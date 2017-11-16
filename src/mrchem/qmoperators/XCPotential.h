@@ -2,6 +2,8 @@
 
 #include "XCOperator.h"
 
+
+
 class XCPotential : public XCOperator {
 public:
     XCPotential(XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D = 0)
