@@ -14,6 +14,14 @@ using namespace Eigen;
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** 
+ *  \class 
+ *  \brief Interface class to compute DFT functionaals and derivatives
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D)
         : QMPotential(0),
           order(k),

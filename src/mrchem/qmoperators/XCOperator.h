@@ -12,6 +12,14 @@ template<int D> class FunctionTree;
 template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
+/*! \file XCOpertator.h
+ *  \class 
+ *  \brief Interface class to compute DFT functionaals and derivatives
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 class XCOperator : public QMPotential {
 public:
     XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D);

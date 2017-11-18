@@ -5,3 +5,4 @@
 # MRChem: MultiResolution Chemistry
 
 - Documentation: http://mrchemdoc.readthedocs.io
+- Version 0.0.10 available

@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "A Multiwavelet-based SCF program"
 # and the maximum width should not exceed 200 pixels. Doxygen will copy the logo
 # to the output directory.
 
-PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/doc/gfx/logo.jpg
+PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/doc/gfx/logo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -750,9 +750,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @PROJECT_SOURCE_DIR@/src \
-                         @PROJECT_SOURCE_DIR@/api \
-                         @PROJECT_SOURCE_DIR@/include \
+INPUT                  = @PROJECT_SOURCE_DIR@/src/mrchem \
                          @PROJECT_SOURCE_DIR@/doc
 
 # This tag can be used to specify the character encoding of the source files
@@ -788,9 +786,8 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = Python/pyparsing.py \
-                         @PROJECT_SOURCE_DIR@/src/bin \
-                         @PROJECT_SOURCE_DIR@/src/metal
+EXCLUDE                = @PROJECT_SOURCE_DIR@/src/mrcpp
+                         
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
