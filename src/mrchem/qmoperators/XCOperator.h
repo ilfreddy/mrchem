@@ -12,9 +12,11 @@ template<int D> class FunctionTree;
 template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
-/*! \file XCOpertator.h
- *  \class 
+/** 
+ *  \class XCOperator
  *  \brief Interface class to compute DFT functionaals and derivatives
+ *
+ *  Testing the output on Sphinx
  *
  *  \author Stig Rune Jensen
  *  \date 2015
