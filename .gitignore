@@ -111,3 +111,8 @@ venv
 *.files
 *.includes
 
+#generated documentation stuff
+doc/Doxyfile
+doc/doctrees/
+doc/html/
+doc/xml/

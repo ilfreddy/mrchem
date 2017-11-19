@@ -481,7 +481,7 @@ def setup(app):
 #    print "f before", f
     # Take first element in each sublist
     f = [x[0] for x in f]
-#    print "f after", f
+#   print "f after", f
     # Apply map to get language name
     l = [get_lexer_for_filename(x).name for x in f]
     # Finally zip d and f into the dir_lang dictionary
