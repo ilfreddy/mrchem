@@ -463,7 +463,6 @@ def setup(app):
             '@PERL_EXECUTABLE@'    : which('perl')
           }
 #    tup = (os.walk(project_src_dir)) 
-#    print "AAAAAAAAAAAAAA", tup
 #    for root, dirs, files in os.walk(project_src_dir):
 #        if 'mwfilters' in dirs:
 #            dirs.remove('mwfilters')
