@@ -73,3 +73,4 @@ Upcoming features:
    installation
    mrchem_manual
    code_reference/classes-and-functions
+   programmers/programmers-manual

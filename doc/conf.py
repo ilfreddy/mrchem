@@ -336,7 +336,6 @@ def which(program):
 def run_doxygen(folder):
     """Run the doxygen make command in the designated folder"""
 
-    print "DO I GET HERE??"
     import subprocess
     try:
         retcode = subprocess.call("cd %s; doxygen" % folder, shell=True)
@@ -463,31 +462,31 @@ def setup(app):
             '@PROJECT_BINARY_DIR@' : project_root_dir,
             '@PERL_EXECUTABLE@'    : which('perl')
           }
-    tup = (os.walk(project_src_dir)) 
-    print "AAAAAAAAAAAAAA", tup
-    for root, dirs, files in os.walk(project_src_dir):
+#    tup = (os.walk(project_src_dir)) 
+#    print "AAAAAAAAAAAAAA", tup
+#    for root, dirs, files in os.walk(project_src_dir):
 #        if 'mwfilters' in dirs:
 #            dirs.remove('mwfilters')
-        print root, dirs
+#        print root, dirs
 # Generate directories list (full paths), remove bin using filter
-    d = [os.path.join(root, x) for root, dirs, _ in os.walk(project_src_dir) for x in dirs]
-    exclude_dirs = [os.path.join(project_src_dir,x) for x in ['mrcpp','mrcpp/mwfilters']]
-    d2 = filter(lambda y: y not in exclude_dirs, d)
-    print d
-    print "EXCLUDE", exclude_dirs
-    print d2
-# Remove 'CMakeLists.txt' from sublists using filter
-    f = [filter(lambda z: not z.endswith('.mod'), filter(lambda y: y != 'CMakeLists.txt', filter(lambda x: os.path.isfile(os.path.join(l, x)), os.listdir(l)))) for l in d2]
-#    print "f before", f
-    # Take first element in each sublist
-    f = [x[0] for x in f]
-#   print "f after", f
-    # Apply map to get language name
-    l = [get_lexer_for_filename(x).name for x in f]
-    # Finally zip d and f into the dir_lang dictionary
-    dir_lang = dict(zip(d, l))
-#    generate_bar_charts(project_doc_dir, dir_lang, project_doc_dir)
-
+#    d = [os.path.join(root, x) for root, dirs, _ in os.walk(project_src_dir) for x in dirs]
+#    exclude_dirs = [os.path.join(project_src_dir,x) for x in ['mrcpp/mwfilters']]
+#    d = filter(lambda y: y not in exclude_dirs, d)
+#    f = [filter(lambda x: os.path.isfile(os.path.join(l, x)), os.listdir(l)) for l in d]
+#
+#    allfiles = []
+#    for idx in range(len(f)):
+#        f[idx] = filter(lambda y: y != 'CMakeLists.txt', f[idx])
+#        f[idx] = filter(lambda y: not y.endswith('.in'), f[idx])
+#        allfiles.extend(f[idx])
+#
+#    # Apply map to get language name
+#    l = [get_lexer_for_filename(x).name for x in allfiles]
+#
+# #   # Finally zip d and f into the dir_lang dictionary
+#    dir_lang = dict(zip(d, l))
+#
+#    # generate_bar_charts(project_doc_dir, dir_lang, project_doc_dir)
     if (os.environ.get('READTHEDOCS', None) == 'True'):
         # Add hook for building doxygen xml when needed
         app.connect("builder-inited", generate_doxygen_xml)
