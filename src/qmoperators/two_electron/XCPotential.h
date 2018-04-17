@@ -29,10 +29,6 @@ public:
     void clear();
 
     double getEnergy() const { return this->energy; }
-    void setup(double prec);
-    void clear();
-
-    Orbital apply (Orbital phi);
     
 protected:
     const int order;                    ///< Order of kernel derivative
@@ -46,6 +42,11 @@ protected:
     void calcDensity();
     void evaluateXCFunctional();
     int getPotentialFunctionIndex(const Orbital & orb);
+
+    void setup(double prec);
+    void clear();
+
+    Orbital apply (Orbital phi);
 };
 
 

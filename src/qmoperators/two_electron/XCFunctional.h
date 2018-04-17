@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma GCC system_header
 #include <Eigen/Core>
 
 #include "FunctionTree.h"
@@ -17,6 +16,8 @@
  *  \date 2015
  *  
  */
+namespace mrchem {
+
 class XCFunctional {
 public:
     XCFunctional(bool s, bool e, double thrs = 0.0);
@@ -35,7 +36,7 @@ public:
     bool isSpinSeparated() const { return this->spin; }
     bool needsGamma() const { return (expDerivatives == 0);};
 
-    void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
+    void evaluate(int k, DoubleMatrix &inp, DoubleMatrix &out) const;
     void evalSetup(const int order);
 
     FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgamma,
@@ -154,4 +155,5 @@ private:
     xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
 
 };
-
+ 
+} //namespace mrchem
