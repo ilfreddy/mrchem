@@ -39,6 +39,7 @@ public:
     void evaluate(int k, DoubleMatrix &inp, DoubleMatrix &out) const;
     void evalSetup(const int order);
 
+ protected:
     FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgamma,
                                        FunctionTreeVector<3> grad_rho, DerivativeOperator<3> *derivative,
                                        int maxScale);
@@ -48,7 +49,6 @@ public:
                                        int maxScale);
     FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTreeVector<3> & df_dgr,
                                        DerivativeOperator<3> *derivative, int maxScale);
- protected:
     FunctionTree<3> * addPotentialContributions(FunctionTreeVector<3> & contributions,
                                                 int maxScale);
     FunctionTree<3> * calcDivergence(FunctionTreeVector<3> &inp,
@@ -81,19 +81,12 @@ public:
     void calcDensity(OrbitalVector * orbitals);
     int calcDensityGradient();
     void calcGamma();
-
     FunctionTreeVector<3> calcPotential();
     bool cropPotential(double prec);
-
     void calcPotentialLDA();
-    
     void calcPotentialGGA();
-
     void calcEnergy();
-    void evaluateXCFunctional();
-
-    void compressTreeData(int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
-    void expandTreeData(int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
+    void evaluateFunctional();
 
     void compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
     void expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
