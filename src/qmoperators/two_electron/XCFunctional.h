@@ -5,6 +5,8 @@
 #include "FunctionTree.h"
 #include "FunctionTreeVector.h"
 #include "xcfun.h"
+#include "Density.h"
+#include "MRCPP/Printer"
 
 /** 
  *  \class XCFunctional
@@ -16,6 +18,8 @@
  *  \date 2015
  *  
  */
+
+        
 namespace mrchem {
 
 class XCFunctional {
@@ -40,36 +44,36 @@ public:
     void evalSetup(const int order);
 
  protected:
-    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgamma,
-                                       FunctionTreeVector<3> grad_rho, DerivativeOperator<3> *derivative,
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho, mrcpp::FunctionTree<3> & df_dgamma,
+                                       mrcpp::FunctionTreeVector<3> grad_rho, mrcpp::DerivativeOperator<3> *derivative,
                                        int maxScale);
-    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drhoa, FunctionTree<3> & df_dgaa,
-                                       FunctionTree<3> & df_dgab, FunctionTreeVector<3> grad_rhoa,
-                                       FunctionTreeVector<3> grad_rhob, DerivativeOperator<3> *derivative,
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drhoa, mrcpp::FunctionTree<3> & df_dgaa,
+                                       mrcpp::FunctionTree<3> & df_dgab, mrcpp::FunctionTreeVector<3> grad_rhoa,
+                                       mrcpp::FunctionTreeVector<3> grad_rhob, mrcpp::DerivativeOperator<3> *derivative,
                                        int maxScale);
-    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTreeVector<3> & df_dgr,
-                                       DerivativeOperator<3> *derivative, int maxScale);
-    FunctionTree<3> * addPotentialContributions(FunctionTreeVector<3> & contributions,
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho, mrcpp::FunctionTreeVector<3> & df_dgr,
+                                       mrcpp::DerivativeOperator<3> *derivative, int maxScale);
+    mrcpp::FunctionTree<3> * addPotentialContributions(mrcpp::FunctionTreeVector<3> & contributions,
                                                 int maxScale);
-    FunctionTree<3> * calcDivergence(FunctionTreeVector<3> &inp,
-                                    DerivativeOperator<3> *derivative,
+    mrcpp::FunctionTree<3> * calcDivergence(mrcpp::FunctionTreeVector<3> &inp,
+                                    mrcpp::DerivativeOperator<3> *derivative,
                                     int maxScale);
-    FunctionTree<3> * calcGradDotPotDensVec(FunctionTree<3> &V,
-                                           FunctionTreeVector<3> &rho,
-                                           DerivativeOperator<3> *derivative,
+    mrcpp::FunctionTree<3> * calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V,
+                                           mrcpp::FunctionTreeVector<3> &rho,
+                                           mrcpp::DerivativeOperator<3> *derivative,
                                            int maxScale);
-    DerivativeOperator<3> *derivative;  ///< External derivative operator
+    mrcpp::DerivativeOperator<3> *derivative;  ///< External derivative operator
     double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density
 
-    FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
-    FunctionTree<3> **xcOutput;         ///< Bookkeeping array returned by XCFun
+    mrcpp::FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
+    mrcpp::FunctionTree<3> **xcOutput;         ///< Bookkeeping array returned by XCFun
 
-    FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
-    FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density        
-    FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density        
-    FunctionTreeVector<3> grad_t; ///< Gradient of the total density        
-    FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)       
+    mrcpp::FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
+    mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density        
+    mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density        
+    mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total density        
+    mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)       
 
     void evaluate(OrbitalVector * orbitals);
     void setupXCInput();
@@ -81,18 +85,18 @@ public:
     void calcDensity(OrbitalVector * orbitals);
     int calcDensityGradient();
     void calcGamma();
-    FunctionTreeVector<3> calcPotential();
+    mrcpp::FunctionTreeVector<3> calcPotential();
     bool cropPotential(double prec);
     void calcPotentialLDA();
     void calcPotentialGGA();
     void calcEnergy();
     void evaluateFunctional();
 
-    void compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
-    void expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
+    void compressNodeData(int n, int nFuncs, mrcpp::FunctionTree<3> **trees, Eigen::MatrixXd &data);
+    void expandNodeData(int n, int nFuncs, mrcpp::FunctionTree<3> **trees, Eigen::MatrixXd &data);
 
-    FunctionTreeVector<3> calcGradient(FunctionTree<3> &inp);
-    FunctionTree<3>* calcDotProduct(FunctionTreeVector<3> &vec_a, FunctionTreeVector<3> &vec_b);
+    mrcpp::FunctionTreeVector<3> calcGradient(mrcpp::FunctionTree<3> &inp);
+    mrcpp::FunctionTree<3>* calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a, mrcpp::FunctionTreeVector<3> &vec_b);
 
     int getPotentialFunctionIndex(const Orbital & orb);
     
@@ -118,7 +122,7 @@ public:
 
     template<class T>
     void clearPtrArray(int n_funcs, T **ptr) {
-        if (ptr == 0) MSG_FATAL("Clearing NULL pointer");
+        if (ptr == 0) MSG_ERROR("Clearing NULL pointer");
         for (int i = 0; i < n_funcs; i++) {
             if (ptr[i] != 0) {
                 delete ptr[i];

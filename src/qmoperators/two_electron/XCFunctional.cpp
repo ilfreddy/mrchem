@@ -1,15 +1,14 @@
-#include "GridGenerator.h"
-#include "MWAdder.h"
-#include "MWMultiplier.h"
-#include "MWDerivative.h"
+#include "mrchem.h"
 #include "XCFunctional.h"
-#include "TelePrompter.h"
 #include "constants.h"
 
+using namespace mrcpp;
 using namespace std;
 using namespace Eigen;
 
 extern MultiResolutionAnalysis<3> *MRA;
+
+namespace mrchem {
 
 /** @brief constructor
  *
@@ -831,3 +830,4 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
     return out;
 }
 
+} //namespace mrchem
