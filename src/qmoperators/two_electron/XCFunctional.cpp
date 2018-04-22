@@ -1,6 +1,9 @@
 #include "mrchem.h"
 #include "XCFunctional.h"
 #include "constants.h"
+#include "MRCPP/MWFunctions"
+#include "MRCPP/MWOperators"
+#include "MRCPP/Timer"
 
 using namespace mrcpp;
 using namespace std;
@@ -18,15 +21,16 @@ namespace mrchem {
  * @param[in] thrs Threshold for func calculation
  *
  */
-XCFunctional::XCFunctional(bool s, bool e, double thrs)
-        : spin(s), cutoff(thrs) {
+XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, DerivativeOperator<3> *D)
+    : spin(s), cutoff(thrs), density(s, false) { //HACK: shared set as false for now... 
     this->functional = xc_new_functional();
     if(e) {
         this->expDerivatives = 1;
     }
     else {
         this->expDerivatives = 0;
-    }        
+    }
+    calcDensity(phi);
 }
 
 /** @brief destructor
@@ -259,10 +263,8 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
 FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions,
                                                          int maxScale) {
     FunctionTree<3> *V = new FunctionTree<3>(*MRA);
-    GridGenerator<3> G(maxScale);
-    MWAdder<3> add(-1.0, maxScale);
-    G(*V, contributions);
-    add(*V, contributions, 0);
+    copy_grid(*V, contributions);
+    add(-1, *V, contributions, -1);
     return V;
 }
 
@@ -279,9 +281,6 @@ FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
                                              DerivativeOperator<3> *derivative,
                                              int maxScale) {
     if (derivative == 0) MSG_ERROR("No derivative operator");
-    MWAdder<3> add(-1.0,  maxScale);
-    MWDerivative<3> apply(maxScale);
-    GridGenerator<3> grid(maxScale);
 
     FunctionTreeVector<3> tmp_vec;
     for (int d = 0; d < 3; d++) {
@@ -290,8 +289,8 @@ FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
         tmp_vec.push_back(out_d);
     }
     FunctionTree<3> *out = new FunctionTree<3>(*MRA);
-    grid(*out, tmp_vec);
-    add(*out, tmp_vec, 0); // Addition on union grid
+    copy_grid(*out, tmp_vec);
+    add(-1.0, *out, tmp_vec, -1); // Addition on union grid
     tmp_vec.clear(true);
     return out;
 }
@@ -310,16 +309,13 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
                                                     FunctionTreeVector<3> &rho,
                                                     DerivativeOperator<3> *derivative,
                                                     int maxScale) {
-    MWMultiplier<3> mult(-1.0, maxScale);
-    GridGenerator<3> grid(maxScale);
-
     FunctionTreeVector<3> vec;
     for (int d = 0; d < 3; d++) {
         if (rho[d] == 0) MSG_ERROR("Invalid density");
 
         Timer timer;
         FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
-        grid(*Vrho, *rho[d]);
+        copy_grid(*Vrho, *rho[d]);
         mult(*Vrho, 1.0, V, *rho[d], 0);
         vec.push_back(Vrho);
 
@@ -687,10 +683,9 @@ void XCFunctional::calcPotentialGGA() {
  * Note: yet another function that does not necessarily belong to this class.
  *
  */
-void XCFunctional::calcDensity() {
+void XCFunctional::calcDensity(const OrbitalVector &phi) {
     if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
     
-    OrbitalVector &phi = *this->orbitals;
     Density &rho = this->density;
     QMPotential &V = *this;
     

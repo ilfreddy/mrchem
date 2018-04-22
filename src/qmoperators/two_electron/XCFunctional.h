@@ -24,7 +24,7 @@ namespace mrchem {
 
 class XCFunctional {
 public:
-    XCFunctional(bool s, bool e, double thrs = 0.0);
+    XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, mrcpp::DerivativeOperator<3> *D);
     virtual ~XCFunctional();
 
     void setDensityCutoff(double thrs) { this->cutoff = thrs; }
@@ -82,7 +82,7 @@ public:
     int setupXCInputGradient(int nUsed);
     void clearXCInput();
     void clearXCOutput();
-    void calcDensity(OrbitalVector * orbitals);
+    void calcDensity(const OrbitalVector &orbitals);
     int calcDensityGradient();
     void calcGamma();
     mrcpp::FunctionTreeVector<3> calcPotential();
