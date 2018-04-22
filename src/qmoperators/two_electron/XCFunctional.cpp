@@ -9,6 +9,8 @@ using namespace mrcpp;
 using namespace std;
 using namespace Eigen;
 
+template class mrcpp::FunctionNode<3>;
+
 extern MultiResolutionAnalysis<3> *MRA;
 
 namespace mrchem {
@@ -316,13 +318,13 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
         Timer timer;
         FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
         copy_grid(*Vrho, *rho[d]);
-        mult(*Vrho, 1.0, V, *rho[d], 0);
+        multiply(-1.0, *Vrho, 1.0, V, *rho[d], -1);
         vec.push_back(Vrho);
 
         timer.stop();
         double t = timer.getWallTime();
         int n = Vrho->getNNodes();
-        TelePrompter::printTree(2, "Multiply", n, t);
+        Printer::printTree(2, "Multiply", n, t);
     }
 
     Timer timer;
@@ -332,7 +334,7 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
     timer.stop();
     double t = timer.getWallTime();
     int n = result->getNNodes();
-    TelePrompter::printTree(2, "Gradient", n, t);
+    Printer::printTree(2, "Gradient", n, t);
     return result;
 }
 
@@ -435,8 +437,6 @@ void XCFunctional::setupXCOutput() {
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
     if (this->xcInput[0] == 0) MSG_ERROR("XC input not initialized");
 
-    GridGenerator<3> grid(this->max_scale);
-
     // Alloc output trees
     int nOut = this->getOutputLength();
     this->xcOutput = allocPtrArray<FunctionTree<3> >(nOut);
@@ -445,7 +445,7 @@ void XCFunctional::setupXCOutput() {
     FunctionTree<3> &rho = *this->xcInput[0];
     for (int i = 0; i < nOut; i++) {
         this->xcOutput[i] = new FunctionTree<3>(*MRA);
-        grid(*this->xcOutput[i], rho);
+        copy_grid(*this->xcOutput[i], rho);
     }
 }
 
@@ -493,6 +493,8 @@ void XCFunctional::evaluateFunctional() {
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
     if (this->xcOutput == 0) MSG_ERROR("XC input not initialized");
 
+    int order = 1; //HACK order needs to be passed!
+    
     Timer timer;
     println(2, "Evaluating");
 
@@ -506,7 +508,7 @@ void XCFunctional::evaluateFunctional() {
     	for (int n = 0; n < nNodes; n++) {
             MatrixXd inpData, outData;
             compressNodeData(n, nInp, this->xcInput, inpData);
-            this->evaluate(this->order, inpData, outData);
+            this->evaluate(order, inpData, outData);
             expandNodeData(n, nOut, this->xcOutput, outData);
         }
     }
@@ -518,7 +520,7 @@ void XCFunctional::evaluateFunctional() {
     timer.stop();
     double t = timer.getWallTime();
     int n = sumNodes<FunctionTree<3> >(this->xcOutput, nOut);
-    TelePrompter::printTree(0, "XC evaluate xcfun", n, t);
+    Printer::printTree(0, "XC evaluate xcfun", n, t);
     printout(2, endl);
 }
 
@@ -696,14 +698,14 @@ void XCFunctional::calcDensity(const OrbitalVector &phi) {
     timer1.stop();
     double t1 = timer1.getWallTime();
     int n1 = rho.getNNodes();
-    TelePrompter::printTree(0, "XC density", n1, t1);
+    Printer::printTree(0, "XC density", n1, t1);
     
     if (this->functional->isGGA()) {
         Timer timer2;
         int n2 = calcDensityGradient();
         timer2.stop();
         double t2 = timer2.getWallTime();
-        TelePrompter::printTree(0, "XC density gradient", n2, t2);
+        Printer::printTree(0, "XC density gradient", n2, t2);
         printout(1, endl);
     }
     if (this->functional->needsGamma()) calcGamma();
@@ -787,7 +789,7 @@ void XCOperator::calcEnergy() {
     timer.stop();
     double t = timer.getWallTime();
     int n = this->xcOutput[0]->getNNodes();
-    TelePrompter::printTree(0, "XC energy", n, t);
+    Printer::printTree(0, "XC energy", n, t);
     return this->energy;
 }
 
@@ -803,18 +805,14 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
                                             FunctionTreeVector<3> &vec_b) {
     if (vec_a.size() != vec_b.size()) MSG_ERROR("Invalid input");
 
-    MWAdder<3> add(-1.0, this->max_scale);
-    MWMultiplier<3> mult(-1.0, this->max_scale);
-    GridGenerator<3> grid(this->max_scale);
-
     FunctionTreeVector<3> out_vec;
     for (int d = 0; d < vec_a.size(); d++) {
         FunctionTree<3> &tree_a = vec_a.getFunc(d);
         FunctionTree<3> &tree_b = vec_b.getFunc(d);
         FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
-        grid(*out_d, tree_a);
-        grid(*out_d, tree_b);
-        mult(*out_d, 1.0, tree_a, tree_b, 0);
+        //ASK STIG: which grid shall I copy here?
+        copy_grid(*out_d, tree_b);
+        multiply(-1.0, *out_d, 1.0, tree_a, tree_b, -1);
         out_vec.push_back(out_d);
     }
     FunctionTree<3> *out = new FunctionTree<3>(*MRA);
