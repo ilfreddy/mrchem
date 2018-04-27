@@ -4,12 +4,13 @@
 #include "MRCPP/MWFunctions"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Timer"
+#include "FunctionNode.h"
+#include "Orbital.h"
+#include "qmfunctions.h"
 
 using namespace mrcpp;
 using namespace std;
 using namespace Eigen;
-
-template class mrcpp::FunctionNode<3>;
 
 extern MultiResolutionAnalysis<3> *MRA;
 
@@ -24,7 +25,7 @@ namespace mrchem {
  *
  */
 XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, DerivativeOperator<3> *D)
-    : spin(s), cutoff(thrs), density(s, false) { //HACK: shared set as false for now... 
+    : spin(s), cutoff(thrs), density(s, false), orbitals(phi) { //HACK: shared set as false for now... 
     this->functional = xc_new_functional();
     if(e) {
         this->expDerivatives = 1;
@@ -32,7 +33,10 @@ XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, Deri
     else {
         this->expDerivatives = 0;
     }
-    calcDensity(phi);
+    density::calc_density(density, orbitals);
+    if (this->isGGA()) calcDensityGradient(); // HACK we should implement gradient stuff as density-related functions, not here!
+    if (this->needsGamma()) calcGamma();
+    max_scale = 20; //HACK: need to get this from somewhere... 
 }
 
 /** @brief destructor
@@ -42,6 +46,22 @@ XCFunctional::~XCFunctional() {
     xc_free_functional(this->functional);
 }
 
+/** @brief evaluation of the functional and its derivatives
+ *
+ * the data contained in the xcInput is converted in matrix form and fed to the functional.
+ * the output matrix is then converted back to function form.
+ *
+ */
+void XCFunctional::setup(const int order) {
+    evalSetup(order);
+    setupXCInput();
+    setupXCOutput();
+    evaluateFunctional();
+    calcEnergy();
+    calcPotential();
+}
+
+    
 /** @brief functional setup
  *
  * @usage For each functional part in calculation a corresponding token is created in xcfun
@@ -492,9 +512,9 @@ void XCFunctional::clearXCOutput() {
 void XCFunctional::evaluateFunctional() {
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
     if (this->xcOutput == 0) MSG_ERROR("XC input not initialized");
-
+ 
     int order = 1; //HACK order needs to be passed!
-    
+   
     Timer timer;
     println(2, "Evaluating");
 
@@ -601,10 +621,13 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
  */
 void XCFunctional::calcPotentialLDA() {
 
-    if (this->order != 1) {
+    int order = 1; //HACK order needs to be passed!
+    int nPotentials = this->isSpinSeparated() ? order + 1 : 1;
+
+    if (order != 1) {
         NOT_IMPLEMENTED_ABORT;
     }
-    for (int i = 0; i < this->nPotentials; i++) {
+    for (int i = 0; i < nPotentials; i++) {
         int outputIndex = i + 1;
         if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
         potentialFunction.push_back(xcOutput[outputIndex]);
@@ -680,38 +703,6 @@ void XCFunctional::calcPotentialGGA() {
     pot = 0;
 }
 
-/** @brief given a set of orbitals, it computes the corresponding density function(s)
- *
- * Note: yet another function that does not necessarily belong to this class.
- *
- */
-void XCFunctional::calcDensity(const OrbitalVector &phi) {
-    if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
-    
-    Density &rho = this->density;
-    QMPotential &V = *this;
-    
-    DensityProjector project(this->apply_prec, this->max_scale);
-    
-    Timer timer1;
-    project(rho, phi);
-    timer1.stop();
-    double t1 = timer1.getWallTime();
-    int n1 = rho.getNNodes();
-    Printer::printTree(0, "XC density", n1, t1);
-    
-    if (this->functional->isGGA()) {
-        Timer timer2;
-        int n2 = calcDensityGradient();
-        timer2.stop();
-        double t2 = timer2.getWallTime();
-        Printer::printTree(0, "XC density gradient", n2, t2);
-        printout(1, endl);
-    }
-    if (this->functional->needsGamma()) calcGamma();
-            
-}
-
 /** @brief computes the gradient invariants (gamma functions)
  *
  * Depending on the mode chosen, xcfun needs either the gamma
@@ -723,7 +714,7 @@ void XCFunctional::calcDensity(const OrbitalVector &phi) {
  */
 void XCFunctional::calcGamma() {
     FunctionTree<3> * temp;
-    if(this->functional->isSpinSeparated()) {
+    if(this->isSpinSeparated()) {
             temp = calcDotProduct(grad_a, grad_a);
             this->gamma.push_back(temp);
             temp = calcDotProduct(grad_a, grad_b);
@@ -767,11 +758,10 @@ int XCFunctional::calcDensityGradient() {
  */
 FunctionTreeVector<3> XCFunctional::calcGradient(FunctionTree<3> &function) {
     if (this->derivative == 0) MSG_ERROR("No derivative operator");
-    MWDerivative<3> apply(this->max_scale);
     FunctionTreeVector<3> gradient;
     for (int d = 0; d < 3; d++) {
         FunctionTree<3> *gradient_comp = new FunctionTree<3>(*MRA);
-        apply(*gradient_comp, *this->derivative, function, d);
+        mrcpp::apply(*gradient_comp, *this->derivative, function, d);
         gradient.push_back(gradient_comp);
     }
     return gradient;
@@ -780,7 +770,7 @@ FunctionTreeVector<3> XCFunctional::calcGradient(FunctionTree<3> &function) {
 /** @brief computes the XC energy as the integral of the functional.
  *
  */
-void XCOperator::calcEnergy() {
+void XCFunctional::calcEnergy() {
     if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
     if (this->xcOutput[0] == 0) MSG_ERROR("Invalid XC output");
     
@@ -790,7 +780,6 @@ void XCOperator::calcEnergy() {
     double t = timer.getWallTime();
     int n = this->xcOutput[0]->getNNodes();
     Printer::printTree(0, "XC energy", n, t);
-    return this->energy;
 }
 
 /** @brief scalar product of two FunctionTreeVector(s)
@@ -801,8 +790,8 @@ void XCOperator::calcEnergy() {
  * Note: should be a mrcpp functionality.
  *
  */
-FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
-                                            FunctionTreeVector<3> &vec_b) {
+FunctionTree<3>* XCFunctional::calcDotProduct(FunctionTreeVector<3> &vec_a,
+                                              FunctionTreeVector<3> &vec_b) {
     if (vec_a.size() != vec_b.size()) MSG_ERROR("Invalid input");
 
     FunctionTreeVector<3> out_vec;
@@ -816,8 +805,8 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
         out_vec.push_back(out_d);
     }
     FunctionTree<3> *out = new FunctionTree<3>(*MRA);
-    grid(*out, out_vec);
-    add(*out, out_vec, 0);
+    copy_grid(*out, out_vec);
+    mrcpp::add(-1.0, *out, out_vec, -1);
 
     out_vec.clear(true);
     return out;

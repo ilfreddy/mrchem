@@ -32,6 +32,7 @@ public:
 
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
+    double getEnergy() const { return energy; }
 
     bool isLDA() const { return (!(this->isGGA() || this->isMetaGGA())); }
     bool isGGA() const { return (xc_is_gga(this->functional)); }
@@ -41,7 +42,11 @@ public:
     bool needsGamma() const { return (expDerivatives == 0);};
 
     void evaluate(int k, DoubleMatrix &inp, DoubleMatrix &out) const;
+    void setup(const int order);
     void evalSetup(const int order);
+
+    int getPotentialFunctionIndex(const Orbital & orb);
+    mrcpp::FunctionTree<3>* getPotentialFunction(int index) {return potentialFunction[index];};
 
  protected:
     mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho, mrcpp::FunctionTree<3> & df_dgamma,
@@ -63,7 +68,6 @@ public:
                                            mrcpp::DerivativeOperator<3> *derivative,
                                            int maxScale);
     mrcpp::DerivativeOperator<3> *derivative;  ///< External derivative operator
-    double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density
 
     mrcpp::FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
@@ -82,7 +86,6 @@ public:
     int setupXCInputGradient(int nUsed);
     void clearXCInput();
     void clearXCOutput();
-    void calcDensity(const OrbitalVector &orbitals);
     int calcDensityGradient();
     void calcGamma();
     mrcpp::FunctionTreeVector<3> calcPotential();
@@ -98,8 +101,7 @@ public:
     mrcpp::FunctionTreeVector<3> calcGradient(mrcpp::FunctionTree<3> &inp);
     mrcpp::FunctionTree<3>* calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a, mrcpp::FunctionTreeVector<3> &vec_b);
 
-    int getPotentialFunctionIndex(const Orbital & orb);
-    
+
     template<class T>
     int sumNodes(T **trees, int nTrees) {
         int nNodes = 0;
@@ -150,7 +152,9 @@ private:
     unsigned int expDerivatives;///< whether gamma-type or explicit derivatives are used
     double cutoff;              ///< Below the cutoff value, the density will be considered zero
     xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
-
+    int max_scale; //HACK: the old XCOperator used to inherit this. Wher do I get it from now?
+    OrbitalVector orbitals;     ///< Set of orbitals used to compute the density defining the functional
+    double energy;              ///< XC energy
 };
  
 } //namespace mrchem

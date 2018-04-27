@@ -81,6 +81,7 @@ namespace density {
 void calc_density(Density &rho, Orbital phi, double prec = -1.0);
 void calc_density(Density &rho, OrbitalVector &Phi, double prec = -1.0);
 
+ 
 } //namespace density
 
 

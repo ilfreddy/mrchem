@@ -1,12 +1,19 @@
+#include "mrchem.h"
+#include "constants.h"
+#include "Orbital.h"
+#include "qmfunctions.h"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "XCFunctional.h"
 #include "XCPotential.h"
 
-using mrcpp::PoissonOperator;
-using mrcpp::Printer;
-using mrcpp::Timer;
+using namespace mrcpp;
+using namespace std;
+using namespace Eigen;
+
+extern MultiResolutionAnalysis<3> *MRA;
 
 namespace mrchem {
 
@@ -23,17 +30,14 @@ namespace mrchem {
  *
  */
 
-XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, mrcpp::DerivativeOperator &D, int k) 
-    : orbitals(&Phi),
+XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, DerivativeOperator<3> &D, int k) 
+    : QMPotential(1), //HACK is the correct value of adap here?
+      orbitals(&Phi),
       functional(&F),
       derivative(&D),
       energy(0.0),
-      order(k) {
-    bool spinDensity = F.isSpinSeparated();
-    density(spinDensity, true);
-    // k+1 potentials if spin separated, otherwise just one.
-    nPotentials = spinDensity ? k + 1 : 1;
-}
+      order(k) {};
+    
 /** @brief destructor
  *
  */
@@ -68,12 +72,11 @@ void XCPotential::setup(double prec) {
  *
  */
 Orbital XCPotential::apply(Orbital phi) {
-    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)];
-    this->setReal(potential);
+    int potentialIndex =  this->functional->getPotentialFunctionIndex(phi);
+    FunctionTree<3> * potential = this->functional->getPotentialFunction(potentialIndex);
     this->setImag(0);
-    Orbital * Vphi = QMPotential::operator()(phi); 
-    this->clearReal(false);
-    this->clearImag(false);
+    Orbital Vphi = QMPotential::apply(phi); 
+    this->setReal(0);
     return Vphi;
 }
 
@@ -83,28 +86,15 @@ Orbital XCPotential::apply(Orbital phi) {
 void XCPotential::clear() {
     energy = 0.0;
     nPotentials = -1;
-    order = -1
-    density.clear();
-    potentials.clear();
+    order = -1;
     clearApplyPrec();
 }
 
 /** @brief evaluation of the functional and its derivatives
  *
- * the data contained in the xcInput is converted in matrix form and fed to the functional.
- * the output matrix is then converted back to function form.
- *
  */
 void XCPotential::evaluateXCFunctional() {
-
-    this->functional->evalSetup(this->order);
-    this->functional->calcDensity(this->orbitals)
-    this->functional->setupXCInput();
-    this->functional->setupXCOutput();
-    this->functional->evaluateFunctional();
-    this->energy = this->functional->calcEnergy();
-    this->potentials = this->functional->calcPotential();
-    this->functional->clear();
+    this->functional->setup(this->order);
 }
 
 /** @brief fetches the correct index for the potential function to use
@@ -116,7 +106,7 @@ void XCPotential::evaluateXCFunctional() {
  *
  */
 int XCPotential::getPotentialFunctionIndex(const Orbital &orb) {
-    int orbitalSpin = orb.getSpin();
+    int orbitalSpin = orb.spin();
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();
     int potentialFunctionIndex = -1;
     if (spinSeparatedFunctional and orbitalSpin == Alpha) {

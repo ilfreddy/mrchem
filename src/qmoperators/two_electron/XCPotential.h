@@ -1,7 +1,6 @@
 #pragma once
 
 #include "QMPotential.h"
-#include "Density.h"
 
 namespace mrchem {
 
@@ -22,8 +21,8 @@ namespace mrchem {
  */
 class XCPotential final : public QMPotential {
 public:
-    XCPotential(XCFunctional &F, OrbitalVector &Phi, mrcpp::DerivativeOperator &D, int k);
-    ~XCPotential() { }
+    XCPotential(XCFunctional &F, OrbitalVector &Phi, mrcpp::DerivativeOperator<3> &D, int k);
+    ~XCPotential();
 
     void setup(double prec);
     void clear();
@@ -31,19 +30,16 @@ public:
     double getEnergy() const { return this->energy; }
     
 protected:
-    const int order;                    ///< Order of kernel derivative
-    int nPotentials;                    ///< Number of potential energy functions
-    XCFunctional *functional;           ///< External XC functional to be used
-    DerivativeOperator<3> *derivative;  ///< External derivative operator
-    OrbitalVector *orbitals;            ///< External set of orbitals used to build the density
-    double energy;                      ///< XC energy
-    FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
+    int order;                           ///< Order of kernel derivative
+    int nPotentials;                           ///< Number of potential energy functions
+    XCFunctional *functional;                  ///< External XC functional to be used
+    mrcpp::DerivativeOperator<3> *derivative;  ///< External derivative operator
+    OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
+    double energy;                             ///< XC energy
+    mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
 
-    void calcDensity();
     void evaluateXCFunctional();
     int getPotentialFunctionIndex(const Orbital & orb);
-    void setup(double prec);
-    void clear();
     Orbital apply (Orbital phi);
 };
 
