@@ -2,11 +2,10 @@
 
 #include <Eigen/Core>
 
-#include "MRCPP/mwtrees/FunctionTree.h"
-#include "MRCPP/mwtrees/FunctionTreeVector.h"
+#include "MRCPP/MWFunctions"
+#include "MRCPP/Printer"
 #include "xcfun.h"
 #include "Density.h"
-#include "MRCPP/Printer"
 
 /** 
  *  \class XCFunctional
@@ -49,36 +48,36 @@ public:
     mrcpp::FunctionTree<3>* getPotentialFunction(int index) {return potentialFunction[index];};
 
  protected:
-    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho, mrcpp::FunctionTree<3> & df_dgamma,
-                                       mrcpp::FunctionTreeVector<3> grad_rho, mrcpp::DerivativeOperator<3> *derivative,
-                                       int maxScale);
-    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drhoa, mrcpp::FunctionTree<3> & df_dgaa,
-                                       mrcpp::FunctionTree<3> & df_dgab, mrcpp::FunctionTreeVector<3> grad_rhoa,
-                                       mrcpp::FunctionTreeVector<3> grad_rhob, mrcpp::DerivativeOperator<3> *derivative,
-                                       int maxScale);
-    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho, mrcpp::FunctionTreeVector<3> & df_dgr,
-                                       mrcpp::DerivativeOperator<3> *derivative, int maxScale);
-    mrcpp::FunctionTree<3> * addPotentialContributions(mrcpp::FunctionTreeVector<3> & contributions,
-                                                int maxScale);
-    mrcpp::FunctionTree<3> * calcDivergence(mrcpp::FunctionTreeVector<3> &inp,
-                                    mrcpp::DerivativeOperator<3> *derivative,
-                                    int maxScale);
-    mrcpp::FunctionTree<3> * calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V,
-                                           mrcpp::FunctionTreeVector<3> &rho,
-                                           mrcpp::DerivativeOperator<3> *derivative,
-                                           int maxScale);
-    mrcpp::DerivativeOperator<3> *derivative;  ///< External derivative operator
-    Density density;                    ///< Unperturbed density
-
-    mrcpp::FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
-    mrcpp::FunctionTree<3> **xcOutput;         ///< Bookkeeping array returned by XCFun
-
+    Density density;                                ///< Unperturbed density
+    mrcpp::FunctionTree<3> **xcInput;               ///< Bookkeeping array to feed XCFun
+    mrcpp::FunctionTree<3> **xcOutput;              ///< Bookkeeping array returned by XCFun
     mrcpp::FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
-    mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density        
-    mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density        
-    mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total density        
-    mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)       
+    mrcpp::FunctionTreeVector<3> grad_a;            ///< Gradient of the alpha density        
+    mrcpp::FunctionTreeVector<3> grad_b;            ///< Gradient of the beta  density        
+    mrcpp::FunctionTreeVector<3> grad_t;            ///< Gradient of the total density        
+    mrcpp::FunctionTreeVector<3> gamma;             ///< Gamma function(s) (three fcns for spin separated calculations)       
+    mrcpp::DerivativeOperator<3> *derivative;       ///< External derivative operator
 
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho,
+                                              mrcpp::FunctionTree<3> & df_dgamma,
+                                              mrcpp::FunctionTreeVector<3> grad_rho,
+                                              mrcpp::DerivativeOperator<3> *derivative);
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drhoa,
+                                              mrcpp::FunctionTree<3> & df_dgaa,
+                                              mrcpp::FunctionTree<3> & df_dgab,
+                                              mrcpp::FunctionTreeVector<3> grad_rhoa,
+                                              mrcpp::FunctionTreeVector<3> grad_rhob,
+                                              mrcpp::DerivativeOperator<3> *derivative);
+    mrcpp::FunctionTree<3> * calcPotentialGGA(mrcpp::FunctionTree<3> & df_drho,
+                                              mrcpp::FunctionTreeVector<3> & df_dgr,
+                                              mrcpp::DerivativeOperator<3> *derivative);
+    mrcpp::FunctionTree<3> * addPotentialContributions(mrcpp::FunctionTreeVector<3> & contributions);
+    mrcpp::FunctionTree<3> * calcDivergence(mrcpp::FunctionTreeVector<3> &inp,
+                                            mrcpp::DerivativeOperator<3> *derivative);
+    mrcpp::FunctionTree<3> * calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V,
+                                                   mrcpp::FunctionTreeVector<3> &rho,
+                                                   mrcpp::DerivativeOperator<3> *derivative);
+    
     void evaluate(OrbitalVector * orbitals);
     void setupXCInput();
     void setupXCOutput();
@@ -152,8 +151,7 @@ private:
     unsigned int expDerivatives;///< whether gamma-type or explicit derivatives are used
     double cutoff;              ///< Below the cutoff value, the density will be considered zero
     xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
-    int max_scale; //HACK: the old XCOperator used to inherit this. Wher do I get it from now?
-    OrbitalVector orbitals;     ///< Set of orbitals used to compute the density defining the functional
+    OrbitalVector * orbitals;   ///< Set of orbitals used to compute the density defining the functional
     double energy;              ///< XC energy
 };
  

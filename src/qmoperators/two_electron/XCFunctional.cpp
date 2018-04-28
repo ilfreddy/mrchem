@@ -12,9 +12,9 @@ using namespace mrcpp;
 using namespace std;
 using namespace Eigen;
 
-extern MultiResolutionAnalysis<3> *MRA;
-
 namespace mrchem {
+
+extern MultiResolutionAnalysis<3> *MRA;
 
 /** @brief constructor
  *
@@ -25,7 +25,7 @@ namespace mrchem {
  *
  */
 XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, DerivativeOperator<3> *D)
-    : spin(s), cutoff(thrs), density(s, false), orbitals(phi) { //HACK: shared set as false for now... 
+    : spin(s), cutoff(thrs), density(s, false), orbitals(&phi) { //HACK: shared set as false for now... 
     this->functional = xc_new_functional();
     if(e) {
         this->expDerivatives = 1;
@@ -33,10 +33,6 @@ XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, Deri
     else {
         this->expDerivatives = 0;
     }
-    density::calc_density(density, orbitals);
-    if (this->isGGA()) calcDensityGradient(); // HACK we should implement gradient stuff as density-related functions, not here!
-    if (this->needsGamma()) calcGamma();
-    max_scale = 20; //HACK: need to get this from somewhere... 
 }
 
 /** @brief destructor
@@ -53,6 +49,9 @@ XCFunctional::~XCFunctional() {
  *
  */
 void XCFunctional::setup(const int order) {
+    density::calc_density(density, *orbitals);
+    if (isGGA()) calcDensityGradient(); // HACK we should implement gradient stuff as density-related functions, not here!
+    if (needsGamma()) calcGamma();
     evalSetup(order);
     setupXCInput();
     setupXCOutput();
@@ -185,22 +184,20 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
  * @param[in] df_dgamma functional_derivative wrt gamma
  * @param[in] grad_rho gradient of rho
  * @param[in] derivative derivative operator to use
- * @param[in] maxScale maximum scale for the derivative application
  *
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTree<3> & df_dgamma,
                                                  FunctionTreeVector<3> grad_rho,
-                                                 DerivativeOperator<3> *derivative,
-                                                 int maxScale) {
+                                                 DerivativeOperator<3> *derivative) {
     FunctionTreeVector<3> funcs;
     funcs.push_back(1.0, &df_drho);
 
     FunctionTree<3> *tmp = 0;
-    tmp = calcGradDotPotDensVec(df_dgamma, grad_rho, derivative, maxScale);
+    tmp = calcGradDotPotDensVec(df_dgamma, grad_rho, derivative);
     funcs.push_back(-2.0, tmp);
 
-    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs);
     funcs.clear(false);
     delete tmp;
     return V;
@@ -219,7 +216,6 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
  * @param[in] grad_rhoa gradient of rho_a
  * @param[in] grad_rhob gradient of rho_b
  * @param[in] derivative derivative operator to use
- * @param[in] maxScale maximum scale for the derivative application
  *
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
@@ -227,20 +223,19 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
                                                  FunctionTree<3> & df_dgab,
                                                  FunctionTreeVector<3> grad_rhoa,
                                                  FunctionTreeVector<3> grad_rhob,
-                                                 DerivativeOperator<3> *derivative,
-                                                 int maxScale) {
+                                                 DerivativeOperator<3> *derivative) {
     FunctionTreeVector<3> funcs;
     funcs.push_back(1.0, &df_drhoa);
 
     FunctionTree<3> *tmp1 = 0;
-    tmp1 = calcGradDotPotDensVec(df_dgaa, grad_rhoa, derivative, maxScale);
+    tmp1 = calcGradDotPotDensVec(df_dgaa, grad_rhoa, derivative);
     funcs.push_back(-2.0, tmp1);
 
     FunctionTree<3> *tmp2 = 0;
-    tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob, derivative, maxScale);
+    tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob, derivative);
     funcs.push_back(-1.0, tmp2);
 
-    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs);
     funcs.clear(false);
     delete tmp1;
     delete tmp2;
@@ -254,21 +249,19 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
  * @param[in] df_drho functional derivative wrt rho
  * @param[in] df_dgr  functional_derivative wrt grad_rho
  * @param[in] derivative derivative operator to use
- * @param[in] maxScale maximum scale for the derivative application
  *
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTreeVector<3> & df_dgr,
-                                                 DerivativeOperator<3> *derivative,
-                                                 int maxScale) {
+                                                 DerivativeOperator<3> *derivative) {
 
     FunctionTreeVector<3> funcs;
     funcs.push_back(1.0, &df_drho);
 
-    FunctionTree<3> * tmp = calcDivergence(df_dgr, derivative, maxScale);
+    FunctionTree<3> * tmp = calcDivergence(df_dgr, derivative);
     funcs.push_back(-1.0, tmp);
 
-    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs);
     funcs.clear(false);
     delete tmp;
     return V;
@@ -277,13 +270,11 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
 /** @brief adds all potential contributions together
  * 
  * @param[in] contributions vctor with all contributions
- * @param[in] maxScale maximum scale to perform the addition
  *
  * NOTE: this should possibly be moved to the new mrcpp module
  * as it only involves mwtrees
  */
-FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions,
-                                                         int maxScale) {
+FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions) {
     FunctionTree<3> *V = new FunctionTree<3>(*MRA);
     copy_grid(*V, contributions);
     add(-1, *V, contributions, -1);
@@ -294,14 +285,12 @@ FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> 
  * 
  * @param[in] inp the vector field expressed as function trees
  * @param[in] derivative the derivative operator
- * @param[in] maxScale the maximum scale to which the derivative is performed
  *
  * NOTE: this should possibly be moved to the new mrcpp module
  * as it only involves mwtrees
  */
 FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
-                                             DerivativeOperator<3> *derivative,
-                                             int maxScale) {
+                                              DerivativeOperator<3> *derivative) {
     if (derivative == 0) MSG_ERROR("No derivative operator");
 
     FunctionTreeVector<3> tmp_vec;
@@ -322,15 +311,13 @@ FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
  * @param[in]V Function (derivative of the functional wrt gamma)
  * @param[in]rho vector field (density gradient)
  * @param[in] derivative the derivative operator
- * @param[in] maxScale the maximum scale to which the derivative is performed
  *
  * NOTE: this should possibly be moved to the new mrcpp module
  * as it only involves mwtrees
  */
 FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
                                                     FunctionTreeVector<3> &rho,
-                                                    DerivativeOperator<3> *derivative,
-                                                    int maxScale) {
+                                                     DerivativeOperator<3> *derivative) {
     FunctionTreeVector<3> vec;
     for (int d = 0; d < 3; d++) {
         if (rho[d] == 0) MSG_ERROR("Invalid density");
@@ -348,7 +335,7 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
     }
 
     Timer timer;
-    FunctionTree<3> *result = calcDivergence(vec, derivative, maxScale);
+    FunctionTree<3> *result = calcDivergence(vec, derivative);
     vec.clear(true);
 
     timer.stop();
@@ -658,10 +645,10 @@ void XCFunctional::calcPotentialGGA() {
             FunctionTree<3> & df_dgab = *xcOutput[4];
             FunctionTree<3> & df_dgbb = *xcOutput[5];
             pot = this->calcPotentialGGA(df_da, df_dgaa, df_dgab, grad_a, grad_b,
-                                                     this->derivative, this->max_scale);
+                                                     this->derivative);
             potentialFunction.push_back(pot);
             pot = this->calcPotentialGGA(df_db, df_dgbb, df_dgab, grad_b, grad_a,
-                                                     this->derivative, this->max_scale);
+                                                     this->derivative);
             potentialFunction.push_back(pot);
         }
         else {
@@ -673,11 +660,9 @@ void XCFunctional::calcPotentialGGA() {
             df_dgb.push_back(xcOutput[6]);
             df_dgb.push_back(xcOutput[7]);
             df_dgb.push_back(xcOutput[8]);
-            pot = this->calcPotentialGGA(df_da, df_dga, this->derivative,
-                                         this->max_scale);
+            pot = this->calcPotentialGGA(df_da, df_dga, this->derivative);
             potentialFunction.push_back(pot);
-            pot = this->calcPotentialGGA(df_db, df_dgb, this->derivative,
-                                         this->max_scale);
+            pot = this->calcPotentialGGA(df_db, df_dgb, this->derivative);
             potentialFunction.push_back(pot);
         }
             
@@ -686,8 +671,7 @@ void XCFunctional::calcPotentialGGA() {
         FunctionTree<3> & df_dt = *xcOutput[1];
         if(needsGamma) {
             FunctionTree<3> & df_dgamma = *xcOutput[2];
-            pot = this->calcPotentialGGA(df_dt, df_dgamma, grad_t,
-                                         this->derivative, this->max_scale);
+            pot = this->calcPotentialGGA(df_dt, df_dgamma, grad_t, this->derivative);
             potentialFunction.push_back(pot);
         }
         else {
@@ -695,8 +679,7 @@ void XCFunctional::calcPotentialGGA() {
             df_dgt.push_back(xcOutput[2]);
             df_dgt.push_back(xcOutput[3]);
             df_dgt.push_back(xcOutput[4]);
-            pot = this->calcPotentialGGA(df_dt, df_dgt,
-                                         this->derivative, this->max_scale);
+            pot = this->calcPotentialGGA(df_dt, df_dgt, this->derivative);
             potentialFunction.push_back(pot);
         }
     }
