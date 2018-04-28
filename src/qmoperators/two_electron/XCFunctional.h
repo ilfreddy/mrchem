@@ -2,8 +2,8 @@
 
 #include <Eigen/Core>
 
-#include "FunctionTree.h"
-#include "FunctionTreeVector.h"
+#include "MRCPP/mwtrees/FunctionTree.h"
+#include "MRCPP/mwtrees/FunctionTreeVector.h"
 #include "xcfun.h"
 #include "Density.h"
 #include "MRCPP/Printer"
