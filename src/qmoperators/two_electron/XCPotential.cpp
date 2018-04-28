@@ -74,6 +74,7 @@ void XCPotential::setup(double prec) {
 Orbital XCPotential::apply(Orbital phi) {
     int potentialIndex =  this->functional->getPotentialFunctionIndex(phi);
     FunctionTree<3> * potential = this->functional->getPotentialFunction(potentialIndex);
+    this->setReal(potential);
     this->setImag(0);
     Orbital Vphi = QMPotential::apply(phi); 
     this->setReal(0);
