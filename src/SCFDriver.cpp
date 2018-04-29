@@ -355,6 +355,8 @@ void SCFDriver::setup() {
     if (diff_kin == "PH")      T = new KineticOperator(*PH_1);
     if (diff_kin == "ABGV_00") T = new KineticOperator(*ABGV_00);
     if (diff_kin == "ABGV_55") T = new KineticOperator(*ABGV_55);
+
+
     V = new NuclearOperator(*nuclei, nuc_prec);
 
     if (wf_method == "Core") {
@@ -367,10 +369,14 @@ void SCFDriver::setup() {
         K = new ExchangeOperator(*P, *phi);
         fock = new FockOperator(T, V, J, K);
     } else if (wf_method == "DFT") {
-        NOT_IMPLEMENTED_ABORT;
-        /*
         J = new CoulombOperator(*P, *phi);
-        xcfun = new XCFunctional(dft_spin, dft_cutoff);
+        bool explicit_der = true; //HACK: should come from input
+        std::string diff_dft = "PH_1"; //HACK: should come from input
+        mrcpp::DerivativeOperator<3> * der_dft = 0;
+        if (diff_dft == "PH_1")      der_dft = PH_1;;
+        if (diff_dft == "ABGV_00") der_dft = ABGV_00;
+        if (diff_dft == "ABGV_55") der_dft = ABGV_55;
+        xcfun = new XCFunctional(dft_spin, explicit_der, dft_cutoff, *phi, *der_dft);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
@@ -379,7 +385,6 @@ void SCFDriver::setup() {
             K = new ExchangeOperator(*P, *phi);
         }
         fock = new FockOperator(T, V, J, K, XC);
-        */
     } else {
         MSG_ERROR("Invalid method");
     }
