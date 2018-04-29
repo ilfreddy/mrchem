@@ -23,6 +23,8 @@
 #include "KineticOperator.h"
 #include "NuclearOperator.h"
 #include "CoulombOperator.h"
+#include "XCFunctional.h"
+#include "XCOperator.h"
 #include "ExchangeOperator.h"
 
 #include "DipoleMoment.h"
@@ -376,11 +378,12 @@ void SCFDriver::setup() {
         if (diff_dft == "PH_1")      der_dft = PH_1;;
         if (diff_dft == "ABGV_00") der_dft = ABGV_00;
         if (diff_dft == "ABGV_55") der_dft = ABGV_55;
-        xcfun = new XCFunctional(dft_spin, explicit_der, dft_cutoff, *phi, *der_dft);
+        xcfun = new XCFunctional(dft_spin, explicit_der, dft_cutoff, *phi, der_dft);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        XC = new XCOperator(*xcfun, *phi, ABGV_00);
+        int order = 1; // HACK
+        XC = new XCOperator(*xcfun, *phi, order);
         if (dft_x_fac > mrcpp::MachineZero) {
             K = new ExchangeOperator(*P, *phi);
         }

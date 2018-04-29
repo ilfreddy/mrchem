@@ -21,7 +21,7 @@ namespace mrchem {
  */
 class XCPotential final : public QMPotential {
 public:
-    XCPotential(XCFunctional &F, OrbitalVector &Phi, mrcpp::DerivativeOperator<3> &D, int k);
+    XCPotential(XCFunctional &F, OrbitalVector &Phi, int k);
     ~XCPotential();
 
     void setup(double prec);
@@ -30,16 +30,14 @@ public:
     double getEnergy() const { return this->energy; }
     
 protected:
-    int order;                           ///< Order of kernel derivative
+    int order;                                 ///< Order of kernel derivative
     int nPotentials;                           ///< Number of potential energy functions
     XCFunctional *functional;                  ///< External XC functional to be used
-    mrcpp::DerivativeOperator<3> *derivative;  ///< External derivative operator
     OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
     double energy;                             ///< XC energy
     mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
 
     void evaluateXCFunctional();
-    int getPotentialFunctionIndex(const Orbital & orb);
     Orbital apply (Orbital phi);
 };
 

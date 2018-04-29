@@ -66,6 +66,7 @@ target_link_libraries(mrchem.x
     mrchem
     mrcpp
     getkw
+    xcfun
     )
 install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

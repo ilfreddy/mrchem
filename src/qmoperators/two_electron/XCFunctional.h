@@ -78,7 +78,6 @@ public:
                                                    mrcpp::FunctionTreeVector<3> &rho,
                                                    mrcpp::DerivativeOperator<3> *derivative);
     
-    void evaluate(OrbitalVector * orbitals);
     void setupXCInput();
     void setupXCOutput();
     int setupXCInputDensity(int nUsed);

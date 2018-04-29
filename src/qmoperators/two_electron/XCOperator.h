@@ -13,9 +13,9 @@ namespace mrchem {
     
 class XCOperator final : public RankZeroTensorOperator {
  public:
- XCOperator(XCFunctional &F, OrbitalVector &Phi, mrcpp::DerivativeOperator D, int k)
-     : potential(0) {
-        this->xcPotential = new XCPotential(F, Phi, D, k);
+ XCOperator(XCFunctional &F, OrbitalVector &Phi, int k)
+     : xcPotential(0) {
+        this->xcPotential = new XCPotential(F, Phi, k);
 
         RankZeroTensorOperator &XC = (*this);
         XC = *xcPotential;

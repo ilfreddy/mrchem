@@ -22,7 +22,6 @@ namespace mrchem {
  * @param[in] k order of the operator
  * @param[in] F XCFunctional pointer
  * @param[in] Phi vector of orbitals
- * @param[in] D derivative operators
  *
  * Based on the order and spin the correct nr. of potential functions is determined
  * Then the functional is set up for subsequent calculations, fixing some internals of
@@ -30,11 +29,10 @@ namespace mrchem {
  *
  */
 
-XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, DerivativeOperator<3> &D, int k) 
+XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, int k) 
     : QMPotential(1), //HACK is the correct value of adap here?
       orbitals(&Phi),
       functional(&F),
-      derivative(&D),
       energy(0.0),
       order(k) {};
     
@@ -43,7 +41,6 @@ XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, DerivativeOperator
  */
 XCPotential::~XCPotential() {
     this->functional = 0;
-    this->derivative = 0;
     this->orbitals = 0;
 }
 
@@ -96,33 +93,6 @@ void XCPotential::clear() {
  */
 void XCPotential::evaluateXCFunctional() {
     this->functional->setup(this->order);
-}
-
-/** @brief fetches the correct index for the potential function to use
- *
- * @param[in] orb the potentialFunction will be applied to this orbital.
- * 
- * Based on the orbital spin, and whether the functional is spin
- * separated, the correct potential index is selected.
- *
- */
-int XCPotential::getPotentialFunctionIndex(const Orbital &orb) {
-    int orbitalSpin = orb.spin();
-    bool spinSeparatedFunctional = this->functional->isSpinSeparated();
-    int potentialFunctionIndex = -1;
-    if (spinSeparatedFunctional and orbitalSpin == Alpha) {
-        potentialFunctionIndex = 0;
-    }
-    else if (spinSeparatedFunctional and orbitalSpin == Beta) {
-        potentialFunctionIndex = 1;
-    }
-    else if (!spinSeparatedFunctional and orbitalSpin == Paired) {
-        potentialFunctionIndex = 0;
-    }
-    else {
-        NOT_IMPLEMENTED_ABORT;
-    }
-    return potentialFunctionIndex;
 }
 
 } //namespace mrchem

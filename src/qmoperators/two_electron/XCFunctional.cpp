@@ -795,4 +795,31 @@ FunctionTree<3>* XCFunctional::calcDotProduct(FunctionTreeVector<3> &vec_a,
     return out;
 }
 
+/** @brief fetches the correct index for the potential function to use
+ *
+ * @param[in] orb the potentialFunction will be applied to this orbital.
+ * 
+ * Based on the orbital spin, and whether the functional is spin
+ * separated, the correct potential index is selected.
+ *
+ */
+int XCFunctional::getPotentialFunctionIndex(const Orbital &orb) {
+    int orbitalSpin = orb.spin();
+    bool spinSeparatedFunctional = isSpinSeparated();
+    int potentialFunctionIndex = -1;
+    if (spinSeparatedFunctional and orbitalSpin == Alpha) {
+        potentialFunctionIndex = 0;
+    }
+    else if (spinSeparatedFunctional and orbitalSpin == Beta) {
+        potentialFunctionIndex = 1;
+    }
+    else if (!spinSeparatedFunctional and orbitalSpin == Paired) {
+        potentialFunctionIndex = 0;
+    }
+    else {
+        NOT_IMPLEMENTED_ABORT;
+    }
+    return potentialFunctionIndex;
+}
+
 } //namespace mrchem
