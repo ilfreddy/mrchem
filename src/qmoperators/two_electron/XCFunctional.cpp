@@ -4,7 +4,7 @@
 #include "MRCPP/MWFunctions"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Timer"
-#include "MRCPP/mwtrees/FunctionNode.h"
+#include "MRCPP/trees/FunctionNode.h"
 #include "Orbital.h"
 #include "qmfunctions.h"
 
