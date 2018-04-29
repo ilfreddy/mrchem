@@ -438,14 +438,12 @@ void SCFDriver::setup_np1() {
         J_np1 = new CoulombOperator(*P, *phi_np1);
         K_np1 = new ExchangeOperator(*P, *phi_np1);
     } else if (wf_method == "DFT") {
-        NOT_IMPLEMENTED_ABORT;
-        /*
         J_np1 = new CoulombOperator(*P, *phi_np1);
-        XC_np1 = new XCOperator(*xcfun, *phi_np1, ABGV_00);
+        int order = 1; //HACK
+        XC_np1 = new XCOperator(*xcfun, *phi_np1, order);
         if (dft_x_fac > mrcpp::MachineZero) {
-            K_np1 = new ExchangeOperator(*P, *phi_np1, dft_x_fac);
+            K_np1 = new ExchangeOperator(*P, *phi_np1);
         }
-        */
     } else {
         MSG_ERROR("Invalid method");
     }
