@@ -52,6 +52,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     diff_kin = input.get<string>("Derivatives.kinetic");
     diff_orb = input.get<string>("Derivatives.h_orb");
     diff_pso = input.get<string>("Derivatives.h_pso");
+    diff_dft = input.get<string>("Derivatives.dft");
 
     calc_scf_energy = input.get<bool>("Properties.scf_energy");
     calc_dipole_moment = input.get<bool>("Properties.dipole_moment");
@@ -83,11 +84,12 @@ SCFDriver::SCFDriver(Getkw &input) {
     wf_method = input.get<string>("WaveFunction.method");
 
     if (wf_method == "DFT") {
-        dft_spin = input.get<bool>("DFT.spin");
-        dft_x_fac = input.get<double>("DFT.exact_exchange");
-        dft_cutoff = input.get<double>("DFT.density_cutoff");
-        dft_func_coefs = input.getDblVec("DFT.func_coefs");
-        dft_func_names = input.getData("DFT.functionals");
+        dft_spin         = input.get<bool>("DFT.spin");
+        dft_explicit_der = input.get<bool>("DFT.explicit_der");
+        dft_x_fac        = input.get<double>("DFT.exact_exchange");
+        dft_cutoff       = input.get<double>("DFT.density_cutoff");
+        dft_func_coefs   = input.getDblVec("DFT.func_coefs");
+        dft_func_names   = input.getData("DFT.functionals");
     }
 
     scf_run = input.get<bool>("SCF.run");
@@ -372,17 +374,15 @@ void SCFDriver::setup() {
         fock = new FockOperator(T, V, J, K);
     } else if (wf_method == "DFT") {
         J = new CoulombOperator(*P, *phi);
-        bool explicit_der = true; //HACK: should come from input
-        std::string diff_dft = "PH_1"; //HACK: should come from input
         mrcpp::DerivativeOperator<3> * der_dft = 0;
-        if (diff_dft == "PH_1")      der_dft = PH_1;;
+        if (diff_dft == "PH_1")    der_dft = PH_1;
         if (diff_dft == "ABGV_00") der_dft = ABGV_00;
         if (diff_dft == "ABGV_55") der_dft = ABGV_55;
-        xcfun = new XCFunctional(dft_spin, explicit_der, dft_cutoff, *phi, der_dft);
+        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, der_dft);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        int order = 1; // HACK
+        int order = 1; // HACK or maybe not?
         XC = new XCOperator(*xcfun, *phi, order);
         if (dft_x_fac > mrcpp::MachineZero) {
             K = new ExchangeOperator(*P, *phi);
@@ -439,7 +439,7 @@ void SCFDriver::setup_np1() {
         K_np1 = new ExchangeOperator(*P, *phi_np1);
     } else if (wf_method == "DFT") {
         J_np1 = new CoulombOperator(*P, *phi_np1);
-        int order = 1; //HACK
+        int order = 1; //HACK: or maybe not, given that order has to be 1 for SCF?
         XC_np1 = new XCOperator(*xcfun, *phi_np1, order);
         if (dft_x_fac > mrcpp::MachineZero) {
             K_np1 = new ExchangeOperator(*P, *phi_np1);

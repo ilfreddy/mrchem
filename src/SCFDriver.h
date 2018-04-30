@@ -92,6 +92,7 @@ protected:
     string diff_kin;
     string diff_orb;
     string diff_pso;
+    string diff_dft;
 
     // Run parameters
     bool calc_scf_energy;
@@ -128,6 +129,7 @@ protected:
 
     // DFT input
     bool dft_spin;
+    bool dft_explicit_der;
     double dft_x_fac;
     double dft_cutoff;
     std::vector<double> dft_func_coefs;
