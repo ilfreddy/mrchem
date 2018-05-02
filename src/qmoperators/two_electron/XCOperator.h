@@ -21,7 +21,8 @@ class XCOperator final : public RankZeroTensorOperator {
         XC = *xcPotential;
     }
     ~XCOperator() { delete this->xcPotential; }
-    
+
+    double getEnergy() {return xcPotential->getEnergy();}
  protected:
     XCPotential *xcPotential;
 };

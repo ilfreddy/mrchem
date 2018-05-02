@@ -33,6 +33,8 @@ XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, Deri
     else {
         this->expDerivatives = 0;
     }
+    xcInput = 0;
+    xcOutput = 0;
 }
 
 /** @brief destructor
@@ -58,6 +60,9 @@ void XCFunctional::setup(const int order) {
     evaluateFunctional();
     calcEnergy();
     calcPotential();
+    clearXCInput();
+    clearXCOutput();
+    density.clear();
 }
 
     
@@ -353,17 +358,17 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
  *
  */
 void XCFunctional::setupXCInput() {
-   if (this->xcInput != 0) MSG_ERROR("XC input not empty");
+    if (this->xcInput != 0) MSG_ERROR("XC input not empty");
     Timer timer;
     println(2, "Preprocessing");
-
+    
     int nInp = this->getInputLength();
     bool spin = this->isSpinSeparated();
     bool gga = this->isGGA();
     bool gamma = this->needsGamma();
-
+    
     this->xcInput = allocPtrArray<FunctionTree<3> >(nInp);
-
+    
     int nUsed = 0;
     nUsed = setupXCInputDensity(nUsed);
     if (gga) {
@@ -373,7 +378,6 @@ void XCFunctional::setupXCInput() {
     for (int i = 0; i < nInp; i++) {
         if (this->xcInput[i] == 0) MSG_ERROR("Invalid XC input");
     }
-
 }
 
 /** @brief sets xcInput pointers for the density

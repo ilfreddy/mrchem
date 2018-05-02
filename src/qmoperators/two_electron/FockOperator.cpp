@@ -6,6 +6,8 @@
 #include "NuclearOperator.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
+#include "XCFunctional.h"
+#include "XCOperator.h"
 #include "SCFEnergy.h"
 #include "utils/mathutils.h"
 
@@ -40,7 +42,7 @@ FockOperator::FockOperator(KineticOperator  *t,
     if (this->nuc  != 0) this->V += *this->nuc;
     if (this->coul != 0) this->V += *this->coul;
     if (this->ex   != 0) this->V -= *this->ex;
-//    if (this->xc   != 0) this->V += *this->xc;
+    if (this->xc   != 0) this->V += *this->xc;
 
     RankZeroTensorOperator &F = (*this);
     F = this->T + this->V;
@@ -135,8 +137,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     if (this->nuc  != 0) E_en  =  this->nuc->trace(Phi).real();
     if (this->coul != 0) E_ee  =  this->coul->trace(Phi).real();
     if (this->ex   != 0) E_x   = -this->ex->trace(Phi).real();
-    //if (this->xc   != 0) E_xc  =  this->xc->getEnergy();
-    //if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi).real();
+    if (this->xc   != 0) E_xc  =  this->xc->getEnergy();
+    if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi).real();
 
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;

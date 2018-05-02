@@ -35,6 +35,7 @@ target_link_libraries(mrchem
     hydrogenguess
     gtoguess
     mrcpp
+    xcfun
     )
 install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 

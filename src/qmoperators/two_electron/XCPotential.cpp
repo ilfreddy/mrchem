@@ -93,6 +93,7 @@ void XCPotential::clear() {
  */
 void XCPotential::evaluateXCFunctional() {
     this->functional->setup(this->order);
+    this->energy = this->functional->getEnergy();
 }
 
 } //namespace mrchem

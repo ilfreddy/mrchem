@@ -27,7 +27,7 @@ public:
     void setup(double prec);
     void clear();
 
-    double getEnergy() const { return this->energy; }
+    double getEnergy() const { return energy; }
     
 protected:
     int order;                                 ///< Order of kernel derivative
