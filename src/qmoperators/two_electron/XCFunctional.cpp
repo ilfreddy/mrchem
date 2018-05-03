@@ -25,7 +25,7 @@ extern MultiResolutionAnalysis<3> *MRA;
  *
  */
 XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, DerivativeOperator<3> *D)
-    : spin(s), cutoff(thrs), density(s, false), orbitals(&phi) { //HACK: shared set as false for now... 
+    : spin(s), cutoff(thrs), density(s, false), orbitals(&phi), derivative(D) { //HACK: shared set as false for now... 
     this->functional = xc_new_functional();
     if(e) {
         this->expDerivatives = 1;
@@ -54,6 +54,7 @@ void XCFunctional::setup(const int order) {
     density::calc_density(density, *orbitals);
     if (isGGA()) calcDensityGradient(); // HACK we should implement gradient stuff as density-related functions, not here!
     if (needsGamma()) calcGamma();
+    
     evalSetup(order);
     setupXCInput();
     setupXCOutput();
@@ -63,6 +64,10 @@ void XCFunctional::setup(const int order) {
     clearXCInput();
     clearXCOutput();
     density.clear();
+    grad_a.clear(true);
+    grad_b.clear(true);
+    grad_t.clear(true);
+    gamma.clear(true);
 }
 
     

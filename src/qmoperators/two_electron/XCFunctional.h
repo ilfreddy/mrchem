@@ -121,17 +121,6 @@ public:
     }
 
     template<class T>
-    void clearPtrArray(int n_funcs, T **ptr) {
-        if (ptr == 0) MSG_ERROR("Clearing NULL pointer");
-        for (int i = 0; i < n_funcs; i++) {
-            if (ptr[i] != 0) {
-                delete ptr[i];
-            }
-            ptr[i] = 0;
-        }
-    }
-
-    template<class T>
     T** deletePtrArray(int n_funcs, T ***ptr) {
         if (*ptr != 0) {
             for (int i = 0; i < n_funcs; i++) {
