@@ -67,6 +67,7 @@ void XCFunctional::setup(const int order) {
     grad_b.clear(true);
     grad_t.clear(true);
     gamma.clear(true);
+    std::cout << "Potential norm " << potentialFunction[0]->getSquareNorm() << std::endl;
 }
 
     
@@ -541,7 +542,7 @@ void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees
  * different calls for LDA and GGA
  *
  */
-FunctionTreeVector<3> XCFunctional::calcPotential() {
+void XCFunctional::calcPotential() {
     if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
     
     bool lda = this->isLDA();
@@ -554,7 +555,6 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
     } else {
         MSG_FATAL("Invalid functional type");
     }
-    return this->potentialFunction;
 }
 
 /** @brief potential calculation for LDA functionals

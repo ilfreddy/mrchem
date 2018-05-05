@@ -84,18 +84,19 @@ public:
     int setupXCInputGradient(int nUsed);
     int calcDensityGradient();
     void calcGamma();
-    mrcpp::FunctionTreeVector<3> calcPotential();
-    bool cropPotential(double prec);
+    void calcPotential();
     void calcPotentialLDA();
     void calcPotentialGGA();
     void calcEnergy();
     void evaluateFunctional();
-
-    void compressNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
-    void expandNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
+    void compressNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees,
+                          Eigen::MatrixXd &data);
+    void expandNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees,
+                        Eigen::MatrixXd &data);
 
     mrcpp::FunctionTreeVector<3> calcGradient(mrcpp::FunctionTree<3> &inp);
-    mrcpp::FunctionTree<3>* calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a, mrcpp::FunctionTreeVector<3> &vec_b);
+    mrcpp::FunctionTree<3>* calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a,
+                                           mrcpp::FunctionTreeVector<3> &vec_b);
 
 private:
     bool spin;                  ///< Spin polarization
