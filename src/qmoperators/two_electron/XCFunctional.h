@@ -49,8 +49,8 @@ public:
 
  protected:
     Density density;                                ///< Unperturbed density
-    mrcpp::FunctionTree<3> **xcInput;               ///< Bookkeeping array to feed XCFun
-    mrcpp::FunctionTree<3> **xcOutput;              ///< Bookkeeping array returned by XCFun
+    mrcpp::FunctionTreeVector<3> xcInput;           ///< Bookkeeping array to feed XCFun
+    mrcpp::FunctionTreeVector<3> xcOutput;          ///< Bookkeeping array returned by XCFun
     mrcpp::FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
     mrcpp::FunctionTreeVector<3> grad_a;            ///< Gradient of the alpha density        
     mrcpp::FunctionTreeVector<3> grad_b;            ///< Gradient of the beta  density        
@@ -82,8 +82,6 @@ public:
     void setupXCOutput();
     int setupXCInputDensity(int nUsed);
     int setupXCInputGradient(int nUsed);
-    void clearXCInput();
-    void clearXCOutput();
     int calcDensityGradient();
     void calcGamma();
     mrcpp::FunctionTreeVector<3> calcPotential();
@@ -93,46 +91,11 @@ public:
     void calcEnergy();
     void evaluateFunctional();
 
-    void compressNodeData(int n, int nFuncs, mrcpp::FunctionTree<3> **trees, Eigen::MatrixXd &data);
-    void expandNodeData(int n, int nFuncs, mrcpp::FunctionTree<3> **trees, Eigen::MatrixXd &data);
+    void compressNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
+    void expandNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
 
     mrcpp::FunctionTreeVector<3> calcGradient(mrcpp::FunctionTree<3> &inp);
     mrcpp::FunctionTree<3>* calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a, mrcpp::FunctionTreeVector<3> &vec_b);
-
-
-    template<class T>
-    int sumNodes(T **trees, int nTrees) {
-        int nNodes = 0;
-        for (int i = 0; i < nTrees; i++) {
-            if (trees[i] != 0) {
-                nNodes += trees[i]->getNNodes();
-            }
-        }
-        return nNodes;
-    }
-
-    template<class T>
-    T** allocPtrArray(int n_funcs) {
-        T **ptr = new T*[n_funcs];
-        for (int i = 0; i < n_funcs; i++) {
-            ptr[i] = 0;
-        }
-        return ptr;
-    }
-
-    template<class T>
-    T** deletePtrArray(int n_funcs, T ***ptr) {
-        if (*ptr != 0) {
-            for (int i = 0; i < n_funcs; i++) {
-                if ((*ptr)[i] != 0) {
-                    delete (*ptr)[i];
-                }
-                (*ptr)[i] = 0;
-            }
-            delete[] *ptr;
-        }
-        return 0;
-    }
 
 private:
     bool spin;                  ///< Spin polarization

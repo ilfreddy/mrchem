@@ -33,8 +33,6 @@ XCFunctional::XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, Deri
     else {
         this->expDerivatives = 0;
     }
-    xcInput = 0;
-    xcOutput = 0;
 }
 
 /** @brief destructor
@@ -58,12 +56,13 @@ void XCFunctional::setup(const int order) {
     evalSetup(order);
     setupXCInput();
     setupXCOutput();
+    potentialFunction.clear(true);
     evaluateFunctional();
     calcEnergy();
     calcPotential();
-    clearXCInput();
-    clearXCOutput();
     density.clear();
+    xcInput.clear(false);
+    xcOutput.clear(false);
     grad_a.clear(true);
     grad_b.clear(true);
     grad_t.clear(true);
@@ -363,7 +362,7 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
  *
  */
 void XCFunctional::setupXCInput() {
-    if (this->xcInput != 0) MSG_ERROR("XC input not empty");
+    if (this->xcInput.size() != 0) MSG_ERROR("XC input not empty");
     Timer timer;
     println(2, "Preprocessing");
     
@@ -371,8 +370,6 @@ void XCFunctional::setupXCInput() {
     bool spin = this->isSpinSeparated();
     bool gga = this->isGGA();
     bool gamma = this->needsGamma();
-    
-    this->xcInput = allocPtrArray<FunctionTree<3> >(nInp);
     
     int nUsed = 0;
     nUsed = setupXCInputDensity(nUsed);
@@ -393,11 +390,11 @@ int XCFunctional::setupXCInputDensity(int nUsed) {
 
     bool spinSep = this->isSpinSeparated();
     if(spinSep) {
-        this->xcInput[nUsed]     = &this->density.alpha();
-        this->xcInput[nUsed + 1] = &this->density.beta();
+        this->xcInput.push_back(&density.alpha());
+        this->xcInput.push_back(&density.beta());
         nUsed += 2;
     } else {
-        this->xcInput[nUsed] = &this->density.total();
+        this->xcInput.push_back(&density.total());
         nUsed++;
     }
     return nUsed;
@@ -412,30 +409,17 @@ int XCFunctional::setupXCInputGradient(int nUsed) {
     bool spinSep = this->isSpinSeparated();
     bool needsGamma = this->needsGamma();
     
-    if(spinSep) {
-        if(needsGamma) {
-            this->xcInput[nUsed    ] = gamma[0];
-            this->xcInput[nUsed + 1] = gamma[1];
-            this->xcInput[nUsed + 2] = gamma[2];
-            nUsed += 3;
-        } else {
-            this->xcInput[nUsed    ] = grad_a[0];
-            this->xcInput[nUsed + 1] = grad_a[1];
-            this->xcInput[nUsed + 2] = grad_a[2];
-            this->xcInput[nUsed + 3] = grad_b[0];
-            this->xcInput[nUsed + 4] = grad_b[1];
-            this->xcInput[nUsed + 5] = grad_b[2];
-            nUsed += 6;
-        }
+    if(needsGamma) {
+        xcInput.push_back(gamma);
+        nUsed += gamma.size();
     } else {
-        if(needsGamma) {
-            this->xcInput[nUsed] = gamma[0];
-            nUsed += 1;
+        if(spinSep) {
+            xcInput.push_back(grad_a);
+            xcInput.push_back(grad_b);
+            nUsed += grad_a.size() + grad_b.size();
         } else {
-            this->xcInput[nUsed    ] = grad_t[0];
-            this->xcInput[nUsed + 1] = grad_t[1];
-            this->xcInput[nUsed + 2] = grad_t[2];
-            nUsed += 3;
+            xcInput.push_back(grad_t);
+            nUsed += grad_t.size();
         }
     }
     return nUsed;
@@ -449,54 +433,19 @@ int XCFunctional::setupXCInputGradient(int nUsed) {
  *
  */
 void XCFunctional::setupXCOutput() {
-    if (this->xcOutput != 0) MSG_ERROR("XC output not empty");
-    if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
-    if (this->xcInput[0] == 0) MSG_ERROR("XC input not initialized");
+    if (this->xcOutput.size() != 0) MSG_ERROR("XC output not empty");
+    if (this->xcInput.size() == 0) MSG_ERROR("XC input not initialized");
 
     // Alloc output trees
     int nOut = this->getOutputLength();
-    this->xcOutput = allocPtrArray<FunctionTree<3> >(nOut);
 
     // Copy grid from input density
     FunctionTree<3> &rho = *this->xcInput[0];
     for (int i = 0; i < nOut; i++) {
-        this->xcOutput[i] = new FunctionTree<3>(*MRA);
-        copy_grid(*this->xcOutput[i], rho);
+        FunctionTree<3> * tmp = new FunctionTree<3>(*MRA);
+        copy_grid(*tmp, rho);
+        this->xcOutput.push_back(tmp);
     }
-}
-
-/** @brief clear the xcInput array
- *
- * the array is just for bookkeeping, therefore it is only necessary
- * to set all pointers to NULL.
- *
- */
-void XCFunctional::clearXCInput() {
-    if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
-
-    int nInp = this->getInputLength();
-    bool spin = this->isSpinSeparated();
-
-    for (int i = 0; i < nInp; i++) {
-        this->xcInput[i] = 0;
-    }
-    this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);  
-}
-
-/** @brief clear the xcOutput array
- *
- * after calling xcfun the array contains intermediate functions which
- * have been employed to obtain the XC potentials. They need to be
- * deleted properly, unless they are used as such (for LDA). In that
- * case the correspondinf pointers are set to NULL when the function
- * "becomes" the potential.
- *
- */
-void XCFunctional::clearXCOutput() {
-    if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
-
-    int nOut = this->getOutputLength();
-    this->xcOutput = deletePtrArray<FunctionTree<3> >(nOut, &this->xcOutput);
 }
 
 /** @brief evaluation of the functional and its derivatives
@@ -506,8 +455,8 @@ void XCFunctional::clearXCOutput() {
  *
  */
 void XCFunctional::evaluateFunctional() {
-    if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
-    if (this->xcOutput == 0) MSG_ERROR("XC input not initialized");
+    if (this->xcInput.size() == 0) MSG_ERROR("XC input not initialized");
+    if (this->xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
  
     int order = 1; //HACK order needs to be passed!
    
@@ -535,7 +484,7 @@ void XCFunctional::evaluateFunctional() {
 
     timer.stop();
     double t = timer.getWallTime();
-    int n = sumNodes<FunctionTree<3> >(this->xcOutput, nOut);
+    int n = this->xcOutput.sumNodes();
     Printer::printTree(0, "XC evaluate xcfun", n, t);
     printout(2, endl);
 }
@@ -551,9 +500,8 @@ void XCFunctional::evaluateFunctional() {
  * param[in] trees the array of FunctionTree(s)
  * param[in] the matrix object.
  */
-void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
-    if (trees == 0) MSG_ERROR("Invalid input");
-    if (trees[0] == 0) MSG_ERROR("Invalid input");
+void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTreeVector<3> trees, MatrixXd &data) {
+    if (trees.size() == 0) MSG_ERROR("Invalid input");
 
     FunctionTree<3> &tree = *trees[0];
     int nCoefs = tree.getTDim()*tree.getKp1_d();
@@ -577,8 +525,8 @@ void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, 
  * param[in] trees the array of FunctionTree(s)
  * param[in] the matrix object.
  */
-void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
-    if (trees == 0) MSG_ERROR("Invalid input");
+void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees, MatrixXd &data) {
+    if (trees.size() == 0) MSG_ERROR("Invalid input");
 
     for (int i = 0; i < nFuncs; i++) {
         if (trees[i] == 0) MSG_ERROR("Uninitialized output tree " << i);
@@ -594,7 +542,7 @@ void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Ma
  *
  */
 FunctionTreeVector<3> XCFunctional::calcPotential() {
-    if (xcOutput == 0) MSG_ERROR("XC output not initialized");
+    if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
     
     bool lda = this->isLDA();
     bool gga = this->isGGA();
@@ -627,7 +575,6 @@ void XCFunctional::calcPotentialLDA() {
         int outputIndex = i + 1;
         if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
         potentialFunction.push_back(xcOutput[outputIndex]);
-        xcOutput[outputIndex] = 0;
     }
 }
 
@@ -763,7 +710,7 @@ FunctionTreeVector<3> XCFunctional::calcGradient(FunctionTree<3> &function) {
  *
  */
 void XCFunctional::calcEnergy() {
-    if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
+    if (this->xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
     if (this->xcOutput[0] == 0) MSG_ERROR("Invalid XC output");
     
     Timer timer;
