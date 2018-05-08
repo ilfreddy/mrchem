@@ -181,10 +181,6 @@ bool SCFDriver::sanityCheck() const {
         MSG_ERROR("Recycling of HelmholtzOperators currently disabled");
         return true;
     }
-    if (wf_method == "DFT" and dft_spin) {
-        MSG_ERROR("Spin DFT not implemented");
-        return false;
-    }
     if (wf_restricted and mol_multiplicity != 1) {
         MSG_ERROR("Restricted open-shell not implemented");
         return false;
