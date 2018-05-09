@@ -67,7 +67,6 @@ void XCFunctional::setup(const int order) {
     grad_b.clear(true);
     grad_t.clear(true);
     gamma.clear(true);
-    std::cout << "Potential norm " << potentialFunction[0]->getSquareNorm() << std::endl;
 }
 
     
