@@ -4,7 +4,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/Printer"
-#include "xcfun.h"
+#include "XCFun/xcfun.h"
 #include "Density.h"
 
 /** 
