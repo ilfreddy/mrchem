@@ -19,6 +19,7 @@
  */
 
 namespace mrchem {
+class XCFunctional;
 
 class XCPotential final : public QMPotential {
 public:

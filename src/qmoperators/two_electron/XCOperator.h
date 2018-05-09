@@ -11,6 +11,7 @@
  */
 
 namespace mrchem {
+class XCFunctional;
     
 class XCOperator final : public RankZeroTensorOperator {
 public:
