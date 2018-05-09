@@ -20,7 +20,6 @@ namespace mrchem {
 XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, int k) 
         : QMPotential(1),
           order(k),
-          nPotentials(-1),
           energy(0.0),
           functional(&F),
           orbitals(&Phi) {
@@ -65,7 +64,6 @@ Orbital XCPotential::apply(Orbital phi) {
  */
 void XCPotential::clear() {
     this->order = -1;
-    this->nPotentials = -1;
     this->energy = 0.0;
     clearApplyPrec();
 }

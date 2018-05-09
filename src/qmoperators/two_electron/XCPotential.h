@@ -32,7 +32,6 @@ public:
     
 protected:
     int order;                                 ///< Order of kernel derivative
-    int nPotentials;                           ///< Number of potential energy functions
     double energy;                             ///< XC energy
     XCFunctional *functional;                  ///< External XC functional to be used
     OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
