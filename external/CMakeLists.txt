@@ -51,6 +51,7 @@ if (ENABLE_XCFUN)
                     -DCMAKE_BUILD_TYPE=Release
                     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                    -DENABLE_FC_SUPPORT=OFF
                     -DSTATIC_LIBRARY_ONLY=ON
         CMAKE_CACHE_ARGS
                     -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
