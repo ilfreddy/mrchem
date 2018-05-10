@@ -3,49 +3,44 @@
 #include <Eigen/Core>
 
 #include "MRCPP/MWFunctions"
-#include "MRCPP/Printer"
 #include "XCFun/xcfun.h"
 #include "Density.h"
 
 /** 
- *  \class XCFunctional
- *  \brief Compute XC functional with XCFun
+ *  @class XCFunctional
+ *  @brief Compute XC functional with XCFun
  *
  *  Interface class for the XCFun library
  *
- *  \author Stig Rune Jensen
- *  \date 2015
- *  
  */
 
-        
 namespace mrchem {
 
-class XCFunctional {
+class XCFunctional final {
 public:
     XCFunctional(bool s, bool e, double thrs, OrbitalVector &phi, mrcpp::DerivativeOperator<3> *D);
-    virtual ~XCFunctional();
+    ~XCFunctional();
 
     void setDensityCutoff(double thrs) { this->cutoff = thrs; }
     void setFunctional(const std::string &name, double coef = 1.0);
 
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
-    double getEnergy() const { return energy; }
+    double getEnergy() const { return this->energy; }
 
     bool isLDA() const { return (!(this->isGGA() || this->isMetaGGA())); }
     bool isGGA() const { return (xc_is_gga(this->functional)); }
     bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
     
     bool isSpinSeparated() const { return this->spin; }
-    bool needsGamma() const { return (expDerivatives == 0);};
+    bool needsGamma() const { return (this->expDerivatives == 0); }
 
-    void evaluate(int k, DoubleMatrix &inp, DoubleMatrix &out) const;
+    void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
     void setup(const int order);
     void evalSetup(const int order);
 
-    int getPotentialFunctionIndex(const Orbital & orb);
-    mrcpp::FunctionTree<3>* getPotentialFunction(int index) {return potentialFunction[index];};
+    int getPotentialFunctionIndex(const Orbital &orb);
+    mrcpp::FunctionTree<3>* getPotentialFunction(int index) { return this->potentialFunction[index]; }
 
  protected:
     Density density;                                ///< Unperturbed density
@@ -102,9 +97,9 @@ private:
     bool spin;                  ///< Spin polarization
     unsigned int expDerivatives;///< whether gamma-type or explicit derivatives are used
     double cutoff;              ///< Below the cutoff value, the density will be considered zero
-    xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
-    OrbitalVector * orbitals;   ///< Set of orbitals used to compute the density defining the functional
     double energy;              ///< XC energy
+    xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
+    OrbitalVector *orbitals;    ///< Set of orbitals used to compute the density defining the functional
 };
  
 } //namespace mrchem
