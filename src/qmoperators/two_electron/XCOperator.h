@@ -9,12 +9,14 @@
  *
  * Notes for myself: I need a way to "select" the correct potential to apply
  */
+
 namespace mrchem {
+class XCFunctional;
     
 class XCOperator final : public RankZeroTensorOperator {
- public:
- XCOperator(XCFunctional &F, OrbitalVector &Phi, int k)
-     : xcPotential(0) {
+public:
+    XCOperator(XCFunctional &F, OrbitalVector &Phi, int k)
+            : xcPotential(0) {
         this->xcPotential = new XCPotential(F, Phi, k);
 
         RankZeroTensorOperator &XC = (*this);
@@ -22,9 +24,9 @@ class XCOperator final : public RankZeroTensorOperator {
     }
     ~XCOperator() { delete this->xcPotential; }
 
-    double getEnergy() {return xcPotential->getEnergy();}
- protected:
+    double getEnergy() { return xcPotential->getEnergy(); }
+protected:
     XCPotential *xcPotential;
 };
-    
+
 } //namespace mrchem

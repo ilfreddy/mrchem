@@ -2,8 +2,6 @@
 
 #include "QMPotential.h"
 
-namespace mrchem {
-
 /** 
  *  \class XCPotential
  *  \brief Exchange and Correlation potential
@@ -19,10 +17,14 @@ namespace mrchem {
  *  \date 2018
  *  
  */
+
+namespace mrchem {
+class XCFunctional;
+
 class XCPotential final : public QMPotential {
 public:
     XCPotential(XCFunctional &F, OrbitalVector &Phi, int k);
-    ~XCPotential();
+    ~XCPotential() { }
 
     void setup(double prec);
     void clear();
@@ -31,14 +33,13 @@ public:
     
 protected:
     int order;                                 ///< Order of kernel derivative
-    int nPotentials;                           ///< Number of potential energy functions
+    double energy;                             ///< XC energy
     XCFunctional *functional;                  ///< External XC functional to be used
     OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
-    double energy;                             ///< XC energy
     mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
 
     void evaluateXCFunctional();
-    Orbital apply (Orbital phi);
+    Orbital apply(Orbital phi);
 };
 
 

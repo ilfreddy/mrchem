@@ -1,19 +1,8 @@
-#include "mrchem.h"
-#include "constants.h"
-#include "Orbital.h"
-#include "qmfunctions.h"
-#include "MRCPP/MWOperators"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-
 #include "XCFunctional.h"
 #include "XCPotential.h"
+#include "Orbital.h"
 
-using namespace mrcpp;
-using namespace std;
-using namespace Eigen;
-
-extern MultiResolutionAnalysis<3> *MRA;
+using mrcpp::FunctionTree;
 
 namespace mrchem {
 
@@ -28,20 +17,12 @@ namespace mrchem {
  * xcfun when F.evalSetup is invoked.
  *
  */
-
 XCPotential::XCPotential(XCFunctional &F, OrbitalVector &Phi, int k) 
-    : QMPotential(1), //HACK is the correct value of adap here?
-      orbitals(&Phi),
-      functional(&F),
-      energy(0.0),
-      order(k) {};
-    
-/** @brief destructor
- *
- */
-XCPotential::~XCPotential() {
-    this->functional = 0;
-    this->orbitals = 0;
+        : QMPotential(1),
+          order(k),
+          energy(0.0),
+          functional(&F),
+          orbitals(&Phi) {
 }
 
 /** @brief setup the XCPotential
@@ -82,9 +63,8 @@ Orbital XCPotential::apply(Orbital phi) {
  *
  */
 void XCPotential::clear() {
-    energy = 0.0;
-    nPotentials = -1;
-    order = -1;
+    this->order = -1;
+    this->energy = 0.0;
     clearApplyPrec();
 }
 
