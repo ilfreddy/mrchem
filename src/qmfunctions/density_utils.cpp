@@ -50,6 +50,8 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace density {
 void compute(double prec, Density &rho, Orbital phi, int spin);
+void compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin);
+void compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin);
 double compute_occupation(Orbital &phi, int dens_spin);
 }
 
@@ -128,6 +130,21 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
+/** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><y_i|
+ *
+ * MPI: Each rank first computes its own local density, which is then reduced
+ *      to rank = 0 and broadcasted to all ranks. The rank distribution of Phi
+ *      and X/Y must be the same.
+ *
+ */
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
+    if (&X == &Y) {
+        density::compute_X(prec, rho, Phi, X, spin);
+    } else {
+        density::compute_XY(prec, rho, Phi, X, Y, spin);
+    }
+}
+
 /** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><x_i|
  *
  * Exploits the fact that the resulting density must be real.
@@ -137,7 +154,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
  *      and X must be the same.
  *
  */
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin) {
+void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin) {
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double add_prec = prec/N_el; // prec for rho = sum_i rho_i
@@ -173,14 +190,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
-/** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><y_i|
- *
- * MPI: Each rank first computes its own local density, which is then reduced
- *      to rank = 0 and broadcasted to all ranks. The rank distribution of Phi
- *      and X/Y must be the same.
- *
- */
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
+void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
     double add_prec = prec/N_el; // prec for rho = sum_i rho_i

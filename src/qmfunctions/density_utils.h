@@ -32,7 +32,6 @@ namespace density {
 
 void compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin);
 void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin);
 void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin);
 
 } //namespace density

@@ -607,11 +607,7 @@ void SCFDriver::setupPerturbedOperators(const ResponseCalculation &rsp_calc) {
         NOT_IMPLEMENTED_ABORT;
     }
 
-    if (phi_x == phi_y) { //LUCA: not sure this is the most elegant thing to do...
-        dJ = new CoulombOperator(P, phi, phi_x);
-    } else {
-        dJ = new CoulombOperator(P, phi, phi_x, phi_y);
-    }
+    dJ = new CoulombOperator(P, phi, phi_x, phi_y);
     
     int d = rsp_calc.dir;
     RankOneTensorOperator<3> &dH = *rsp_calc.pert;

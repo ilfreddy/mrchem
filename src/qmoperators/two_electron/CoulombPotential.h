@@ -23,15 +23,14 @@
 
 namespace mrchem {
 
-class CoulombPotential final : public QMPotential {
+class CoulombPotential : public QMPotential {
 public:
-    CoulombPotential(mrcpp::PoissonOperator *P,
-                     OrbitalVector *Phi   = nullptr);
+    CoulombPotential(mrcpp::PoissonOperator *P);
+
     friend class CoulombOperator;
 
 protected:
     Density density;                  ///< Ground-state electron density
-    OrbitalVector *orbitals;          ///< Unperturbed orbitals defining the ground-state electron density
     mrcpp::PoissonOperator *poisson;  ///< Operator used to compute the potential
 
     Density &getDensity() { return this->density; }
@@ -40,7 +39,7 @@ protected:
     void setup(double prec);
     void clear();
 
-    void setupDensity(double prec);
+    virtual void setupDensity(double prec) { }
     void setupPotential(double prec);
 };
 
