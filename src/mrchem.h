@@ -44,8 +44,8 @@ namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 using ComplexInt = std::complex<int>;
 using ComplexDouble = std::complex<double>;
 
-using DoubleFunction = std::function<double (const double *r)>;
-using ComplexFunction = std::function<ComplexDouble (const double *r)>;
+using DoubleFunction = std::function<double (const mrcpp::Coord<3> &r)>;
+using ComplexFunction = std::function<ComplexDouble (const mrcpp::Coord<3> &r)>;
 
 using IntVector = Eigen::VectorXi;
 using DoubleVector = Eigen::VectorXd;

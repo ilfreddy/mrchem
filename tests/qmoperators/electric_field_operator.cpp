@@ -65,14 +65,11 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
     // setting up the field
     Eigen::Vector3d field;
     field << 1.0, 1.0, 1.0;
-    ElectricFieldOperator EF(field);
+    ElectricFieldOperator EF(field, {0.0, 0.0, 0.0});
     EF.setup(prec);
 
     //origin 
-    double *o = new double[3];
-    o[0] = 0.4;
-    o[1] = 0.3;
-    o[2] = 0.2;
+    mrcpp::Coord<3> o{0.4, 0.3, 0.2};
 
     //setting up the orbitals
     for (int i = 0; i < nFuncs; i++) {
@@ -132,7 +129,7 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
     // Setting up the field
     Eigen::Vector3d field;
     field << 1.0, 1.0, 1.0;
-    ElectricFieldOperator EF(field);
+    ElectricFieldOperator EF(field, {0.0, 0.0, 0.0});
     EF.setup(prec);
 
     // Setting up the molecule
@@ -144,19 +141,12 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
     double *o = new double[3];
     
     // Setting up the 1s orbital on H
-    o[0] = 1.0;
-    o[1] = 0.0;
-    o[2] = 0.0;
-    HydrogenFunction sh(1, 0, 0, 1.0, o);
+    HydrogenFunction sh(1, 0, 0, 1.0, {1.0, 0.0, 0.0});
     Orbital phi_h(SPIN::Paired);
     phi_h.alloc(NUMBER::Real);
     mrcpp::project(prec, phi_h.real(), sh);
 
-    // Setting up the 1s orbital on Li
-    o[0] = -1.0;
-    o[1] =  0.0;
-    o[2] =  0.0;
-    HydrogenFunction sli(1, 0, 0, 3.0, o);
+    HydrogenFunction sli(1, 0, 0, 3.0, {-1.0, 0.0, 0.0});
     Orbital phi_li(SPIN::Paired);
     phi_li.alloc(NUMBER::Real);
     mrcpp::project(prec, phi_li.real(), sli);

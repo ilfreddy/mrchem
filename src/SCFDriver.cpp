@@ -19,7 +19,6 @@
 #include "qmfunctions/Orbital.h"
 
 #include "SCFDriver.h"
-#include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Molecule.h"
 
 #include "qmfunctions/density_utils.h"
@@ -261,8 +260,8 @@ void SCFDriver::setup() {
     phi = new OrbitalVector;
 
     // Defining gauge origin
-    const double *COM = molecule->getCenterOfMass();
-    const double *COC = molecule->getCenterOfCharge();
+    const mrcpp::Coord<3> &COM = molecule->getCenterOfMass();
+    const mrcpp::Coord<3> &COC = molecule->getCenterOfCharge();
     if (center_of_mass) {
         r_O[0] = COM[0];
         r_O[1] = COM[1];
@@ -290,7 +289,7 @@ void SCFDriver::setup() {
     h_B = new H_B_dip(*(useDerivative(diff_orb)), r_O);
     h_M = new H_M_pso *[nNucs];
     for (int k = 0; k < nNucs; k++) {
-        const double *r_K = molecule->getNucleus(k).getCoord();
+        const mrcpp::Coord<3> &r_K = molecule->getNucleus(k).getCoord();
         h_M[k] = new H_M_pso(*(useDerivative(diff_pso)), r_K);
     }
 
@@ -333,7 +332,7 @@ void SCFDriver::setup() {
                     rsp_calculations.push_back(h_B, 0.0, true, d);
                 }
             } else {
-                const double *r_K = molecule->getNucleus(K).getCoord();
+                const mrcpp::Coord<3> &r_K = molecule->getNucleus(K).getCoord();
                 for (int d = 0; d < 3; d++) {
                     if (rsp_directions[d] == 0) continue;
                     rsp_calculations.push_back(h_M[K], 0.0, true, d);
@@ -404,7 +403,7 @@ void SCFDriver::setup() {
         fock->setXCOperator(XC);
     }
     //HACK we need a better way to decide whether to initialize the external potential operator
-    if (ext_electric) Vext = new ElectricFieldOperator(ext_electric_field);
+    if (ext_electric) Vext = new ElectricFieldOperator(ext_electric_field, r_O);
     fock->setExtOperator(Vext);
     fock->build();
 }
@@ -753,7 +752,7 @@ void SCFDriver::calcGroundStateProperties() {
         for (int k = 0; k < nuclei->size(); k++) {
             const Nucleus &nuc_k = (*nuclei)[k];
             double Z_k = nuc_k.getCharge();
-            const double *R_k = nuc_k.getCoord();
+            const mrcpp::Coord<3> &R_k = nuc_k.getCoord();
             Nuclei nucs;
             nucs.push_back("H", R_k);
             NuclearGradientOperator r_rm3(nuc_k, 1.0e-2);
@@ -762,7 +761,7 @@ void SCFDriver::calcGroundStateProperties() {
                 if (l == k) continue;
                 const Nucleus &nuc_l = (*nuclei)[l];
                 double Z_l = nuc_l.getCharge();
-                const double *R_l = nuc_l.getCoord();
+                const mrcpp::Coord<3> &R_l = nuc_l.getCoord();
                 double r_x = (R_k[0] - R_l[0]);
                 double r_y = (R_k[1] - R_l[1]);
                 double r_z = (R_k[2] - R_l[2]);
@@ -810,7 +809,7 @@ void SCFDriver::calcGroundStateProperties() {
             int K = nmr_nucleus_k[k];
             NMRShielding &nmr = molecule->getNMRShielding(K);
             MatrixXd &dia = nmr.getDiamagnetic();
-            const double *r_K = nmr.getNucleus().getCoord();
+            const mrcpp::Coord<3> &r_K = nmr.getNucleus().getCoord();
             H_BM_dia h(r_O, r_K);
             h.setup(rel_prec);
             dia = h.trace(*phi);
@@ -829,8 +828,8 @@ void SCFDriver::calcGroundStateProperties() {
                 if (K == L) continue;
                 SpinSpinCoupling &sscc = molecule->getSpinSpinCoupling(K, L);
                 MatrixXd &dia = sscc.getDiamagnetic();
-                const double *r_K = sscc.getNucleusK().getCoord();
-                const double *r_L = sscc.getNucleusL().getCoord();
+                const mrcpp::Coord<3> &r_K = sscc.getNucleusK().getCoord();
+                const mrcpp::Coord<3> &r_L = sscc.getNucleusL().getCoord();
                 NOT_IMPLEMENTED_ABORT;
             }
         }
@@ -846,7 +845,7 @@ void SCFDriver::calcGroundStateProperties() {
             HyperFineCoupling &hfc = molecule->getHyperFineCoupling(K);
             const Nuclei &nucs = molecule->getNuclei();
             const Nucleus &nuc = nucs[K];
-            const double *r_K = nuc.getCoord();
+            const mrcpp::Coord<3> &r_K = nuc.getCoord();
             NOT_IMPLEMENTED_ABORT;
         }
         timer.stop();
@@ -967,7 +966,7 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
     Timer timer;
     const Nuclei &nucs = mol.getNuclei();
     for (int k = 0; k < nucs.size(); k++) {
-        func.buildGrid(nucs[k].getCharge(), nucs[k].getCoord());
+        func.buildGrid(nucs[k].getCharge(), nucs[k].getCoord().data());
         printout(0, std::setw(3) << k);
         printout(0, std::setw(7) << nucs[k].getElement().getSymbol());
         printout(0, std::setw(32) << func.getNNodes());

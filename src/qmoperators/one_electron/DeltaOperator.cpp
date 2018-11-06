@@ -9,19 +9,14 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-QMDelta::QMDelta(const double *o, double expo)
+QMDelta::QMDelta(const mrcpp::Coord<3> &o, double expo)
         : QMPotential(1) {
-    double pos[3];
-    for (int d = 0; d < 3; d++) {
-        pos[d] = (o != 0) ? o[d] : 0.0;
-    }
-
     // Delta function should integrate to one
     double coef = pow(expo/MATHCONST::pi, 3.0/2.0);
 
     this->func.setCoef(coef);
     this->func.setExp(expo);
-    this->func.setPos(pos);
+    this->func.setPos(o.data());
 }
 
 void QMDelta::setup(double prec) {

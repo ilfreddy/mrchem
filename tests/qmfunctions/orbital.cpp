@@ -34,12 +34,12 @@ using namespace mrchem;
 
 namespace orbital_tests {
 
-auto f = [] (const double *r) -> double {
+auto f = [] (const mrcpp::Coord<3> &r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-1.0*R*R);
 };
 
-auto g = [] (const double *r) -> double {
+auto g = [] (const mrcpp::Coord<3> &r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-2.0*R*R);
 };
@@ -74,7 +74,7 @@ TEST_CASE("Orbital", "[orbital]") {
     SECTION("copy") {
         Orbital phi_1(SPIN::Paired);
         phi_1.alloc(NUMBER::Real);
-        mrcpp::project(prec, phi_1.real(), f);
+        mrcpp::project<3>(prec, phi_1.real(), f);
 
         SECTION("copy constructor") {
             Orbital phi_2(phi_1);
@@ -137,8 +137,8 @@ TEST_CASE("Orbital", "[orbital]") {
         phi.alloc();
         REQUIRE( phi.norm() == Approx(-1.0) );
 
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
         REQUIRE( phi.norm() > 1.0 );
 
         phi.normalize();
@@ -151,8 +151,8 @@ TEST_CASE("Orbital", "[orbital]") {
         Orbital phi(SPIN::Paired);
         phi.alloc();
 
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
 
         const double ref_norm = phi.norm();
         const double f_int = phi.real().integrate();
@@ -180,12 +180,12 @@ TEST_CASE("Orbital", "[orbital]") {
     SECTION("orthogonalize") {
         Orbital phi_1(SPIN::Alpha);
         phi_1.alloc(NUMBER::Real);
-        mrcpp::project(prec, phi_1.real(), f);
+        mrcpp::project<3>(prec, phi_1.real(), f);
 
         SECTION("different spin") {
             Orbital phi_2(SPIN::Beta);
             phi_2.alloc(NUMBER::Imag);
-            mrcpp::project(prec, phi_2.imag(), g);
+            mrcpp::project<3>(prec, phi_2.imag(), g);
 
             ComplexDouble S = orbital::dot(phi_1, phi_2);
             REQUIRE( std::abs(S.real()) < thrs );
@@ -197,7 +197,7 @@ TEST_CASE("Orbital", "[orbital]") {
         SECTION("same spin") {
             Orbital phi_2(SPIN::Alpha);
             phi_2.alloc(NUMBER::Imag);
-            mrcpp::project(prec, phi_2.imag(), g);
+            mrcpp::project<3>(prec, phi_2.imag(), g);
 
             ComplexDouble S1 = orbital::dot(phi_1, phi_2);
             REQUIRE( std::abs(S1.real()) < thrs );
@@ -222,8 +222,8 @@ TEST_CASE("Orbital", "[orbital]") {
         ComplexDouble c(0.5, 0.5);
         Orbital phi(SPIN::Paired);
         phi.alloc();
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
 
         SECTION("scalar conjugate") {
             Orbital psi = phi.paramCopy();
@@ -246,8 +246,8 @@ TEST_CASE("Orbital", "[orbital]") {
     SECTION("multiply") {
         Orbital phi(SPIN::Paired);
         phi.alloc();
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
 
         Orbital psi = phi.paramCopy();
         qmfunction::multiply(psi, phi.dagger(), phi, -1.0);

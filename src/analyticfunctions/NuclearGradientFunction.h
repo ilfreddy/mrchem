@@ -36,8 +36,7 @@ public:
     NuclearGradientFunction(int d, const Nucleus &nuc, double c)
         : dir(d), smooth(c), nucleus(nuc) { }
 
-    double evalf(const double *r) const;
-    double evalf(const std::array<double, 3> &r) const { return evalf(r.data()); }
+    double evalf(const mrcpp::Coord<3> &r) const override;
 
     Nucleus &getNucleus() { return this->nucleus; }
     const Nucleus &getNucleus() const { return this->nucleus; }

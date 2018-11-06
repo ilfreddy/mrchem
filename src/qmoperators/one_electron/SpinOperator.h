@@ -8,7 +8,6 @@ namespace mrchem {
 class QMSpin final : public QMOperator {
 public:
     QMSpin(int d) : D(d) { }
-    ~QMSpin() { }
 
 protected:
     const int D;
@@ -23,15 +22,14 @@ protected:
 class SpinOperator final : public RankOneTensorOperator<3> {
 public:
     SpinOperator()
-        : s_x(0),
-          s_y(1),
-          s_z(2) {
+            : s_x(0)
+            , s_y(1)
+            , s_z(2) {
         RankOneTensorOperator &s = *this;
         s[0] = s_x;
         s[1] = s_y;
         s[2] = s_z;
     }
-    ~SpinOperator() { }
 
 protected:
     QMSpin s_x;

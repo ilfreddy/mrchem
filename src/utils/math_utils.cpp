@@ -33,12 +33,11 @@ namespace mrchem {
 namespace math_utils {
 
 /** @brief Calculate the distance between two points in three dimensions */
-double calc_distance(const double *a, const double *b) {
-    assert(a != 0 and b != 0);
+double calc_distance(const mrcpp::Coord<3> &a, const mrcpp::Coord<3> &b) {
     double r_x = a[0] - b[0];
     double r_y = a[1] - b[1];
     double r_z = a[2] - b[2];
-    return std::sqrt(r_x*r_x + r_y*r_y + r_z*r_z);
+    return std::sqrt(r_x * r_x + r_y * r_y + r_z * r_z);
 }
 
 /** @brief Print a matrix to stdout
@@ -81,7 +80,7 @@ DoubleMatrix read_matrix_file(const std::string &file) {
         for (int j = 0; j < nTerms; j++) {
             std::getline(ifs, line);
             std::istringstream iss(line);
-            iss >> M(j,i);
+            iss >> M(j, i);
         }
     }
 
@@ -103,16 +102,14 @@ DoubleMatrix skew_matrix_exp(const DoubleMatrix &A) {
     //calculates U=exp(-A)=exp(i(iA)) iA=HermitianMatrix
     //skew=antisymmetric real
     ComplexDouble im(0.0, 1.0);
-    ComplexMatrix Aim = im*A;
+    ComplexMatrix Aim = im * A;
 
     //NB: eigenvalues are real, but eigenvectors are complex
     DoubleVector diag;
     ComplexMatrix U = diagonalize_hermitian_matrix(Aim, diag);
 
     ComplexMatrix diagim = ComplexMatrix::Zero(A.cols(), A.cols());
-    for (int j = 0; j < A.cols(); j++) {
-        diagim(j,j) = std::exp(im*diag(j));
-    }
+    for (int j = 0; j < A.cols(); j++) { diagim(j, j) = std::exp(im * diag(j)); }
 
     Aim = U * diagim * U.adjoint();
     return Aim.real(); //imaginary part is zero
@@ -135,9 +132,9 @@ ComplexMatrix hermitian_matrix_pow(const ComplexMatrix &A, double b) {
     DoubleMatrix B = DoubleMatrix::Zero(A.rows(), A.cols());
     for (int i = 0; i < diag.size(); i++) {
         if (std::abs(diag(i)) < mrcpp::MachineZero) {
-            B(i,i) = 0.0;
+            B(i, i) = 0.0;
         } else {
-            B(i,i) = std::pow(diag(i), b);
+            B(i, i) = std::pow(diag(i), b);
         }
     }
     return U * B * U.adjoint();
@@ -153,8 +150,8 @@ ComplexMatrix hermitian_matrix_pow(const ComplexMatrix &A, double b) {
 ComplexMatrix diagonalize_hermitian_matrix(const ComplexMatrix &A, DoubleVector &diag) {
     Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(A.cols());
     es.compute(A);
-    diag = es.eigenvalues();//real
-    return es.eigenvectors();//complex
+    diag = es.eigenvalues();  //real
+    return es.eigenvectors(); //complex
 }
 
 /** @brief Compute the eigenvalues and eigenvectors of a Hermitian matrix block

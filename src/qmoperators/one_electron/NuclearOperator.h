@@ -9,14 +9,13 @@ namespace mrchem {
 class NuclearPotential final : public QMPotential {
 public:
     NuclearPotential(const Nuclei &nucs, double prec);
-    ~NuclearPotential() { }
 
     void setup(double prec);
     void clear();
 
     Nuclei &getNuclei() { return this->func.getNuclei(); }
     const Nuclei &getNuclei() const { return this->func.getNuclei(); }
-    double evalf(const double *r)  { return this->func.evalf(r); }
+    double evalf(const mrcpp::Coord<3> &r)  { return this->func.evalf(r); }
     
 protected:
     NuclearFunction func;
@@ -29,7 +28,6 @@ public:
         RankZeroTensorOperator &v = (*this);
         v = r_m1;
     }
-    ~NuclearOperator() { }
 
     Nuclei &getNuclei() { return this->r_m1.getNuclei(); }
     const Nuclei &getNuclei() const { return this->r_m1.getNuclei(); }

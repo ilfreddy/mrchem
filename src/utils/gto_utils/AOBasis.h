@@ -15,9 +15,9 @@ public:
 
     void append(const AOContraction &ctr);
 
-    mrcpp::GaussExp<3> getAO(int n, const double *center) const;
-    mrcpp::GaussExp<3> getBasis(const double *center) const;
-    mrcpp::GaussExp<3> getNormBasis(const double *center) const;
+    mrcpp::GaussExp<3> getAO(int n, const mrcpp::Coord<3> &center) const;
+    mrcpp::GaussExp<3> getBasis(const mrcpp::Coord<3> &center) const;
+    mrcpp::GaussExp<3> getNormBasis(const mrcpp::Coord<3> &center) const;
 
     AOContraction &getContraction(int n) { return *this->ctrs[n]; }
     const AOContraction &getContraction(int n) const { return *this->ctrs[n]; }

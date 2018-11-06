@@ -8,7 +8,6 @@ namespace mrchem {
 class QMNabla final : public QMOperator {
 public:
     QMNabla(int d, mrcpp::DerivativeOperator<3> &D);
-    ~QMNabla() { }
 
 protected:
     const int apply_dir;
@@ -32,7 +31,6 @@ public:
         d[1] = d_y;
         d[2] = d_z;
     }
-    ~NablaOperator() { }
 
 protected:
     QMNabla d_x;

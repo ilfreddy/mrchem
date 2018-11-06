@@ -8,13 +8,10 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-PositionPotential::PositionPotential(int d, const double *o)
+PositionPotential::PositionPotential(int d, const mrcpp::Coord<3> &o)
         : QMPotential(1) {
-    double orig = 0.0;
-    if (o != 0) orig = o[d];
-
-    auto f = [d, orig] (const double *r) -> double {
-        return r[d] - orig;
+    auto f = [d, o] (const mrcpp::Coord<3> &r) -> double {
+        return r[d] - o[d];
     };
 
     this->func.set(f);

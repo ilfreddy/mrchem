@@ -73,7 +73,7 @@ void Intgrl::readAtomBlock(std::ifstream &ifs) {
 }
 
 void Intgrl::readAtomData(std::ifstream &ifs, int n_atoms, double z) {
-    double coord[3];
+    mrcpp::Coord<3> coord;
     std::string sym;
     for (int j = 0; j < n_atoms; j++) {
         ifs >> sym;
@@ -121,7 +121,7 @@ void Intgrl::readContractionBlock(std::ifstream &ifs, AOBasis &bas, int l) {
 
 GaussExp<3> Intgrl::getAtomBasis(int i, bool norm) const {
     assert(i >= 0 and i < this->nuclei.size());
-    const double *coord = this->nuclei[i]->getCoord();
+    const mrcpp::Coord<3> &coord = this->nuclei[i]->getCoord();
     if (norm) {
         return this->basis[i]->getNormBasis(coord);
     } else {
@@ -132,7 +132,7 @@ GaussExp<3> Intgrl::getAtomBasis(int i, bool norm) const {
 GaussExp<3> Intgrl::getMolBasis(bool norm) const {
     GaussExp<3> molexp;
     for (unsigned int i = 0; i < this->nuclei.size(); i++) {
-        const double *coord = this->nuclei[i]->getCoord();
+        const mrcpp::Coord<3> &coord = this->nuclei[i]->getCoord();
         if (norm) {
             molexp.append(this->basis[i]->getNormBasis(coord));
         } else {

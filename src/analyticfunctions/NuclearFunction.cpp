@@ -34,13 +34,13 @@ void NuclearFunction::push_back(const Nucleus &nuc, double S) {
     this->smooth.push_back(S);
 }
 
-double NuclearFunction::evalf(const double *r) const {
+double NuclearFunction::evalf(const mrcpp::Coord<3> &r) const {
     double c = -1.0/(3.0*mrcpp::root_pi);
     double result = 0.0;
     for (int i = 0; i < this->nuclei.size(); i++) {
         double S_i = this->smooth[i];
         double Z_i = this->nuclei[i].getCharge();
-        const double *R = this->nuclei[i].getCoord();
+        const mrcpp::Coord<3> &R = this->nuclei[i].getCoord();
         double R1 = math_utils::calc_distance(R, r)/S_i;
         double partResult = -std::erf(R1)/R1 + c*(std::exp(-R1*R1) + 16.0*std::exp(-4.0*R1*R1));
         result += Z_i*partResult/S_i;
@@ -67,7 +67,7 @@ bool NuclearFunction::isVisibleAtScale(int scale, int nQuadPts) const {
 bool NuclearFunction::isZeroOnInterval(const double *a, const double *b) const {
     int totSplit = 0;
     for (int i = 0; i < this->nuclei.size(); i++) {
-        const double *R = this->nuclei[i].getCoord();
+        const mrcpp::Coord<3> &R = this->nuclei[i].getCoord();
         int split = 1;
         if (a[0] > R[0] or b[0] < R[0]) split = 0;
         if (a[1] > R[1] or b[1] < R[1]) split = 0;

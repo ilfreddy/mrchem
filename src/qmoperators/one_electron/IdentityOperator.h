@@ -8,7 +8,6 @@ namespace mrchem {
 class QMIdentity final : public QMOperator {
 public:
     QMIdentity() : QMOperator() { }
-    ~QMIdentity() { }
 
 protected:
     void setup(double prec) { setApplyPrec(prec); }
@@ -24,7 +23,6 @@ public:
         RankZeroTensorOperator &h = (*this);
         h = I;
     }
-    ~IdentityOperator() { }
 
     ComplexDouble operator()(Orbital bra, Orbital ket);
     ComplexDouble dagger(Orbital bra, Orbital ket);

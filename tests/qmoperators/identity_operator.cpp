@@ -36,12 +36,12 @@ using namespace orbital;
 
 namespace identity_operator_tests {
 
-auto f = [] (const double *r) -> double {
+auto f = [] (const mrcpp::Coord<3> &r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-1.0*R*R);
 };
 
-auto g = [] (const double *r) -> double {
+auto g = [] (const mrcpp::Coord<3> &r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-2.0*R*R);
 };
@@ -53,8 +53,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
     SECTION("apply") {
         Orbital phi(SPIN::Paired);
         phi.alloc();
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
 
         IdentityOperator I;
         I.setup(prec);
@@ -74,8 +74,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         Phi.push_back(SPIN::Paired);
         Phi[0].alloc(NUMBER::Real);
         Phi[1].alloc(NUMBER::Real);
-        mrcpp::project(prec, Phi[0].real(), f);
-        mrcpp::project(prec, Phi[1].real(), g);
+        mrcpp::project<3>(prec, Phi[0].real(), f);
+        mrcpp::project<3>(prec, Phi[1].real(), g);
         normalize(Phi);
 
         IdentityOperator I;
@@ -99,8 +99,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
     SECTION("expectation value") {
         Orbital phi(SPIN::Paired);
         phi.alloc();
-        mrcpp::project(prec, phi.real(), f);
-        mrcpp::project(prec, phi.imag(), g);
+        mrcpp::project<3>(prec, phi.real(), f);
+        mrcpp::project<3>(prec, phi.imag(), g);
 
         IdentityOperator I;
         I.setup(prec);
@@ -119,8 +119,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         Phi.push_back(SPIN::Paired);
         Phi[0].alloc(NUMBER::Imag);
         Phi[1].alloc(NUMBER::Imag);
-        mrcpp::project(prec, Phi[0].imag(), f);
-        mrcpp::project(prec, Phi[1].imag(), g);
+        mrcpp::project<3>(prec, Phi[0].imag(), f);
+        mrcpp::project<3>(prec, Phi[1].imag(), g);
 
         IdentityOperator I;
         I.setup(prec);

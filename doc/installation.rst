@@ -7,85 +7,87 @@ Installation
 Build prerequisites
 -------------------
 
-On Stallo the supplied setup script should be able to configure things
-correctly, provided all the necessary modules have been loaded. Using the Intel
-tool chain (2016b does not work)::
+The supplied setup script should be able to configure things
+correctly, provided all the necessary tools are available.
 
-    $ module load intel/2015b
-    $ module load CMake/3.3.2-intel-2015b
-    $ module load Boost/1.59.0-intel-2015b-Python-2.7.10
-    $ module load Eigen/3.1.1
+Stallo
+------
 
-Using the GNU tool chain::
+Using the Intel tool chain on Stallo::
 
-    $ module load foss/2016b
-    $ module load CMake/3.6.2-foss-2016b
-    $ module load Boost/1.61.0-foss-2016b
-    $ module load Eigen/3.1.1
+    $ module load intel/2017a
+    $ module load CMake/3.9.1
+    $ module load Boost/1.63.0-intel-2017a-Python-2.7.13
+    $ module load Eigen/3.3.4
+
+Fram
+----
+
+Using the Intel tool chain on Fram::
+
+    $ module load intel/2017a
+    $ module load CMake/3.9.1
+    $ module load Boost/1.63.0-intel-2017a-Python-2.7.13
+
+Eigen is not available through the module system on Fram, so it must be
+installed manually by the user, see the `Eigen3
+<http://eigen.tuxfamily.org/index.php?title=Main_Page>`_ home page or the
+``.ci/eigen.sh`` source file for details.
 
 -------------------------------
 Obtaining and building the code
 -------------------------------
 
-The public version of MRChem (currently with limited features) is available on
-GitHub::
+The public version of MRChem is available on GitHub::
 
     $ git clone git@github.com:MRChemSoft/mrchem.git
 
-To build the code using OpenMP parallelization (there is a ``--mpi`` analogue,
-but this is highly experimental at the moment) with the GNU tool chain::
+To build the code with only shared memory OpenMP parallelization::
 
     $ cd mrchem
-    $ ./setup --omp --prefix=.
-    $ cd build
+    $ ./setup --prefix=<install-dir> --omp <build-dir>
+    $ cd <build-dir>
     $ make
     $ make install
 
-With the Intel tool chain you need to specify the compilers in the setup::
+With the Intel tool chain on Stallo or Fram you need to specify the compilers
+in the setup::
 
-    $ ./setup --cc=icc --cxx=icpc --omp --prefix=.
+    $ ./setup --prefix=<install-dir> --omp --cxx=icpc <build-dir>
 
-The official MRChem main program is located in ``src/mrchem/mrchem.cpp``, whose
-executable will be built in ``build/bin/mrchem.x``. Please do not change this
-file unless you know what you are doing. To try out your own ideas you can
-instead write a separate main program in a file
-called ``mrchem.cpp`` in the ``pilot`` directory. You will find a sample code
-called ``mrchem.cpp.sample`` in this directory where some of the functionality
-of MRCPP is demonstrated. To activate it, rename it ``mrchem.cpp`` *before* you
-run the setup script::
+To build the code with hybrid MPI/OpenMP parallelization::
 
-    $ git clone git@github.com:MRChemSoft/mrchem.git
-    $ cd mrchem/pilot
-    $ cp mrchem.cpp.sample mrchem.cpp
-    $ cd ..
-    $ ./setup --cc=icc --cxx=icpc --omp --prefix=.
-    $ cd build
-    $ make
-    $ make install
+    $ ./setup --prefix=<install-dir> --omp --mpi --cxx=mpiicpc <build-dir>
 
-The pilot executable will now be built in ``build/pilot/mrchem-pilot.x``.
-Feel free to do whatever you like with your pilot code, but it is your own
-personal playground so don't add this file to git.
+The MRChem executables will be installed in ``<install-dir>/bin``.
 
-A test suite is provided (with the ``--enable-tests`` flag to setup) to make
-sure that everything compiled properly::
 
-    $ cd build/tests
-    $ ./unit-tests
+-------
+Testing
+-------
 
+A test suite is provided to make sure that everything compiled properly. To run
+a collection of small unit tests::
+
+    $ cd <build-dir>
+    $ ctest -L unit
+
+To run a couple of more involved integration tests::
+
+    $ cd <build-dir>
+    $ ctest -L integration
+
+In order to run the integration tests you must first install the ``runtest``
+Python package (listed as required in ``Pipfile``).
 
 -------------------
 Running the program
 -------------------
 
-A Python input parser will be provided along with the mrchem
-executables both for the official program and the pilot code::
+A Python input parser will be provided along with the mrchem executable::
 
     $ build/bin/mrchem              // Python input parser
     $ build/bin/mrchem.x            // MRChem executable
-
-    $ build/pilot/mrchem            // Python input parser
-    $ build/pilot/mrchem-pilot.x    // Pilot executable
 
 The input parser takes a single file argument (default ``mrchem.inp``),
 processes the input and calls the main executable. Output is written to stdout
@@ -93,30 +95,18 @@ but can be redirected to an output file::
 
     $ ./mrchem mrchem.inp > mrchem.out &
 
-A sample input file is provided for the pilot code. For the official program,
-please refer to the MRChem manual or the examples directory.
-
-By following the instructions above the code will be compiled in OpenMP
-parallel. To run the program in parallel use the environment variable
+To run the program in OpenMP parallel use the environment variable
 ``OMP_NUM_THREADS`` (``unset OMP_NUM_THREADS`` will give you all threads
 available, otherwise use ``export OMP_NUM_THREADS N``)::
 
     $ export OMP_NUM_THREADS 16
-    $ ./mrchem
+    $ ./mrchem mrchem.inp
 
+When you run the program in hybrid MPI/OpenMP parallel, you must run the input
+parser manually first with the dryrun ``-D`` option, before launching the main
+executable with ``mpirun`` (or equivalent). For 20 threads each on 5 MPI
+processes::
 
---------
-Examples
---------
+    $ ./mrchem -D mrchem.inp
+    $ OMP_NUM_THREADS=20  mpirun -np 5 @mrchem.inp >mrchem.out &
 
-There are a few examples (input ``mrchem.inp`` and expected output
-``mrchem.out``) located in the ``examples`` directory. More details regarding
-the input file can be found in the MRChem manual. To run e.g. the H2 molecule
-(on Stallo, please **don't** do this on the login nodes)::
-
-    $ cd examples/h2
-    $ unset OMP_NUM_THREADS
-    $ ../../build/bin/mrchem mrchem.inp
-
-This will print the output from the calculation to the terminal, which you can
-compare to the reference ``mrchem.out``.

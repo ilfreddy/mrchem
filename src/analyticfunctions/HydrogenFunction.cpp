@@ -26,6 +26,7 @@
 #include "MRCPP/Printer"
 
 #include "HydrogenFunction.h"
+#include "utils/math_utils.h"
 #include "mrchem.h"
 
 namespace mrchem {
@@ -36,7 +37,7 @@ RadialFunction::RadialFunction(int n, int l, double Z)
     this->c_1 = 2.0*Z/(1.0*this->N);
 }
 
-double RadialFunction::evalf(const double *r) const {
+double RadialFunction::evalf(const mrcpp::Coord<1> &r) const {
     double rho = this->c_1*r[0];
     return this->c_0*this->evalfPoly(rho)*exp(-rho/2.0);
 }
@@ -92,7 +93,7 @@ AngularFunction::AngularFunction(int l, int m)
     this->c_0 = calcConstant();
 }
 
-double AngularFunction::evalf(const double *r) const {
+double AngularFunction::evalf(const mrcpp::Coord<3> &r) const {
     return this->c_0*this->evalfPoly(r);
 }
 
@@ -118,7 +119,7 @@ double AngularFunction::calcConstant() const {
     return c/(2.0*MATHCONST::sqrt_pi);
 }
 
-double AngularFunction::evalfPoly(const double *q) const {
+double AngularFunction::evalfPoly(const mrcpp::Coord<3> &q) const {
     double x = q[0];
     double y = q[1];
     double z = q[2];
@@ -144,23 +145,23 @@ double AngularFunction::evalfPoly(const double *q) const {
     return value;
 }
 
-HydrogenFunction::HydrogenFunction(int n, int l, int m, double Z, const double *o)
-        : RepresentableFunction<3>(),
-          R(n, l, Z),
-          Y(l, m) {
-    this->origin[0] = (o != 0) ? o[0] : 0.0;
-    this->origin[1] = (o != 0) ? o[1] : 0.0;
-    this->origin[2] = (o != 0) ? o[2] : 0.0;
-}
+HydrogenFunction::HydrogenFunction(int n, int l, int m, double Z)
+        : RepresentableFunction<3>()
+        , origin({0.0, 0.0, 0.0})
+        , R(n, l, Z)
+        , Y(l, m) {}
 
-double HydrogenFunction::evalf(const double *p) const {
-    double q[3] = {
-        p[0] - this->origin[0],
-        p[1] - this->origin[1],
-        p[2] - this->origin[2]
-    };
-    double r = std::sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2]);
-    return this->R.evalf(&r)*this->Y.evalf(q);
+HydrogenFunction::HydrogenFunction(int n, int l, int m, double Z, const mrcpp::Coord<3> &o)
+        : RepresentableFunction<3>()
+        , origin(o)
+        , R(n, l, Z)
+        , Y(l, m) {}
+
+double HydrogenFunction::evalf(const mrcpp::Coord<3> &p) const {
+    const mrcpp::Coord<3> &o = this->origin;
+    mrcpp::Coord<3> q{p[0] - o[0], p[1] - o[1], p[2] - o[2]};
+    mrcpp::Coord<1> r{math_utils::calc_distance(p, o)};
+    return this->R.evalf(r)*this->Y.evalf(q);
 }
 
 } //namespace mrchem

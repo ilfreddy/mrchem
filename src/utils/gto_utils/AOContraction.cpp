@@ -61,7 +61,7 @@ AOContraction::AOContraction(int l) {
     this->nComp = (this->L + 1) * (this->L + 2) / 2;
 }
 
-GaussExp<3> AOContraction::getNormContraction(int m, const double *center) const {
+GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &center) const {
     GaussExp<3> ctr = getContraction(m, center);
     ctr.normalize();
     return ctr;
@@ -77,7 +77,7 @@ GaussExp<3> AOContraction::getNormContraction(int m, const double *center) const
             9 for gxxyy, ...
               etc     ...
 */
-GaussExp<3> AOContraction::getContraction(int m, const double *center) const {
+GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) const {
     assert(m >= 0 and m < this->nComp);
     GaussExp<3> ctr;
     double normFac = 1.0;
@@ -104,7 +104,7 @@ GaussExp<3> AOContraction::getContraction(int m, const double *center) const {
     normFac = std::sqrt(normFac);
     for (unsigned int i = 0; i < expo.size(); i++) {
         GaussFunc<3> gto;
-        gto.setPos(center);
+        gto.setPos(center.data());
         gto.setExp(this->expo[i]);
         gto.setPower(GTOS[this->L].comp[m]);
         gto.normalize();

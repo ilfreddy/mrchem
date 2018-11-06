@@ -21,8 +21,8 @@ public:
     AOContraction(int l = 0);
 
     void append(double e, double c);
-    mrcpp::GaussExp<3> getNormContraction(int m, const double *center) const;
-    mrcpp::GaussExp<3> getContraction(int m, const double *center) const;
+    mrcpp::GaussExp<3> getNormContraction(int m, const mrcpp::Coord<3> &center) const;
+    mrcpp::GaussExp<3> getContraction(int m, const mrcpp::Coord<3> &center) const;
 
     int getNComp() const { return this->nComp; }
     int getMoment() const { return this->L; }

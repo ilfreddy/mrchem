@@ -24,8 +24,9 @@ namespace mrchem {
  */
 class ElectricFieldOperator final : public RankZeroTensorOperator {
 public:
- ElectricFieldOperator(const Eigen::Vector3d &f)
-     : field(f) {
+ ElectricFieldOperator(const Eigen::Vector3d &f, const mrcpp::Coord<3> &o)
+            : field(f)
+            , dipole(o) {
         RankZeroTensorOperator &d_x = this->dipole[0];
         RankZeroTensorOperator &d_y = this->dipole[1];
         RankZeroTensorOperator &d_z = this->dipole[2];
@@ -42,9 +43,7 @@ public:
  */
     ComplexDouble trace(const Nuclei &nucs) {
         ComplexDouble result = 0.0;
-        for (int k = 0; k < nucs.size(); k++) {
-            result += trace(nucs[k]);
-        }
+        for (auto &nuc_k : nucs) result += trace(nuc_k);
         return result;
     }
 
@@ -62,7 +61,7 @@ public:
 
  protected:
     Eigen::Vector3d field; ///< the external field vector 
-    H_E_dip dipole; ///< the dipole moment operator
+    H_E_dip dipole;        ///< the dipole moment operator
     
 
 };

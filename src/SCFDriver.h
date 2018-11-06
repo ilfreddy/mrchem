@@ -193,7 +193,7 @@ protected:
     std::string file_mo_mat_b;
 
     // Gauge origin
-    double r_O[3];
+    mrcpp::Coord<3> r_O;
 
     // SCF machinery
     HelmholtzVector *helmholtz;

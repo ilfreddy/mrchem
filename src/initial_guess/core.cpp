@@ -215,7 +215,7 @@ OrbitalVector initial_guess::core::project_ao(double prec,
         const Nucleus &nuc = nucs[i];
         int minAO = std::ceil(nuc.getElement().getZ()/2.0);
         double Z = nuc.getCharge();
-        const double *R = nuc.getCoord();
+        const mrcpp::Coord<3> &R = nuc.getCoord();
 
         int nAO = 0;
         int nShell = 0;

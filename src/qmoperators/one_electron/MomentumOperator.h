@@ -8,7 +8,6 @@ namespace mrchem {
 class QMMomentum final : public QMOperator {
 public:
     QMMomentum(int d, mrcpp::DerivativeOperator<3> &D);
-    ~QMMomentum() { }
 
 protected:
     const int apply_dir;
@@ -32,7 +31,6 @@ public:
         p[1] = p_y;
         p[2] = p_z;
     }
-    ~MomentumOperator() { }
 
 protected:
     QMMomentum p_x;

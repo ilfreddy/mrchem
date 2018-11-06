@@ -40,7 +40,7 @@ void AOBasis::append(const AOContraction &ctr) {
     this->nFunc += ctr.getNComp();
 }
 
-GaussExp<3> AOBasis::getAO(int n, const double *center) const {
+GaussExp<3> AOBasis::getAO(int n, const mrcpp::Coord<3> &center) const {
     assert(n >= 0 and n < nFunc);
     int m = 0;
     for (int i = 0; i < ctrs.size(); i++) {
@@ -53,7 +53,7 @@ GaussExp<3> AOBasis::getAO(int n, const double *center) const {
     MSG_FATAL("Something is terribly wrong");
 }
 
-GaussExp<3> AOBasis::getBasis(const double *center) const {
+GaussExp<3> AOBasis::getBasis(const mrcpp::Coord<3> &center) const {
     NOT_IMPLEMENTED_ABORT;
     GaussExp<3> abas;
     for (unsigned int i = 0; i < this->ctrs.size(); i++) {
@@ -63,7 +63,7 @@ GaussExp<3> AOBasis::getBasis(const double *center) const {
     return abas;
 }
 
-GaussExp<3> AOBasis::getNormBasis(const double *center) const {
+GaussExp<3> AOBasis::getNormBasis(const mrcpp::Coord<3> &center) const {
     NOT_IMPLEMENTED_ABORT;
     GaussExp<3> abas;
     for (unsigned int i = 0; i < this->ctrs.size(); i++) {

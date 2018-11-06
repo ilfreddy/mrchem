@@ -74,7 +74,7 @@ double NuclearOperator::trace(const Nuclei &nucs) {
     for (int i = 0; i < nNucs; i++) {
         const Nucleus &nuc_i = nucs[i];
         double Z_i = nuc_i.getCharge();
-        const double *R_i = nuc_i.getCoord();
+        const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
         E_nuc += Z_i*this->r_m1.evalf(R_i);
     }
     return E_nuc;

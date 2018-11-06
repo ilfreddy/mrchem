@@ -28,6 +28,8 @@
 #include <iostream>
 #include <vector>
 
+#include "MRCPP/MWFunctions"
+
 #include "Element.h"
 #include "PeriodicTable.h"
 
@@ -35,38 +37,30 @@ namespace mrchem {
 
 class Nucleus final {
 public:
-    Nucleus(const Element &elm, const double *r = 0)
+    Nucleus(const Element &elm, const mrcpp::Coord<3> &r)
             : charge(elm.getZ())
+            , coord(r)
             , element(&elm) {
-        setCoord(r);
     }
     Nucleus(const Nucleus &nuc)
             : charge(nuc.charge)
+            , coord(nuc.coord)
             , element(nuc.element) {
-        setCoord(nuc.coord);
     }
     Nucleus &operator=(const Nucleus &nuc) {
         if (this != &nuc) {
             this->charge = nuc.charge;
             this->element = nuc.element;
-            setCoord(nuc.coord);
+            this->coord = nuc.coord;
         }
         return *this;
     }
 
     void setCharge(double z) { this->charge = z; }
-    void setCoord(const double *r) {
-        for (int d = 0; d < 3; d++) {
-            if (r != 0) {
-                this->coord[d] = r[d];
-            } else {
-                this->coord[d] = 0.0;
-            }
-        }
-    }
+    void setCoord(const mrcpp::Coord<3> &r) { this->coord = r; }
 
     double getCharge() const { return this->charge; }
-    const double *getCoord() const { return this->coord; }
+    const mrcpp::Coord<3> &getCoord() const { return this->coord; }
     const Element &getElement() const { return *this->element; }
 
     friend std::ostream &operator<<(std::ostream &o, const Nucleus &nuc) {
@@ -79,14 +73,14 @@ public:
 
 private:
     double charge;
-    double coord[3];
+    mrcpp::Coord<3> coord;
     const Element *element;
 };
 
 class Nuclei : public std::vector<Nucleus> {
 public:
     void push_back(const Nucleus &nuc) { std::vector<Nucleus>::push_back(nuc); }
-    void push_back(const char *sym, const double *r) {
+    void push_back(const char *sym, const mrcpp::Coord<3> &r) {
         PeriodicTable pt;
         Nucleus nuc(pt.getElement(sym), r);
         std::vector<Nucleus>::push_back(nuc);

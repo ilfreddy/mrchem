@@ -40,11 +40,11 @@ double compute_nuclear_repulsion(const Nuclei &nucs) {
     for (int i = 0; i < nNucs; i++) {
         const Nucleus &nuc_i = nucs[i];
         const double Z_i = nuc_i.getCharge();
-        const double *R_i = nuc_i.getCoord();
+        const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
         for (int j = i+1; j < nNucs; j++) {
             const Nucleus &nuc_j = nucs[j];
             const double Z_j = nuc_j.getCharge();
-            const double *R_j = nuc_j.getCoord();
+            const mrcpp::Coord<3> &R_j = nuc_j.getCoord();
             double R_ij = math_utils::calc_distance(R_i, R_j);
             E_nuc += (Z_i*Z_j)/R_ij;
         }

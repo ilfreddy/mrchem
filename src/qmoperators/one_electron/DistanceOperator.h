@@ -8,8 +8,7 @@ namespace mrchem {
 
 class DistancePotential final : public QMPotential {
 public:
-    DistancePotential(double pow, const double *r_K, double S);
-    ~DistancePotential() { }
+    DistancePotential(double pow, const mrcpp::Coord<3> &r_K, double S);
 
     void setup(double prec);
     void clear();
@@ -19,14 +18,13 @@ protected:
     NuclearFunction func;
 };
 
-class DistanceOperator : public RankZeroTensorOperator {
+class DistanceOperator final : public RankZeroTensorOperator {
 public:
-    DistanceOperator(double pow, const double *R = 0, double S = 1.0e-7)
+    DistanceOperator(double pow, const mrcpp::Coord<3> &R, double S = 1.0e-7)
             : r_pow(pow, R, S) {
         RankZeroTensorOperator &v = (*this);
         v = r_pow;
     }
-    ~DistanceOperator() { }
 
 protected:
     DistancePotential r_pow;

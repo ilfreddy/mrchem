@@ -7,8 +7,7 @@ namespace mrchem {
 
 class QMDelta final : public QMPotential {
 public:
-    QMDelta(const double *o, double expo);
-    ~QMDelta() { }
+    QMDelta(const mrcpp::Coord<3> &o, double expo);
 
 protected:
     mrcpp::GaussFunc<3> func;
@@ -19,12 +18,11 @@ protected:
 
 class DeltaOperator final : public RankZeroTensorOperator {
 public:
-    DeltaOperator(const double *o = 0, double expo = 1.0e6)
-            : delta(0, expo) {
+    DeltaOperator(const mrcpp::Coord<3> &o, double expo = 1.0e6)
+            : delta(o, expo) {
         RankZeroTensorOperator &d = (*this);
         d = delta;
     }
-    ~DeltaOperator() { }
 
 protected:
     QMDelta delta;

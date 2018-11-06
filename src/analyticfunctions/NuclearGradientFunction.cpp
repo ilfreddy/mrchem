@@ -30,10 +30,10 @@
 
 namespace mrchem {
 
-double NuclearGradientFunction::evalf(const double *r) const {
+double NuclearGradientFunction::evalf(const mrcpp::Coord<3> &r) const {
     double c_A = this->smooth;
     double Z_A = this->nucleus.getCharge();
-    const double *R_A = this->nucleus.getCoord();
+    const mrcpp::Coord<3> &R_A = this->nucleus.getCoord();
     double x_A =  R_A[this->dir] - r[this->dir];
     double r_A = math_utils::calc_distance(R_A, r);
     return -Z_A*(x_A/r_A)*du_dr(r_A/c_A)/(c_A*c_A);
@@ -47,7 +47,7 @@ bool NuclearGradientFunction::isVisibleAtScale(int scale, int nQuadPts) const {
 
 bool NuclearGradientFunction::isZeroOnInterval(const double *a, const double *b) const {
     bool out = false;
-    const double *R = this->nucleus.getCoord();
+    const mrcpp::Coord<3> &R = this->nucleus.getCoord();
     if (a[0] > R[0] or b[0] < R[0]) out = true;
     if (a[1] > R[1] or b[1] < R[1]) out = true;
     if (a[2] > R[2] or b[2] < R[2]) out = true;

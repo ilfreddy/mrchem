@@ -64,7 +64,7 @@ protected:
         for (int i = 0; i < nNuclei; i++) {
             const Nucleus &nuc = this->molecule->getNucleus(i);
             int Z = nuc.getCharge();
-            const double *coord = nuc.getCoord();
+            const mrcpp::Coord<3> &coord = nuc.getCoord();
             o << Z << "  0.00 " << coord[0]
               << "  " << coord[1]
               << "  " << coord[2] << std::endl;

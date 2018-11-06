@@ -36,7 +36,7 @@
 namespace mrchem {
 namespace math_utils {
 
-double calc_distance(const double *a, const double *b);
+double calc_distance(const mrcpp::Coord<3> &a, const mrcpp::Coord<3> &b);
 
 void print_matrix(int level, const DoubleMatrix &M, const std::string &name, int pr = 5);
 

@@ -66,8 +66,8 @@ public:
     int getNNuclei() const { return this->nuclei.size(); }
     int getNElectrons() const;
 
-    const double *getCenterOfMass() const { return this->COM; }
-    const double *getCenterOfCharge() const { return this->COC; }
+    const mrcpp::Coord<3> &getCenterOfMass() const { return this->COM; }
+    const mrcpp::Coord<3> &getCenterOfCharge() const { return this->COC; }
 
     Nuclei &getNuclei() { return this->nuclei; }
     const Nuclei &getNuclei() const { return this->nuclei; }
@@ -105,8 +105,8 @@ protected:
     Nuclei nuclei;
 
     // Properties
-    double COM[3];
-    double COC[3];
+    mrcpp::Coord<3> COM;
+    mrcpp::Coord<3> COC;
     SCFEnergy *energy;
     DipoleMoment *dipole;
     QuadrupoleMoment *quadrupole;

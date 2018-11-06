@@ -481,16 +481,12 @@ void Molecule::calcCenterOfMass() {
     double M = 0.0;
     for (int i = 0; i < getNNuclei(); i++) {
         const Nucleus &nuc = getNucleus(i);
-        const double *r_i = nuc.getCoord();
+        const mrcpp::Coord<3> &r_i = nuc.getCoord();
         const double m_i = nuc.getElement().getMass();
-        for (int d = 0; d < 3; d++) {
-            this->COM[d] += r_i[d] * m_i;
-        }
+        for (int d = 0; d < 3; d++) this->COM[d] += r_i[d] * m_i;
         M += m_i;
     }
-    for (int d = 0; d < 3; d++) {
-        this->COM[d] *= 1.0/M;
-    }
+    for (int d = 0; d < 3; d++) this->COM[d] *= 1.0 / M;
 }
 
 /** @brief Compute nuclear center of charge */
@@ -502,16 +498,12 @@ void Molecule::calcCenterOfCharge() {
     double Z = 0.0;
     for (int i = 0; i < getNNuclei(); i++) {
         const Nucleus &nuc = getNucleus(i);
-        const double *r_i = nuc.getCoord();
+        const mrcpp::Coord<3> &r_i = nuc.getCoord();
         const double z_i = nuc.getElement().getZ();
-        for (int d = 0; d < 3; d++) {
-            this->COC[d] += r_i[d] * z_i;
-        }
+        for (int d = 0; d < 3; d++) this->COC[d] += r_i[d] * z_i;
         Z += z_i;
     }
-    for (int d = 0; d < 3; d++) {
-        this->COC[d] *= 1.0/Z;
-    }
+    for (int d = 0; d < 3; d++) this->COC[d] *= 1.0 / Z;
 }
 
 /** @brief Read nuclear coordinates from xyz file
@@ -530,7 +522,7 @@ void Molecule::readCoordinateFile(const std::string &coord_file) {
 
     int nNuclei;
     std::string sym;
-    double coord[3];
+    mrcpp::Coord<3> coord;
     ifs >> nNuclei;
     for (int i = 0; i < nNuclei; i++) {
         ifs >> sym;
@@ -552,7 +544,7 @@ void Molecule::readCoordinateFile(const std::string &coord_file) {
 void Molecule::readCoordinateString(const std::vector<std::string> &coord_str) {
     int nNuclei = coord_str.size();
     std::string sym;
-    double coord[3];
+    mrcpp::Coord<3> coord;
     for (int i = 0; i < nNuclei; i++) {
         std::stringstream ss;
         ss.str(coord_str[i]);
@@ -574,7 +566,7 @@ void Molecule::printGeometry() const {
     int nNuclei = getNNuclei();
     for (int i = 0; i < nNuclei; i++) {
         const Nucleus &nuc = getNucleus(i);
-        const double *coord = nuc.getCoord();
+        const mrcpp::Coord<3> &coord = nuc.getCoord();
         std::stringstream symbol;
         symbol << nuc.getElement().getSymbol();
         symbol << "  ";
