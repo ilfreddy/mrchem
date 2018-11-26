@@ -27,18 +27,18 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
+#include "utils/math_utils.h"
 
-#include "qmfunction_utils.h"
-#include "orbital_utils.h"
 #include "Orbital.h"
 #include "OrbitalIterator.h"
+#include "orbital_utils.h"
+#include "qmfunction_utils.h"
 
-using mrcpp::Timer;
-using mrcpp::Printer;
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 namespace mrchem {
 
@@ -66,23 +66,23 @@ ComplexDouble orbital::dot(Orbital bra, Orbital ket) {
  *      the foreign bra's are cleared.
  *
  */
-ComplexVector orbital::dot(OrbitalVector &bra, OrbitalVector &ket) {
-    if (bra.size() != ket.size()) MSG_FATAL("Size mismatch");
+ComplexVector orbital::dot(OrbitalVector &Bra, OrbitalVector &Ket) {
+    if (Bra.size() != Ket.size()) MSG_FATAL("Size mismatch");
 
-    int N = bra.size();
+    int N = Bra.size();
     ComplexVector result = ComplexVector::Zero(N);
     for (int i = 0; i < N; i++) {
         // The bra is sent to the owner of the ket
-        if (bra[i].rankID() != ket[i].rankID()) {
-            int tag = 8765*i;
-            int src = bra[i].rankID();
-            int dst = ket[i].rankID();
-            if (mpi::my_orb(bra[i])) mpi::send_orbital(bra[i], dst, tag);
-            if (mpi::my_orb(ket[i])) mpi::recv_orbital(bra[i], src, tag);
+        if (Bra[i].rankID() != Ket[i].rankID()) {
+            int tag = 8765 + i;
+            int src = Bra[i].rankID();
+            int dst = Ket[i].rankID();
+            if (mpi::my_orb(Bra[i])) mpi::send_function(Bra[i], dst, tag, mpi::comm_orb);
+            if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i], src, tag, mpi::comm_orb);
         }
-        result[i] = orbital::dot(bra[i], ket[i]);
+        result[i] = orbital::dot(Bra[i], Ket[i]);
+        if (not mpi::my_orb(Bra[i])) Bra[i].free();
     }
-    mpi::free_foreign(bra);
     mpi::allreduce_vector(result, mpi::comm_orb);
     return result;
 }
@@ -92,13 +92,13 @@ ComplexVector orbital::dot(OrbitalVector &bra, OrbitalVector &ket) {
  *  Returns true if orbital parameters are the same.
  *
  */
-bool orbital::compare(const Orbital &orb_a, const Orbital &orb_b) {
+bool orbital::compare(const Orbital &phi_a, const Orbital &phi_b) {
     bool comp = true;
-    if (compare_occ(orb_a, orb_b) < 0) {
+    if (compare_occ(phi_a, phi_b) < 0) {
         MSG_WARN("Different occupancy");
         comp = false;
     }
-    if (compare_spin(orb_a, orb_b) < 0) {
+    if (compare_spin(phi_a, phi_b) < 0) {
         MSG_WARN("Different spin");
         comp = false;
     }
@@ -110,9 +110,9 @@ bool orbital::compare(const Orbital &orb_a, const Orbital &orb_b) {
  *  Returns the common occupancy if they match, -1 if they differ.
  *
  */
-int orbital::compare_occ(const Orbital &orb_a, const Orbital &orb_b) {
+int orbital::compare_occ(const Orbital &phi_a, const Orbital &phi_b) {
     int comp = -1;
-    if (orb_a.occ() == orb_b.occ()) comp = orb_a.occ();
+    if (phi_a.occ() == phi_b.occ()) comp = phi_a.occ();
     return comp;
 }
 
@@ -121,9 +121,9 @@ int orbital::compare_occ(const Orbital &orb_a, const Orbital &orb_b) {
  *  Returns the common spin if they match, -1 if they differ.
  *
  */
-int orbital::compare_spin(const Orbital &orb_a, const Orbital &orb_b) {
+int orbital::compare_spin(const Orbital &phi_a, const Orbital &phi_b) {
     int comp = -1;
-    if (orb_a.spin() == orb_b.spin()) comp = orb_a.spin();
+    if (phi_a.spin() == phi_b.spin()) comp = phi_a.spin();
     return comp;
 }
 
@@ -132,15 +132,13 @@ int orbital::compare_spin(const Orbital &orb_a, const Orbital &orb_b) {
  *  Component-wise addition of orbitals.
  *
  */
-OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &inp_a,
-                           ComplexDouble b, OrbitalVector &inp_b,
-                           double prec) {
-    if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
+OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec) {
+    if (Phi_a.size() != Phi_b.size()) MSG_ERROR("Size mismatch");
 
-    OrbitalVector out = orbital::param_copy(inp_a);
-    for (int i = 0; i < inp_a.size(); i++) {
-        if (inp_a[i].rankID() != inp_b[i].rankID()) MSG_FATAL("MPI rank mismatch");
-        qmfunction::add(out[i], a, inp_a[i], b, inp_b[i], prec);
+    OrbitalVector out = orbital::param_copy(Phi_a);
+    for (int i = 0; i < Phi_a.size(); i++) {
+        if (Phi_a[i].rankID() != Phi_b[i].rankID()) MSG_FATAL("MPI rank mismatch");
+        qmfunction::add(out[i], a, Phi_a[i], b, Phi_b[i], prec);
     }
     return out;
 }
@@ -150,10 +148,11 @@ OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &inp_a,
  * MPI: Rank distribution of output vector is the same as input vector
  *
  */
-OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
+OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double prec) {
     // Get all out orbitals belonging to this MPI
-    OrbitalVector out = orbital::param_copy(inp);
-    OrbitalIterator iter(inp);
+    double inter_prec = (mpi::numerically_exact) ? -1.0 : prec;
+    OrbitalVector out = orbital::param_copy(Phi);
+    OrbitalIterator iter(Phi);
     while (iter.next()) {
         for (int i = 0; i < out.size(); i++) {
             if (not mpi::my_orb(out[i])) continue;
@@ -166,11 +165,19 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double
                 func_vec.push_back(recv_j);
             }
             Orbital tmp_i = out[i].paramCopy();
-            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
-            out[i].add(1.0, tmp_i, prec); // In place addition
+            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, inter_prec);
+            out[i].add(1.0, tmp_i); // In place addition
+            out[i].crop(inter_prec);
             tmp_i.free();
         }
     }
+
+    if (mpi::numerically_exact) {
+        for (auto &out_i : out) {
+            if (mpi::my_orb(out_i)) out_i.crop(prec);
+        }
+    }
+
     return out;
 }
 
@@ -179,10 +186,10 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double
  * New orbitals are constructed as deep copies of the input set.
  *
  */
-OrbitalVector orbital::deep_copy(OrbitalVector &inp) {
+OrbitalVector orbital::deep_copy(OrbitalVector &Phi) {
     OrbitalVector out;
-    for (int i = 0; i < inp.size(); i++) {
-        Orbital out_i = inp[i].deepCopy();
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital out_i = Phi[i].deepCopy();
         out.push_back(out_i);
     }
     return out;
@@ -193,10 +200,10 @@ OrbitalVector orbital::deep_copy(OrbitalVector &inp) {
  * New orbitals are constructed as parameter copies of the input set.
  *
  */
-OrbitalVector orbital::param_copy(const OrbitalVector &inp) {
+OrbitalVector orbital::param_copy(const OrbitalVector &Phi) {
     OrbitalVector out;
-    for (int i = 0; i < inp.size(); i++) {
-        Orbital out_i = inp[i].paramCopy();
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital out_i = Phi[i].paramCopy();
         out.push_back(out_i);
     }
     return out;
@@ -209,12 +216,12 @@ OrbitalVector orbital::param_copy(const OrbitalVector &inp) {
  * the input vector empty.
  *
  */
-OrbitalVector orbital::adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b) {
+OrbitalVector orbital::adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b) {
     OrbitalVector out;
-    for (int i = 0; i < inp_a.size(); i++) out.push_back(inp_a[i]);
-    for (int i = 0; i < inp_b.size(); i++) out.push_back(inp_b[i]);
-    inp_a.clear();
-    inp_b.clear();
+    for (int i = 0; i < Phi_a.size(); i++) out.push_back(Phi_a[i]);
+    for (int i = 0; i < Phi_b.size(); i++) out.push_back(Phi_b[i]);
+    Phi_a.clear();
+    Phi_b.clear();
     return out;
 }
 
@@ -225,19 +232,18 @@ OrbitalVector orbital::adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b) {
  * and the ownership is transferred.
  *
  */
-OrbitalVector orbital::disjoin(OrbitalVector &inp, int spin) {
+OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     OrbitalVector out;
     OrbitalVector tmp;
-    for (int i = 0; i < inp.size(); i++) {
-        Orbital &orb_i = inp[i];
-        if (orb_i.spin() == spin) {
-            out.push_back(orb_i);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (Phi[i].spin() == spin) {
+            out.push_back(Phi[i]);
         } else {
-            tmp.push_back(orb_i);
+            tmp.push_back(Phi[i]);
         }
     }
-    inp.clear();
-    inp = tmp;
+    Phi.clear();
+    Phi = tmp;
     return out;
 }
 
@@ -252,13 +258,13 @@ OrbitalVector orbital::disjoin(OrbitalVector &inp, int spin) {
  * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals in the
  * vector are saved.
  */
-void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs) {
+void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, const std::string &suffix, int n_orbs) {
     if (n_orbs < 0) n_orbs = Phi.size();
     if (n_orbs > Phi.size()) MSG_ERROR("Index out of bounds");
     for (int i = 0; i < n_orbs; i++) {
         if (not mpi::my_orb(Phi[i])) continue; //only save own orbitals
         std::stringstream orbname;
-        orbname << file << "_" << i;
+        orbname << file << "_" << suffix << i;
         Phi[i].saveOrbital(orbname.str());
     }
 }
@@ -273,19 +279,19 @@ void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int n_o
  * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals matching
  * the prefix name will be read.
  */
-OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
+OrbitalVector orbital::load_orbitals(const std::string &file, const std::string &suffix, int n_orbs) {
     OrbitalVector Phi;
     for (int i = 0; true; i++) {
         if (n_orbs > 0 and i >= n_orbs) break;
         Orbital phi_i;
         std::stringstream orbname;
-        orbname << file << "_" << i;
+        orbname << file << "_" << suffix << i;
         phi_i.loadOrbital(orbname.str());
-        phi_i.setRankId(mpi::orb_rank);
+        phi_i.setRankID(mpi::orb_rank);
         if (phi_i.hasReal() or phi_i.hasImag()) {
-            phi_i.setRankId(i%mpi::orb_size);
+            phi_i.setRankID(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (i%mpi::orb_size != mpi::orb_rank) phi_i.clear(true);
+            if (not mpi::my_orb(phi_i)) phi_i.free();
         } else {
             break;
         }
@@ -305,52 +311,86 @@ OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
  * Leaves an empty vector. Orbitals are freed.
  *
  */
-void orbital::free(OrbitalVector &vec) {
-    for (int i = 0; i < vec.size(); i++) vec[i].free();
-    vec.clear();
+void orbital::free(OrbitalVector &Phi) {
+    for (auto &phi_i : Phi) phi_i.free();
+    Phi.clear();
+}
+
+/** @brief Normalize single orbital. Private function. */
+void orbital::normalize(Orbital &phi) {
+    phi.rescale(1.0 / phi.norm());
 }
 
 /** @brief Normalize all orbitals in the set */
-void orbital::normalize(OrbitalVector &vec) {
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].normalize();
-    }
+void orbital::normalize(OrbitalVector &Phi) {
+    mpi::free_foreign(Phi);
+    for (auto &phi_i : Phi)
+        if (mpi::my_orb(phi_i)) orbital::normalize(phi_i);
+}
+
+/** @brief In place orthogonalize against inp. Private function. */
+void orbital::orthogonalize(Orbital &phi, Orbital psi) {
+    ComplexDouble overlap = orbital::dot(psi, phi);
+    double sq_norm = psi.squaredNorm();
+    if (std::abs(overlap) > mrcpp::MachineZero) phi.add(-1.0 * overlap / sq_norm, psi);
 }
 
 /** @brief Gram-Schmidt orthogonalize orbitals within the set */
-void orbital::orthogonalize(OrbitalVector &vec) {
-    for (int i = 0; i < vec.size(); i++) {
-        Orbital &orb_i = vec[i];
+void orbital::orthogonalize(OrbitalVector &Phi) {
+    mpi::free_foreign(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
         for (int j = 0; j < i; j++) {
-            Orbital &orb_j = vec[j];
-            orb_i.orthogonalize(orb_j);
+            int tag = 7632 * i + j;
+            int src = Phi[j].rankID();
+            int dst = Phi[i].rankID();
+            if (src == dst) {
+                if (mpi::my_orb(Phi[i])) orbital::orthogonalize(Phi[i], Phi[j]);
+            } else {
+                if (mpi::my_orb(Phi[i])) {
+                    mpi::recv_function(Phi[j], src, tag, mpi::comm_orb);
+                    orbital::orthogonalize(Phi[i], Phi[j]);
+                    Phi[j].free();
+                }
+                if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j], dst, tag, mpi::comm_orb);
+            }
         }
     }
 }
 
-/** @brief Orthogonalize the out orbital against all orbitals in inp */
-void orbital::orthogonalize(OrbitalVector &vec, OrbitalVector &inp) {
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].orthogonalize(inp);
+/** @brief Orthogonalize the Phi orbital against all orbitals in Psi */
+void orbital::orthogonalize(OrbitalVector &Phi, OrbitalVector &Psi) {
+    // Get all output orbitals belonging to this MPI
+    OrbitalChunk myPhi = mpi::get_my_chunk(Phi);
+
+    // Orthogonalize MY orbitals with ALL input orbitals
+    OrbitalIterator iter(Psi, false);
+    while (iter.next()) {
+        for (int i = 0; i < iter.get_size(); i++) {
+            Orbital &psi_i = iter.orbital(i);
+            for (int j = 0; j < myPhi.size(); j++) {
+                Orbital &phi_j = std::get<1>(myPhi[j]);
+                orbital::orthogonalize(phi_j, psi_i);
+            }
+        }
     }
 }
 
-ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &braket) {
-    ComplexMatrix S = ComplexMatrix::Zero(braket.size(), braket.size());
+ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &BraKet) {
+    ComplexMatrix S = ComplexMatrix::Zero(BraKet.size(), BraKet.size());
 
     // Get all ket orbitals belonging to this MPI
-    OrbitalChunk my_ket = mpi::get_my_chunk(braket);
+    OrbitalChunk myKet = mpi::get_my_chunk(BraKet);
 
     // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
     // Computes the FULL columns associated with MY orbitals on the ket side
-    OrbitalIterator iter(braket, true); // use symmetry
+    OrbitalIterator iter(BraKet, true); // use symmetry
     while (iter.next()) {
         for (int i = 0; i < iter.get_size(); i++) {
             int idx_i = iter.idx(i);
             Orbital &bra_i = iter.orbital(i);
-            for (int j = 0; j < my_ket.size(); j++) {
-                int idx_j = std::get<0>(my_ket[j]);
-                Orbital &ket_j = std::get<1>(my_ket[j]);
+            for (int j = 0; j < myKet.size(); j++) {
+                int idx_j = std::get<0>(myKet[j]);
+                Orbital &ket_j = std::get<1>(myKet[j]);
                 if (mpi::my_orb(bra_i) and idx_j > idx_i) continue;
                 if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
                     S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
@@ -376,25 +416,23 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &braket) {
  *      matrix at exit.
  *
  */
-ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
-    ComplexMatrix S = ComplexMatrix::Zero(bra.size(), ket.size());
+ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ket) {
+    ComplexMatrix S = ComplexMatrix::Zero(Bra.size(), Ket.size());
 
     // Get all ket orbitals belonging to this MPI
-    OrbitalChunk my_ket = mpi::get_my_chunk(ket);
+    OrbitalChunk myKet = mpi::get_my_chunk(Ket);
 
     // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
     // Computes the FULL columns associated with MY orbitals on the ket side
-    OrbitalIterator iter(bra);
+    OrbitalIterator iter(Bra);
     while (iter.next()) {
         for (int i = 0; i < iter.get_size(); i++) {
             int idx_i = iter.idx(i);
             Orbital &bra_i = iter.orbital(i);
-            for (int j = 0; j < my_ket.size(); j++) {
-                int idx_j = std::get<0>(my_ket[j]);
-                Orbital &ket_j = std::get<1>(my_ket[j]);
-                if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
-                    S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
-                }
+            for (int j = 0; j < myKet.size(); j++) {
+                int idx_j = std::get<0>(myKet[j]);
+                Orbital &ket_j = std::get<1>(myKet[j]);
+                if (mpi::my_unique_orb(ket_j) or mpi::grand_master()) S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
             }
         }
     }
@@ -414,7 +452,7 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
     printout(1, "Calculating Löwdin orthonormalization matrix      ");
 
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
-    ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0/2.0);
+    ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0 / 2.0);
 
     timer.stop();
     println(1, timer.getWallTime());
@@ -491,7 +529,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
 
     Timer orth_t;
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
-    F = S_m12.transpose()*F*S_m12;
+    F = S_m12.transpose() * F * S_m12;
     orth_t.stop();
     Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
 
@@ -500,8 +538,8 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
     int np = orbital::size_paired(Phi);
     int na = orbital::size_alpha(Phi);
     int nb = orbital::size_beta(Phi);
-    if (np > 0) math_utils::diagonalize_block(F, U, 0,       np);
-    if (na > 0) math_utils::diagonalize_block(F, U, np,      na);
+    if (np > 0) math_utils::diagonalize_block(F, U, 0, np);
+    if (na > 0) math_utils::diagonalize_block(F, U, np, na);
     if (nb > 0) math_utils::diagonalize_block(F, U, np + na, nb);
     U = U * S_m12;
     diag_t.stop();
@@ -535,72 +573,65 @@ ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi) {
 }
 
 /** @brief Returns the number of occupied orbitals */
-int orbital::size_occupied(const OrbitalVector &vec) {
+int orbital::size_occupied(const OrbitalVector &Phi) {
     int nOcc = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].occ() > 0) nOcc++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.occ() > 0) nOcc++;
     return nOcc;
 }
 
 /** @brief Returns the number of empty orbitals */
-int orbital::size_empty(const OrbitalVector &vec) {
+int orbital::size_empty(const OrbitalVector &Phi) {
     int nEmpty = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].occ() == 0) nEmpty++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.occ() == 0) nEmpty++;
     return nEmpty;
 }
 
 /** @brief Returns the number of singly occupied orbitals */
-int orbital::size_singly(const OrbitalVector &vec) {
+int orbital::size_singly(const OrbitalVector &Phi) {
     int nSingly = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].occ() == 1) nSingly++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.occ() == 1) nSingly++;
     return nSingly;
 }
 
 /** @brief Returns the number of doubly occupied orbitals */
-int orbital::size_doubly(const OrbitalVector &vec) {
+int orbital::size_doubly(const OrbitalVector &Phi) {
     int nDoubly = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].occ() == 1) nDoubly++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.occ() == 1) nDoubly++;
     return nDoubly;
 }
 
 /** @brief Returns the number of paired orbitals */
-int orbital::size_paired(const OrbitalVector &vec) {
+int orbital::size_paired(const OrbitalVector &Phi) {
     int nPaired = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].spin() == SPIN::Paired) nPaired++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.spin() == SPIN::Paired) nPaired++;
     return nPaired;
 }
 
 /** @brief Returns the number of alpha orbitals */
-int orbital::size_alpha(const OrbitalVector &vec) {
+int orbital::size_alpha(const OrbitalVector &Phi) {
     int nAlpha = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].spin() == SPIN::Alpha) nAlpha++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.spin() == SPIN::Alpha) nAlpha++;
     return nAlpha;
 }
 
 /** @brief Returns the number of beta orbitals */
-int orbital::size_beta(const OrbitalVector &vec) {
+int orbital::size_beta(const OrbitalVector &Phi) {
     int nBeta = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        if (vec[i].spin() == SPIN::Beta) nBeta++;
-    }
+    for (auto &phi_i : Phi)
+        if (phi_i.spin() == SPIN::Beta) nBeta++;
     return nBeta;
 }
 
 /** @brief Returns the spin multiplicity of the vector */
-int orbital::get_multiplicity(const OrbitalVector &vec) {
-    int nAlpha = get_electron_number(vec, SPIN::Alpha);
-    int nBeta = get_electron_number(vec, SPIN::Beta);
+int orbital::get_multiplicity(const OrbitalVector &Phi) {
+    int nAlpha = get_electron_number(Phi, SPIN::Alpha);
+    int nBeta = get_electron_number(Phi, SPIN::Beta);
     int S = std::abs(nAlpha - nBeta);
     return S + 1;
 }
@@ -610,20 +641,15 @@ int orbital::get_multiplicity(const OrbitalVector &vec) {
  * Paired spin (default input) returns the total number of electrons.
  *
  */
-int orbital::get_electron_number(const OrbitalVector &vec, int spin) {
+int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
     int nElectrons = 0;
-    for (int i = 0; i < vec.size(); i++) {
-        const Orbital &orb = vec[i];
+    for (auto &phi_i : Phi) {
         if (spin == SPIN::Paired) {
-            nElectrons += orb.occ();
+            nElectrons += phi_i.occ();
         } else if (spin == SPIN::Alpha) {
-            if (orb.spin() == SPIN::Paired or orb.spin() == SPIN::Alpha) {
-                nElectrons += 1;
-            }
+            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Alpha) nElectrons += 1;
         } else if (spin == SPIN::Beta) {
-            if (orb.spin() == SPIN::Paired or orb.spin() == SPIN::Beta) {
-                nElectrons += 1;
-            }
+            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Beta) nElectrons += 1;
         } else {
             MSG_ERROR("Invalid spin argument");
         }
@@ -632,12 +658,10 @@ int orbital::get_electron_number(const OrbitalVector &vec, int spin) {
 }
 
 /** @brief Returns a vector containing the orbital errors */
-DoubleVector orbital::get_errors(const OrbitalVector &vec) {
-    int nOrbs = vec.size();
+DoubleVector orbital::get_errors(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
     DoubleVector errors = DoubleVector::Zero(nOrbs);
-    for (int i = 0; i < nOrbs; i++) {
-        errors(i) = vec[i].error();
-    }
+    for (int i = 0; i < nOrbs; i++) errors(i) = Phi[i].error();
     return errors;
 }
 
@@ -646,20 +670,16 @@ DoubleVector orbital::get_errors(const OrbitalVector &vec) {
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_errors(OrbitalVector &vec, const DoubleVector &errors) {
-    if (vec.size() != errors.size()) MSG_ERROR("Size mismatch");
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].setError(errors(i));
-    }
+void orbital::set_errors(OrbitalVector &Phi, const DoubleVector &errors) {
+    if (Phi.size() != errors.size()) MSG_ERROR("Size mismatch");
+    for (int i = 0; i < Phi.size(); i++) Phi[i].setError(errors(i));
 }
 
 /** @brief Returns a vector containing the orbital spins */
-IntVector orbital::get_spins(const OrbitalVector &vec) {
-    int nOrbs = vec.size();
+IntVector orbital::get_spins(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
     IntVector spins = IntVector::Zero(nOrbs);
-    for (int i = 0; i < nOrbs; i++) {
-        spins(i) = vec[i].spin();
-    }
+    for (int i = 0; i < nOrbs; i++) spins(i) = Phi[i].spin();
     return spins;
 }
 
@@ -668,20 +688,16 @@ IntVector orbital::get_spins(const OrbitalVector &vec) {
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_spins(OrbitalVector &vec, const IntVector &spins) {
-    if (vec.size() != spins.size()) MSG_ERROR("Size mismatch");
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].setSpin(spins(i));
-    }
+void orbital::set_spins(OrbitalVector &Phi, const IntVector &spins) {
+    if (Phi.size() != spins.size()) MSG_ERROR("Size mismatch");
+    for (int i = 0; i < Phi.size(); i++) Phi[i].setSpin(spins(i));
 }
 
 /** @brief Returns a vector containing the orbital occupancies */
-IntVector orbital::get_occupancies(const OrbitalVector &vec) {
-    int nOrbs = vec.size();
+IntVector orbital::get_occupancies(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
     IntVector occ = IntVector::Zero(nOrbs);
-    for (int i = 0; i < nOrbs; i++) {
-        occ(i) = vec[i].occ();
-    }
+    for (int i = 0; i < nOrbs; i++) occ(i) = Phi[i].occ();
     return occ;
 }
 
@@ -690,46 +706,55 @@ IntVector orbital::get_occupancies(const OrbitalVector &vec) {
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_occupancies(OrbitalVector &vec, const IntVector &occ) {
-    if (vec.size() != occ.size()) MSG_ERROR("Size mismatch");
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].setOcc(occ(i));
-    }
+void orbital::set_occupancies(OrbitalVector &Phi, const IntVector &occ) {
+    if (Phi.size() != occ.size()) MSG_ERROR("Size mismatch");
+    for (int i = 0; i < Phi.size(); i++) Phi[i].setOcc(occ(i));
 }
 
 /** @brief Returns a vector containing the orbital square norms */
-DoubleVector orbital::get_squared_norms(const OrbitalVector &vec) {
-    int nOrbs = vec.size();
+DoubleVector orbital::get_squared_norms(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        if (mpi::my_orb(vec[i])) norms(i) = vec[i].squaredNorm();
+        if (mpi::my_orb(Phi[i])) norms(i) = Phi[i].squaredNorm();
     }
+    mpi::allreduce_vector(norms, mpi::comm_orb);
     return norms;
 }
 
 /** @brief Returns a vector containing the orbital norms */
-DoubleVector orbital::get_norms(const OrbitalVector &vec) {
-    int nOrbs = vec.size();
+DoubleVector orbital::get_norms(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        if (mpi::my_orb(vec[i])) norms(i) = vec[i].norm();
+        if (mpi::my_orb(Phi[i])) norms(i) = Phi[i].norm();
     }
+    mpi::allreduce_vector(norms, mpi::comm_orb);
     return norms;
 }
 
-void orbital::print(const OrbitalVector &vec) {
+/** @brief Returns a vector containing the orbital integrals */
+ComplexVector orbital::get_integrals(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
+    ComplexVector ints = DoubleVector::Zero(nOrbs);
+    for (int i = 0; i < nOrbs; i++) {
+        if (mpi::my_orb(Phi[i])) ints(i) = Phi[i].integrate();
+    }
+    mpi::allreduce_vector(ints, mpi::comm_orb);
+    return ints;
+}
+
+void orbital::print(const OrbitalVector &Phi) {
     Printer::setScientific();
     printout(0, "============================================================\n");
     printout(0, " OrbitalVector:");
-    printout(0, std::setw(4) << vec.size()          << " orbitals  ");
-    printout(0, std::setw(4) << size_occupied(vec)  << " occupied  ");
-    printout(0, std::setw(4) << get_electron_number(vec) << " electrons\n");
+    printout(0, std::setw(4) << Phi.size() << " orbitals  ");
+    printout(0, std::setw(4) << size_occupied(Phi) << " occupied  ");
+    printout(0, std::setw(4) << get_electron_number(Phi) << " electrons\n");
     printout(0, "------------------------------------------------------------\n");
     printout(0, "   n  RankID           Norm          Spin Occ      Error    \n");
     printout(0, "------------------------------------------------------------\n");
-    for (int i = 0; i < vec.size(); i++) {
-        println(0, std::setw(4) << i << vec[i]);
-    }
+    for (int i = 0; i < Phi.size(); i++) println(0, std::setw(4) << i << Phi[i]);
     printout(0, "============================================================\n\n\n");
 }
 

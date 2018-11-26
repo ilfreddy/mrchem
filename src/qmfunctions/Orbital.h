@@ -68,7 +68,7 @@ public:
 
     void setOcc(int occ) { this->orb_data.occ = occ; }
     void setSpin(int spin) { this->orb_data.spin = spin; }
-    void setRankId(int rank) { this->orb_data.rank_id = rank; }
+    void setRankID(int rank) { this->orb_data.rank_id = rank; }
     void setError(double error) { this->orb_data.error = error; }
 
     int occ() const { return this->orb_data.occ; }
@@ -77,20 +77,16 @@ public:
     double error() const { return this->orb_data.error; }
     OrbitalData &getOrbitalData() { return this->orb_data; }
 
-    void normalize() { this->rescale(1.0/this->norm()); }
-    void orthogonalize(Orbital inp);
-    void orthogonalize(OrbitalVector inp_vec);
-
     void saveOrbital(const std::string &file);
     void loadOrbital(const std::string &file);
 
     char printSpin() const;
-    friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
+    friend std::ostream &operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 
 protected:
     OrbitalData orb_data;
 
-    std::ostream& print(std::ostream &o) const;
+    std::ostream &print(std::ostream &o) const;
 };
 
 } //namespace mrchem

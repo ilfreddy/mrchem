@@ -4,8 +4,8 @@
 #include "QMPotential.h"
 #include "qmfunctions/Orbital.h"
 
-using mrcpp::FunctionTreeVector;
 using mrcpp::FunctionTree;
+using mrcpp::FunctionTreeVector;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -22,11 +22,10 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * potential grid. The argument sets how many extra refinement levels is allowed
  * beyond this initial refinement.
  */
-QMPotential::QMPotential(int adap)
-        : QMFunction(nullptr, nullptr)
+QMPotential::QMPotential(int adap, bool shared)
+        : QMFunction(shared, nullptr, nullptr)
         , QMOperator()
-        , adap_build(adap) {
-}
+        , adap_build(adap) {}
 
 /** @brief destructor
  *
@@ -51,8 +50,8 @@ Orbital QMPotential::apply(Orbital inp) {
     Orbital out = inp.paramCopy();
     FunctionTree<3> *re = calcRealPart(inp, false);
     FunctionTree<3> *im = calcImagPart(inp, false);
-    out.setReal(re);
-    out.setImag(im);
+    out.set(NUMBER::Real, re);
+    out.set(NUMBER::Imag, im);
     timer.stop();
 
     int n = out.getNNodes();
@@ -76,8 +75,8 @@ Orbital QMPotential::dagger(Orbital inp) {
     Orbital out = inp.paramCopy();
     FunctionTree<3> *re = calcRealPart(inp, true);
     FunctionTree<3> *im = calcImagPart(inp, true);
-    out.setReal(re);
-    out.setImag(im);
+    out.set(NUMBER::Real, re);
+    out.set(NUMBER::Imag, im);
     timer.stop();
 
     int n = out.getNNodes();
@@ -95,7 +94,7 @@ Orbital QMPotential::dagger(Orbital inp) {
  * Computes the real part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
+FunctionTree<3> *QMPotential::calcRealPart(Orbital &phi, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
@@ -141,7 +140,7 @@ FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
  * Computes the imaginary part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3>* QMPotential::calcImagPart(Orbital &phi, bool dagger) {
+FunctionTree<3> *QMPotential::calcImagPart(Orbital &phi, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 

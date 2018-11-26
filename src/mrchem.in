@@ -154,6 +154,18 @@ def setup_keywords(input_dir):
     top.add_kw('teletype',              'BOOL', False)
     # yapf: enable
 
+    mpi = getkw.Section('MPI')
+    # yapf: disable
+    mpi.add_kw('numerically_exact',      'BOOL', False)
+    mpi.add_kw('share_nuclear_potential','BOOL', False)
+    mpi.add_kw('share_coulomb_density',  'BOOL', False)
+    mpi.add_kw('share_coulomb_potential','BOOL', False)
+    mpi.add_kw('share_xc_density',       'BOOL', False)
+    mpi.add_kw('share_xc_potential',     'BOOL', False)
+    mpi.add_kw('shared_memory_size',     'INT', 10000)
+    # yapf: enable
+    top.add_sect(mpi)
+
     mra = getkw.Section('MRA', callback=verify_mra)
     # yapf: disable
     mra.add_kw('order',                 'INT', -1)
@@ -186,7 +198,7 @@ def setup_keywords(input_dir):
     # yapf: enable
     top.add_sect(molecule)
 
-    wavefunction = getkw.Section('WaveFunction')
+    wavefunction = getkw.Section('WaveFunction', callback=verify_wf)
     # yapf: disable
     wavefunction.add_kw('restricted',   'BOOL', True)
     wavefunction.add_kw('method',       'STR', 'HF')
@@ -299,8 +311,8 @@ def setup_keywords(input_dir):
     response.add_kw('max_iter',         'INT', -1)
     response.add_kw('kain',             'INT', 0)
     response.add_kw('canonical',        'BOOL', True)
-    response.add_kw('orbital_thrs',     'DBL', 1.0)
-    response.add_kw('property_thrs',    'DBL', 1.0)
+    response.add_kw('orbital_thrs',     'DBL', -1.0)
+    response.add_kw('property_thrs',    'DBL', -1.0)
     response.add_kw('directions',       'INT_ARRAY', [1, 1, 1])
     response.add_kw('orbital_prec',     'DBL_ARRAY', [1.0e-4, -1.0])
     response.add_kw('initial_guess',    'STR', 'none')
@@ -428,8 +440,6 @@ def verify_response(rsp):
         rsp['orbital_prec'][1] = topsect['rel_prec'][0]
     if rsp['orbital_prec'][0] < 0:
         rsp['orbital_prec'][0] = rsp['orbital_prec'][1]
-    if rsp['property_thrs'][0] < 0:
-        rsp['property_thrs'][0] = 1.0
 
 
 def verify_ext_field(ext_field):
@@ -496,6 +506,39 @@ def verify_hfcc(hfcc):
     if not hfcc.get('nucleus_k').is_set():
         hfcc['nucleus_k'].get().append(-1)
 
+def verify_wf(wf):
+    valid_methods = {
+        'Core',
+        'Hartree',
+        'HF',
+        'DFT'
+    }
+    default_functionals = {
+        #functional:exact_exchange
+        'LDA':0.00,
+        'PBE':0.00,
+        'PBE0':0.25,
+        'BLYP':0.0,
+        'B3LYP':0.20,
+        'BP86':0.0,
+        'PW91':0.0
+    }
+    method = wf['method'][0]
+    if method in default_functionals:
+        dft = topsect.fetch_sect('DFT')
+        exx = default_functionals[method]
+        if dft['functionals'].is_set():
+            print('Cannot overwrite default functional: ' + method)
+            exit()
+        if dft['exact_exchange'].is_set():
+            print('Cannot overwrite default exact exchange: ' + str(exx))
+            exit()
+        wf['method'][0] = 'DFT'
+        dft['functionals'].get().append(method + ' 1.00')
+        dft['exact_exchange'][0] = exx
+    elif not (method in valid_methods):
+        print('Invalid WaveFunction method: ' + method)
+        exit()
 
 def verify_dft(dft):
     if not dft['spin'].is_set():

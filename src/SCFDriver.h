@@ -38,32 +38,43 @@ class MagneticFieldOperator;
 
 class ResponseCalculation final {
 public:
-    ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d)
-        : pert(h), freq(w), imag(im), dir(d) { }
+    ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d, const std::string &n)
+            : pert(h)
+            , freq(w)
+            , imag(im)
+            , dir(d)
+            , name(n) {}
 
-    bool isDynamic() const { if (std::abs(this->freq) > mrcpp::MachineZero) return true; return false; }
+    bool isDynamic() const {
+        if (std::abs(this->freq) > mrcpp::MachineZero) return true;
+        return false;
+    }
     bool isImaginary() const { return this->imag; }
+    std::string getFileSuffix() const {
+        std::stringstream suffix;
+        suffix << name << "_" << dir << "_";
+        return suffix.str();
+    }
 
     RankOneTensorOperator<3> *pert;
     double freq;
     bool imag;
     int dir;
+    std::string name;
 };
 
 class ResponseCalculations final {
 public:
-    void push_back(RankOneTensorOperator<3> *h, double w, bool im, int d) {
-        ResponseCalculation rsp_calc(h, w, im, d);
+    void push_back(RankOneTensorOperator<3> *h, double w, bool im, int d, const std::string &n) {
+        ResponseCalculation rsp_calc(h, w, im, d, n);
         bool unique = true;
         for (int i = 0; i < this->calculations.size(); i++) {
             const ResponseCalculation &i_calc = calculations[i];
-            if ((i_calc.pert == rsp_calc.pert) and
-                (std::abs(i_calc.freq - rsp_calc.freq) < mrcpp::MachineZero) and
-                (i_calc.dir == rsp_calc.dir)) unique = false;
+            if ((i_calc.pert == rsp_calc.pert) and (std::abs(i_calc.freq - rsp_calc.freq) < mrcpp::MachineZero) and
+                (i_calc.dir == rsp_calc.dir))
+                unique = false;
         }
-        if (unique) {
-            this->calculations.push_back(rsp_calc);
-        }
+        if (unique) this->calculations.push_back(rsp_calc);
     }
 
     void clear() { this->calculations.clear(); }
@@ -78,7 +89,7 @@ protected:
 class SCFDriver final {
 public:
     SCFDriver(Getkw &input);
-    ~SCFDriver() { }
+    ~SCFDriver() {}
 
     void setup();
     void run();
@@ -184,6 +195,10 @@ protected:
     // File input
     std::string file_start_orbitals;
     std::string file_final_orbitals;
+    std::string file_start_x_orbs;
+    std::string file_final_x_orbs;
+    std::string file_start_y_orbs;
+    std::string file_final_y_orbs;
     std::string file_basis_set;
     std::string file_dens_mat_a;
     std::string file_dens_mat_b;
@@ -240,8 +255,8 @@ protected:
     mrdft::XCFunctional *xcfun;
 
     // Perturbation operators
-    H_E_dip  *h_E; // dH/dE
-    H_B_dip  *h_B; // dH/dB
+    H_E_dip *h_E;  // dH/dE
+    H_B_dip *h_B;  // dH/dB
     H_M_pso **h_M; // dH/dM[K]
 
     bool sanityCheck() const;
@@ -252,11 +267,11 @@ protected:
     void calcGroundStateProperties();
     void calcLinearResponseProperties(const ResponseCalculation &rsp_calc);
 
-    mrdft::XCFunctional* setupFunctional(int order);
+    mrdft::XCFunctional *setupFunctional(int order);
     void setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol);
     void setupInitialGroundState();
     void setupPerturbedOperators(const ResponseCalculation &rsp_calc);
-    void setupPerturbedOrbitals(bool dynamic);
+    void setupPerturbedOrbitals(const ResponseCalculation &rsp_calc);
 
     void clearPerturbedOperators();
     void clearPerturbedOrbitals(bool dynamic);
@@ -264,7 +279,7 @@ protected:
     GroundStateSolver *setupInitialGuessSolver();
     OrbitalOptimizer *setupOrbitalOptimizer();
     EnergyOptimizer *setupEnergyOptimizer();
-    LinearResponseSolver* setupLinearResponseSolver(bool dynamic);
+    LinearResponseSolver *setupLinearResponseSolver(bool dynamic);
 
     void setup_np1();
     void clear_np1();
@@ -273,7 +288,7 @@ protected:
 
     void extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O);
 
-    mrcpp::DerivativeOperator<3>* useDerivative(std::string derivative_name);
+    mrcpp::DerivativeOperator<3> *useDerivative(std::string derivative_name);
 };
 
 } //namespace mrchem

@@ -155,6 +155,10 @@ SCFDriver::SCFDriver(Getkw &input) {
 
     file_start_orbitals = input.get<std::string>("Files.start_orbitals");
     file_final_orbitals = input.get<std::string>("Files.final_orbitals");
+    file_start_x_orbs = input.get<std::string>("Files.start_x_orbs");
+    file_final_x_orbs = input.get<std::string>("Files.final_x_orbs");
+    file_start_y_orbs = input.get<std::string>("Files.start_y_orbs");
+    file_final_y_orbs = input.get<std::string>("Files.final_y_orbs");
     file_basis_set = input.get<std::string>("Files.basis_set");
     file_dens_mat_a = input.get<std::string>("Files.dens_mat_a");
     file_dens_mat_b = input.get<std::string>("Files.dens_mat_b");
@@ -319,7 +323,7 @@ void SCFDriver::setup() {
         molecule->initMagnetizability();
         for (int d = 0; d < 3; d++) {
             if (rsp_directions[d] == 0) continue;
-            rsp_calculations.push_back(h_B, 0.0, true, d);
+            rsp_calculations.push_back(h_B, 0.0, true, d, "H_B");
         }
     }
     if (calc_nmr_shielding) {
@@ -329,13 +333,14 @@ void SCFDriver::setup() {
             if (nmr_perturbation == "B") {
                 for (int d = 0; d < 3; d++) {
                     if (rsp_directions[d] == 0) continue;
-                    rsp_calculations.push_back(h_B, 0.0, true, d);
+                    rsp_calculations.push_back(h_B, 0.0, true, d, "H_B");
                 }
             } else {
                 const mrcpp::Coord<3> &r_K = molecule->getNucleus(K).getCoord();
                 for (int d = 0; d < 3; d++) {
                     if (rsp_directions[d] == 0) continue;
-                    rsp_calculations.push_back(h_M[K], 0.0, true, d);
+                    std::string name = "H_M" + std::to_string(K);
+                    rsp_calculations.push_back(h_M[K], 0.0, true, d, name);
                 }
             }
         }
@@ -565,14 +570,16 @@ LinearResponseSolver *SCFDriver::setupLinearResponseSolver(bool dynamic) {
     return lrs;
 }
 
-void SCFDriver::setupPerturbedOrbitals(bool dynamic) {
+void SCFDriver::setupPerturbedOrbitals(const ResponseCalculation &rsp_calc) {
     if (phi == 0) MSG_ERROR("Orbitals not initialized");
 
     phi_x = new OrbitalVector;
     *phi_x = orbital::param_copy(*phi);
-    if (dynamic) {
+    if (rsp_start == "MW") *phi_x = orbital::load_orbitals(file_start_x_orbs, rsp_calc.getFileSuffix());
+    if (rsp_calc.isDynamic()) {
         phi_y = new OrbitalVector;
         *phi_y = orbital::param_copy(*phi);
+        if (rsp_start == "MW") *phi_y = orbital::load_orbitals(file_start_y_orbs, rsp_calc.getFileSuffix());
     } else {
         phi_y = phi_x;
     }
@@ -691,10 +698,8 @@ bool SCFDriver::runGroundState() {
 }
 
 void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
-    double omega = rsp_calc.freq;
-    bool dynamic = false;
-    if (fabs(omega) > mrcpp::MachineZero) dynamic = true;
-    setupPerturbedOrbitals(dynamic);
+    bool dynamic = rsp_calc.isDynamic();
+    setupPerturbedOrbitals(rsp_calc);
     setupPerturbedOperators(rsp_calc);
 
     bool converged = true;
@@ -707,8 +712,10 @@ void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
         solver->clearUnperturbed();
         delete solver;
     }
-
-    if (rsp_write_orbitals) NOT_IMPLEMENTED_ABORT;
+    if (rsp_write_orbitals) {
+        orbital::save_orbitals(*phi_x, file_final_x_orbs, rsp_calc.getFileSuffix());
+        if (dynamic) orbital::save_orbitals(*phi_y, file_final_y_orbs, rsp_calc.getFileSuffix());
+    }
 
     // Compute requested properties
     if (converged) calcLinearResponseProperties(rsp_calc);
@@ -977,10 +984,10 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
 }
 
 /** @brief helper routine to set up the correct parameters in the functional before using it
-     *
-     * param[in] order the requested order of the derivative (order=1 for SCF)
-     *
-     */
+ *
+ * param[in] order the requested order of the derivative (order=1 for SCF)
+ *
+ */
 
 mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
     mrdft::XCFunctional *fun = new mrdft::XCFunctional(*MRA, dft_spin);
@@ -992,7 +999,7 @@ mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
     fun->setUseGamma(dft_use_gamma);
     fun->setDensityCutoff(dft_cutoff);
     fun->evalSetup(order);
-    setupInitialGrid(*fun, *molecule);
+    //setupInitialGrid(*fun, *molecule);
     return fun;
 }
 

@@ -118,3 +118,5 @@ doc/Doxyfile
 doc/doctrees/
 doc/html/
 doc/xml/
+
+.direnv/

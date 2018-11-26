@@ -39,13 +39,13 @@ struct FunctionData {
 
 class QMFunction {
 public:
-    QMFunction(mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
+    QMFunction(bool share, mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
     QMFunction(const QMFunction &func);
     QMFunction &operator=(const QMFunction &func);
-    virtual ~QMFunction() = default;
+    virtual ~QMFunction();
 
-    void alloc(int type = NUMBER::Total);
-    void clear(int type = NUMBER::Total);
+    void set(int type, mrcpp::FunctionTree<3> *func);
+    void alloc(int type);
     void free(int type = NUMBER::Total);
 
     int getNNodes(int type = NUMBER::Total) const;
@@ -54,11 +54,13 @@ public:
 
     double norm() const;
     double squaredNorm() const;
+    ComplexDouble integrate() const;
 
-    void add(ComplexDouble c, QMFunction inp, double prec = -1.0);
-    void multiply(QMFunction inp, double prec = -1.0);
+    void add(ComplexDouble c, QMFunction inp);
     void rescale(ComplexDouble c);
+    void crop(double prec);
 
+    bool isShared() const { return (this->shared_mem == nullptr) ? false : true; }
     bool hasReal() const { return (this->re == nullptr) ? false : true; }
     bool hasImag() const { return (this->im == nullptr) ? false : true; }
 
@@ -68,13 +70,11 @@ public:
     const mrcpp::FunctionTree<3> &real() const { return *this->re; }
     const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
 
-    void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
-    void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
-
 protected:
     FunctionData func_data;
-    mrcpp::FunctionTree<3> *re;     ///< Real part of function
-    mrcpp::FunctionTree<3> *im;     ///< Imaginary part of function
+    mrcpp::SharedMemory *shared_mem;
+    mrcpp::FunctionTree<3> *re; ///< Real part of function
+    mrcpp::FunctionTree<3> *im; ///< Imaginary part of function
 };
 
 } // namespace mrchem

@@ -2,6 +2,7 @@
 #include "MRCPP/Timer"
 
 #include "XCPotential.h"
+#include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
@@ -23,13 +24,13 @@ namespace mrchem {
  * xcfun when F.evalSetup is invoked.
  */
 XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
-        : QMPotential(1)
+        : QMPotential(1, mpi::share_xc_pot)
         , orbitals(Phi)
         , functional(F)
         , energy(0.0) {}
 
 /** @brief Prepare the operator for application
- * 
+ *
  * @param[in] prec Apply precision
  *
  * Sequence of steps required to compute the XC potentials:
@@ -43,8 +44,8 @@ XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
 void XCPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
-    setupDensity();
-    setupPotential(prec);
+    setupDensity(prec);
+    setupPotential();
 }
 
 /** @brief Clears all data in the XCPotential object */
@@ -60,42 +61,41 @@ void XCPotential::clear() {
  * is kept as is, e.i. no additional refinement at this point, since the grid
  * size is determined inside the module.
  */
-void XCPotential::setupDensity() {
+void XCPotential::setupDensity(double prec) {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
-        FunctionTree<3> &tmp_a = this->functional->getDensity(mrdft::DensityType::Alpha);
-        Density rho_a;
-        rho_a.setReal(&tmp_a);
-        density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
+        FunctionTree<3> &func_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        Density rho_a(false);
+        rho_a.set(NUMBER::Real, &func_a);
+        density::compute(prec, rho_a, Phi, DENSITY::Alpha);
+        rho_a.set(NUMBER::Real, nullptr);
         time_a.stop();
-        Printer::printTree(0, "XC alpha density", rho_a.getNNodes(), time_a.getWallTime());
+        Printer::printTree(0, "XC alpha density", func_a.getNNodes(), time_a.getWallTime());
 
         Timer time_b;
-        FunctionTree<3> &tmp_b = this->functional->getDensity(mrdft::DensityType::Beta);
-        Density rho_b;
-        rho_b.setReal(&tmp_b);
-        density::compute(-1.0, rho_b, Phi, DENSITY::Beta);
+        FunctionTree<3> &func_b = this->functional->getDensity(mrdft::DensityType::Beta);
+        Density rho_b(false);
+        rho_b.set(NUMBER::Real, &func_b);
+        density::compute(prec, rho_b, Phi, DENSITY::Beta);
+        rho_b.set(NUMBER::Real, nullptr);
         time_b.stop();
-        Printer::printTree(0, "XC beta density", rho_b.getNNodes(), time_b.getWallTime());
+        Printer::printTree(0, "XC beta density", func_b.getNNodes(), time_b.getWallTime());
 
         // Extend to union grid
-        int nNodes = 1;
-        while (nNodes > 0) {
-            int nAlpha = mrcpp::refine_grid(rho_a.real(), rho_b.real());
-            int nBeta = mrcpp::refine_grid(rho_b.real(), rho_a.real());
-            nNodes = nAlpha + nBeta;
-        }
+        while (mrcpp::refine_grid(func_a, func_b)) {}
+        while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
         Timer time_t;
-        FunctionTree<3> &tmp_t = this->functional->getDensity(mrdft::DensityType::Total);
-        Density rho_t;
-        rho_t.setReal(&tmp_t);
-        density::compute(-1.0, rho_t, Phi, DENSITY::Total);
+        FunctionTree<3> &func_t = this->functional->getDensity(mrdft::DensityType::Total);
+        Density rho_t(false);
+        rho_t.set(NUMBER::Real, &func_t);
+        density::compute(prec, rho_t, Phi, DENSITY::Total);
+        rho_t.set(NUMBER::Real, nullptr);
         time_t.stop();
-        Printer::printTree(0, "XC total density", rho_t.getNNodes(), time_t.getWallTime());
+        Printer::printTree(0, "XC total density", func_t.getNNodes(), time_t.getWallTime());
     }
 }
 
@@ -116,27 +116,16 @@ void XCPotential::setupDensity() {
  * 7) Clear internal functions in XCFunctional (density grid is kept)
  *
  */
-void XCPotential::setupPotential(double prec) {
+void XCPotential::setupPotential() {
     if (this->functional == nullptr) MSG_ERROR("XCFunctional not initialized");
     if (not this->functional->hasDensity()) MSG_ERROR("XC density not initialized");
     if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
-
-    int inpNodes = this->functional->getNNodes();
-    int inpPoints = this->functional->getNPoints();
 
     this->functional->setup();
     this->functional->evaluate();
     this->energy = this->functional->calcEnergy();
     this->potentials = this->functional->calcPotential();
-    //this->functional->pruneGrid(prec);
-    this->functional->refineGrid(prec);
     this->functional->clear();
-
-    int newNodes = this->functional->getNNodes() - inpNodes;
-    int newPoints = this->functional->getNPoints() - inpPoints;
-
-    println(0, " XC grid size   " << std::setw(26) << inpNodes << std::setw(17) << inpPoints);
-    println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }
 
 /** @brief Return FunctionTree for the input density from the XCFunctional
@@ -181,9 +170,9 @@ Orbital XCPotential::apply(Orbital phi) {
     if (this->hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
     FunctionTree<3> &V = getPotential(phi.spin());
-    this->setReal(&V);
+    this->set(NUMBER::Real, &V);
     Orbital Vphi = QMPotential::apply(phi);
-    this->setReal(0);
+    this->set(NUMBER::Real, nullptr);
 
     return Vphi;
 }

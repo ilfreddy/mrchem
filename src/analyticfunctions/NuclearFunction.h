@@ -44,8 +44,8 @@ public:
     Nuclei &getNuclei() { return this->nuclei; }
     const Nuclei &getNuclei() const { return this->nuclei; }
 
-    bool isVisibleAtScale(int scale, int nQuadPts) const;
-    bool isZeroOnInterval(const double *a, const double *b) const;
+    bool isVisibleAtScale(int scale, int nQuadPts) const override;
+    bool isZeroOnInterval(const double *a, const double *b) const override;
 
 protected:
     Nuclei nuclei;
