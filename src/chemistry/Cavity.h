@@ -34,7 +34,7 @@ namespace mrchem {
 
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public: 
-    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> R, double slope, double e_i, double e_o);
+    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double e_i, double e_o);
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
     double evalf(const mrcpp::Coord<3> &r) const override;
     void eval_epsilon(bool argument, bool implement);
