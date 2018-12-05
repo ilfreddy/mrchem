@@ -1,0 +1,38 @@
+# vim:syntax=sh:
+
+abs_prec = 1.0e-4                 # Overall relative precision
+
+MRA {
+  min_scale = -4                  # Root scale defines world size 2^{-n}
+  corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]
+  boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
+}
+
+Molecule {
+  multiplicity = 2
+$coords
+H       0.0000  0.0000  0.0000
+$end
+}
+
+WaveFunction {
+  method = HF                     # Wave function method (HF or DFT)
+  restricted = false
+}
+
+ExternalField {
+  electric_run = true
+  electric_field = [ 0.0, 0.0, 0.01 ]
+}
+
+Properties {
+  scf_energy = true               # Compute ground state energy
+  dipole_moment = true            # Compute electrostatic dipole moment
+}
+
+SCF {
+  kain = 3                        # Length of KAIN iterative history
+  max_iter = 5
+  initial_guess = CORE_DZ
+}
+

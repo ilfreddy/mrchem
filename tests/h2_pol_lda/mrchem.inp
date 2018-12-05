@@ -1,0 +1,44 @@
+# vim:syntax=sh:
+
+rel_prec = 1.0e-3                 # Overall relative precision
+
+MRA {
+  min_scale = -5                  # Root scale defines world size 2^{-n}
+  corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]
+  boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
+}
+
+Molecule {
+  angstrom = true
+$coords
+H      0.0000 0.0000   -0.3705
+H      0.0000 0.0000    0.3705
+$end
+}
+
+WaveFunction {
+  method = LDA                    # Wave function method (HF or DFT)
+  restricted = false              # Unrestricted calculation
+}
+
+Properties {
+  scf_energy = true               # Compute ground state energy
+  polarizability = true           # Compute electric polarizability
+}
+
+Polarizability {
+  frequency = [0.0]               # Static polarizability 
+}
+
+SCF {
+  run = false                     # Use initial guess, don't optimize
+  initial_guess = GTO             # Reading precomputed GTO MOs
+}
+
+Response {
+  kain = 3                        # Length of KAIN iterative history
+  max_iter = 10
+  orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
+  directions = [0,0,1]            # Compute only in z direction
+}
+
