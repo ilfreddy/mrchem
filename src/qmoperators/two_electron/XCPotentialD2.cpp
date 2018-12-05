@@ -1,11 +1,12 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+
 #include "XCPotential.h"
 #include "XCPotentialD2.h"
-#include "qmfunctions/Orbital.h"
-#include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -13,7 +14,7 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-    /** @brief Constructor
+/** @brief Constructor
  *
  * @param[in] F XCFunctional pointer
  * @param[in] Phi Vector of orbitals
@@ -22,17 +23,13 @@ namespace mrchem {
  * Then the functional is set up for subsequent calculations, fixing some internals of
  * xcfun when F.evalSetup is invoked.
  */
-XCPotentialD2::XCPotentialD2(mrdft::XCFunctional *F,
-                             OrbitalVector *Phi,
-                             OrbitalVector *X,
-                             OrbitalVector *Y)
-    : XCPotential(F, Phi)
-    , orbitals_x(X)
-    , orbitals_y(Y) {
-    pertDensity_t = nullptr;
-    pertDensity_a = nullptr;
-    pertDensity_b = nullptr;
-}
+XCPotentialD2::XCPotentialD2(mrdft::XCFunctional *F, OrbitalVector *Phi, OrbitalVector *X, OrbitalVector *Y)
+        : XCPotential(F, Phi)
+        , orbitals_x(X)
+        , orbitals_y(Y)
+        , pertDensity_t(nullptr)
+        , pertDensity_a(nullptr)
+        , pertDensity_b(nullptr) {}
 
 XCPotentialD2::~XCPotentialD2() {
     mrcpp::clear(this->potentials, true);
@@ -66,7 +63,6 @@ void XCPotentialD2::clear() {
     this->energy = 0.0;
     clearApplyPrec();
 }
-
 
 //LUCA This does not work in the case of a non spin separated functional used for an open-shell system!!
 void XCPotentialD2::setupPerturbedDensity(double prec) {
@@ -145,7 +141,7 @@ void XCPotentialD2::setupPotential(double prec) {
  *
  * @param[in] type Which spin potential to return (alpha, beta or total)
  */
-FunctionTree<3>& XCPotentialD2::getPotential(int orbitalSpin, int densitySpin) {
+FunctionTree<3> &XCPotentialD2::getPotential(int orbitalSpin, int densitySpin) {
     int pot_idx = XCPotentialD2::getPotentialIndex(orbitalSpin, densitySpin);
     return mrcpp::get_func(this->potentials, pot_idx);
 }
@@ -156,58 +152,66 @@ int XCPotentialD2::getPotentialIndex(int orbitalSpin, int densitySpin) {
 
     //Potential order (spin separated): v_a, v_b, v_aa, v_ab, v_bb
     //Potential order (spin restricted, total density only): v_r, v_rr
-    
-    int functional_case = spinFunctional;       // 0  1
-    functional_case += orbitalSpin   << 1;   // 0  2  4  6
-    functional_case += densitySpin   << 3;   // 0  8 16 24
+
+    int functional_case = spinFunctional; // 0  1
+    functional_case += orbitalSpin << 1;  // 0  2  4  6
+    functional_case += densitySpin << 3;  // 0  8 16 24
 
     //OS Paired Alpha Beta
     //DS Total  Spin  Alpha Beta
-    
-    // SF    OS             DS          case   Index 
-    switch(functional_case) {
-    //  0     0 (paired)     0 (total)     0    1    
-    case( 0): return 1;
-    //  1     0 (paired)     0 (total)     1    not valid
-    //  0     1 (alpha )     0 (total)     2    not implemented 
-    case( 2): return 1;
-    //  1     1 (alpha )     0 (total)     3    not valid
-    //  0     2 (beta  )     0 (total)     4    not implemented 
-    case( 4): return 1;
-    //  1     2 (beta  )     0 (total)     5    not valid
-    //  0     3 (unused)     0 (total)     6    not valid
-    //  1     3 (unused)     0 (total)     7    not valid
-    //  0     0 (paired)     1 (spin )     8    not valid
-    //  1     0 (paired)     1 (spin )     9    not valid
-    //  0     1 (alpha )     1 (spin )    10    not valid
-    //  1     1 (alpha )     1 (spin )    11    not valid
-    //  0     2 (beta  )     1 (spin )    12    not valid
-    //  1     2 (beta  )     1 (spin )    13    not valid
-    //  0     3 (unused)     1 (spin )    14    not valid
-    //  1     3 (unused)     1 (spin )    15    not valid
-    //  0     0 (paired)     2 (alpha)    16    not implemented  
-    //  1     0 (paired)     2 (alpha)    17    not implemented  
-    //  0     1 (alpha )     2 (alpha)    18    not valid 
-    //  1     1 (alpha )     2 (alpha)    19    2  
-    case(19): return 2;
-    //  0     2 (beta  )     2 (alpha)    20    not valid 
-    //  1     2 (beta  )     2 (alpha)    21    3  
-    case(21): return 3;
-    //  0     3 (unused)     2 (alpha)    22    not valid
-    //  1     3 (unused)     2 (alpha)    23    not valid
-    //  0     0 (paired)     3 (beta )    24    not implemented 
-    //  1     0 (paired)     3 (beta )    25    not implemented 
-    //  0     1 (alpha )     3 (beta )    26    not valid 
-    //  1     1 (alpha )     3 (beta )    27    3  
-    case(27): return 3;
-    //  0     2 (beta  )     3 (beta )    28    not valid
-    //  1     2 (beta  )     3 (beta )    29    4 
-    case(29): return 4;
-    //  0     3 (unused)     3 (beta )    30    not valid 
-    //  1     3 (unused)     3 (beta )    31    not valid 
-    default: MSG_FATAL("Not implemented: ABORT");
+
+    // SF    OS             DS          case   Index
+    switch (functional_case) {
+        //  0     0 (paired)     0 (total)     0    1
+        case (0):
+            return 1;
+        //  1     0 (paired)     0 (total)     1    not valid
+        //  0     1 (alpha )     0 (total)     2    not implemented
+        case (2):
+            return 1;
+        //  1     1 (alpha )     0 (total)     3    not valid
+        //  0     2 (beta  )     0 (total)     4    not implemented
+        case (4):
+            return 1;
+        //  1     2 (beta  )     0 (total)     5    not valid
+        //  0     3 (unused)     0 (total)     6    not valid
+        //  1     3 (unused)     0 (total)     7    not valid
+        //  0     0 (paired)     1 (spin )     8    not valid
+        //  1     0 (paired)     1 (spin )     9    not valid
+        //  0     1 (alpha )     1 (spin )    10    not valid
+        //  1     1 (alpha )     1 (spin )    11    not valid
+        //  0     2 (beta  )     1 (spin )    12    not valid
+        //  1     2 (beta  )     1 (spin )    13    not valid
+        //  0     3 (unused)     1 (spin )    14    not valid
+        //  1     3 (unused)     1 (spin )    15    not valid
+        //  0     0 (paired)     2 (alpha)    16    not implemented
+        //  1     0 (paired)     2 (alpha)    17    not implemented
+        //  0     1 (alpha )     2 (alpha)    18    not valid
+        //  1     1 (alpha )     2 (alpha)    19    2
+        case (19):
+            return 2;
+        //  0     2 (beta  )     2 (alpha)    20    not valid
+        //  1     2 (beta  )     2 (alpha)    21    3
+        case (21):
+            return 3;
+        //  0     3 (unused)     2 (alpha)    22    not valid
+        //  1     3 (unused)     2 (alpha)    23    not valid
+        //  0     0 (paired)     3 (beta )    24    not implemented
+        //  1     0 (paired)     3 (beta )    25    not implemented
+        //  0     1 (alpha )     3 (beta )    26    not valid
+        //  1     1 (alpha )     3 (beta )    27    3
+        case (27):
+            return 3;
+        //  0     2 (beta  )     3 (beta )    28    not valid
+        //  1     2 (beta  )     3 (beta )    29    4
+        case (29):
+            return 4;
+        //  0     3 (unused)     3 (beta )    30    not valid
+        //  1     3 (unused)     3 (beta )    31    not valid
+        default:
+            NOT_IMPLEMENTED_ABORT;
     }
-    
+
     return -1;
 }
 
@@ -220,47 +224,44 @@ int XCPotentialD2::getPotentialIndex(int orbitalSpin, int densitySpin) {
  * base-class before the base class function is called.
  */
 Orbital XCPotentialD2::apply(Orbital phi) {
-    if (this->hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero"); //LUCA this does not make nuch sense before we have retrieved the potential
-
     bool spinSeparated = this->functional->isSpinSeparated();
     bool totalDens = (pertDensity_t != nullptr);
     bool alphaDens = (pertDensity_a != nullptr);
-    bool betaDens =  (pertDensity_b != nullptr);
+    bool betaDens = (pertDensity_b != nullptr);
 
-    if (totalDens and (alphaDens or betaDens)) MSG_ERROR("Total density and spin separated densities are both available");
+    if (totalDens and (alphaDens or betaDens))
+        MSG_ERROR("Total density and spin separated densities are both available");
 
     FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
     mrcpp::FunctionTreeVector<3> components;
-    if(not spinSeparated and totalDens) {
-        FunctionTree<3>* component = buildComponent(phi.spin(), DENSITY::Total, pertDensity_t->real());
+    if (not spinSeparated and totalDens) {
+        FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Total, pertDensity_t->real());
         components.push_back(std::make_tuple(1.0, component));
-    }
-    else if(spinSeparated) {
-        if (totalDens)  MSG_FATAL("Not implemented: abort!");
+    } else if (spinSeparated) {
+        if (totalDens) NOT_IMPLEMENTED_ABORT;
         if (alphaDens) {
-            FunctionTree<3>* component = buildComponent(phi.spin(), DENSITY::Alpha, pertDensity_a->real());
+            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Alpha, pertDensity_a->real());
             components.push_back(std::make_tuple(1.0, component));
         }
         if (betaDens) {
-            FunctionTree<3>* component = buildComponent(phi.spin(), DENSITY::Beta, pertDensity_b->real());
+            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Beta, pertDensity_b->real());
             components.push_back(std::make_tuple(1.0, component));
         }
-    }
-    else {
-        MSG_FATAL("Not implemented: abort!");
+    } else {
+        NOT_IMPLEMENTED_ABORT;
     }
 
     mrcpp::build_grid(*Vrho, components); //LUCA just using "add" results in loss of precision.
     mrcpp::add(-1.0, *Vrho, components);
     this->set(NUMBER::Real, Vrho);
-    Orbital Vrhophi = QMPotential::apply(phi); 
+    Orbital Vrhophi = QMPotential::apply(phi);
     this->set(NUMBER::Real, nullptr);
     delete Vrho; //LUCA: enough to deallocate this FunctionTree?
     mrcpp::clear(components, true);
     return Vrhophi;
 }
 
-FunctionTree<3>* XCPotentialD2::buildComponent(int orbital_spin, int density_spin, FunctionTree<3> &pert_dens) {
+FunctionTree<3> *XCPotentialD2::buildComponent(int orbital_spin, int density_spin, FunctionTree<3> &pert_dens) {
     FunctionTree<3> *tmp = new FunctionTree<3>(*MRA);
     FunctionTree<3> &V = getPotential(orbital_spin, density_spin);
     mrcpp::build_grid(*tmp, V);
@@ -269,4 +270,4 @@ FunctionTree<3>* XCPotentialD2::buildComponent(int orbital_spin, int density_spi
     return tmp;
 }
 
-}
+} // namespace mrchem
