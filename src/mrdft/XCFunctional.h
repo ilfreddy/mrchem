@@ -87,10 +87,18 @@ public:
     void setUseGamma(bool use) { this->use_gamma = use; }
     bool useGamma() const { return this->use_gamma; }
 
+    int getOrder() const { return this->order; }
     bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
     bool isGGA() const { return (xc_is_gga(this->functional)); }
     bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
+    bool isHybrid() const { return (std::abs(this->amountEXX()) > mrcpp::MachineZero); }
     bool isSpinSeparated() const { return this->spin_separated; }
+
+    double amountEXX() const {
+        double exx = 0.0;
+        xc_get(this->functional, "exx", &exx);
+        return exx;
+    }
 
     void evalSetup(int order);
     void setup();
@@ -99,10 +107,12 @@ public:
     void evaluate();
     double calcEnergy();
     mrcpp::FunctionTreeVector<3> calcPotential();
+    mrcpp::FunctionTreeVector<3> calcHessian();
 
-protected:
-    const bool spin_separated;                   ///< Spin polarization
-    const mrcpp::MultiResolutionAnalysis<3> MRA; ///< Computational domain
+ protected:
+    int order;
+    const bool spin_separated;                  ///< Spin polarization
+    const mrcpp::MultiResolutionAnalysis<3> MRA;///< Computational domain
 
     bool use_gamma; ///< Whether gamma-type or explicit derivatives are used
     double cutoff;  ///< Below the cutoff value, the density will be considered zero
@@ -135,6 +145,8 @@ protected:
 
     void calcPotentialLDA(mrcpp::FunctionTreeVector<3> &potentials);
     void calcPotentialGGA(mrcpp::FunctionTreeVector<3> &potentials);
+    void calcHessianLDA(mrcpp::FunctionTreeVector<3> &potentials);
+    //    void calcPotentialGGA(mrcpp::FunctionTreeVector<3> &potentials);
 
     mrcpp::FunctionTree<3> *calcPotentialGGA(mrcpp::FunctionTree<3> &df_drho, mrcpp::FunctionTreeVector<3> &df_dgr);
     mrcpp::FunctionTree<3> *calcPotentialGGA(mrcpp::FunctionTree<3> &df_drho,

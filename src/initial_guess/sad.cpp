@@ -151,7 +151,6 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
 
         Psi = orbital::adjoin(Psi_a, Psi_b);
     }
-    orbital::free(Phi);
     F.clear();
     t_diag.stop();
     Printer::printFooter(0, t_diag, 2);
@@ -181,7 +180,7 @@ ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F, Or
 OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
     Timer t;
     OrbitalVector Psi;
-    for (int i = 0; i < N; i++) Psi.push_back(spin);
+    for (int i = 0; i < N; i++) Psi.push_back(Orbital(spin));
     mpi::distribute(Psi);
 
     OrbitalIterator iter(Phi);
@@ -200,7 +199,6 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U,
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
             Psi[i].add(1.0, tmp_i); // In place addition
             Psi[i].crop(prec);
-            tmp_i.free();
         }
     }
     t.stop();

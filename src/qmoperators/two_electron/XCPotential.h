@@ -1,7 +1,8 @@
 #pragma once
 
-#include "qmoperators/one_electron/QMPotential.h"
 #include "mrdft/XCFunctional.h"
+#include "parallel.h"
+#include "qmoperators/one_electron/QMPotential.h"
 
 /** @class XCPotential
  *
@@ -26,30 +27,30 @@
 
 namespace mrchem {
 
-class XCPotential final : public QMPotential {
+class XCPotential : public QMPotential {
 public:
-    XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi = nullptr);
+    XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
+            : QMPotential(1, mpi::share_xc_pot)
+            , energy(0.0)
+            , orbitals(Phi)
+            , functional(F) {}
+    virtual ~XCPotential() = default;
 
     friend class XCOperator;
 
 protected:
-    OrbitalVector *orbitals;                   ///< External set of orbitals used to build the density
-    mrdft::XCFunctional *functional;           ///< External XC functional to be used
-
-    double energy;                             ///< XC energy
-    mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
+    double energy;                   ///< XC energy
+    OrbitalVector *orbitals;         ///< External set of orbitals used to build the density
+    mrdft::XCFunctional *functional; ///< External XC functional to be used
 
     double getEnergy() const { return this->energy; }
+    int getOrder() const { return this->functional->getOrder(); }
+
     mrcpp::FunctionTree<3> &getDensity(int spin);
-    mrcpp::FunctionTree<3> &getPotential(int spin);
+    virtual void setupPotential(double prec) {}
+    virtual Orbital apply(Orbital phi) = 0;
 
-    void setup(double prec);
-    void clear();
-
-    void setupDensity(double prec);
-    void setupPotential();
-
-    Orbital apply(Orbital phi);
+    void setupDensity(double prec = -1.0);
 };
 
 } //namespace mrchem

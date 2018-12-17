@@ -15,10 +15,9 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 QMNabla::QMNabla(int d, DerivativeOperator<3> &D)
-    : QMOperator(),
-      apply_dir(d),
-      derivative(&D) {
-}
+        : QMOperator()
+        , apply_dir(d)
+        , derivative(&D) {}
 
 Orbital QMNabla::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
@@ -39,11 +38,11 @@ Orbital QMNabla::apply(Orbital inp) {
     if (inp.hasImag()) {
         out.alloc(NUMBER::Imag);
         mrcpp::apply(out.imag(), D, inp.imag(), dir);
-        if (inp.conjugate()) out.real().rescale(-1.0);
+        if (inp.conjugate()) out.imag().rescale(-1.0);
     }
     timer.stop();
 
-    int n = out.getNNodes();
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QMNabla", n, t);
 

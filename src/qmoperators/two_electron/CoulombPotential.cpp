@@ -1,14 +1,12 @@
+#include "CoulombPotential.h"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-
-#include "CoulombPotential.h"
 #include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 
-using mrcpp::FunctionTree;
 using mrcpp::PoissonOperator;
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -25,15 +23,11 @@ namespace mrchem {
  * the vector can change throughout the calculation. The density and (*this)
  * QMPotential is uninitialized at this point and will be computed at setup.
  */
-CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
+
+CoulombPotential::CoulombPotential(PoissonOperator *P)
         : QMPotential(1, mpi::share_coul_pot)
         , density(mpi::share_coul_dens)
-        , orbitals(Phi)
         , poisson(P) {}
-
-CoulombPotential::~CoulombPotential() {
-    this->density.free();
-}
 
 /** @brief prepare operator for application
  *
@@ -42,6 +36,10 @@ CoulombPotential::~CoulombPotential() {
  * This will compute the Coulomb potential by application of the Poisson
  * operator to the density. If the density is not available it is computed
  * from the current orbitals (assuming that the orbitals are available).
+ * For first-order perturbations the first order density and the Hessian will be
+ * computed. In order to make the Hessian available to CoulombOperator, it is stored in the 
+ * potential function instead of the zeroth-order potential.
+ *
  */
 void CoulombPotential::setup(double prec) {
     if (isSetup(prec)) return;
@@ -56,31 +54,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    QMFunction::free();   // delete FunctionTree pointers
-    this->density.free(); // delete FunctionTree pointers
-    clearApplyPrec();     // apply_prec = -1
-}
-
-/** @brief compute electron density
- *
- * @param prec: apply precision
- *
- * This will compute the electron density as the sum of squares of the orbitals.
- */
-void CoulombPotential::setupDensity(double prec) {
-    if (hasDensity()) return;
-    if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
-
-    OrbitalVector &Phi = *this->orbitals;
-    Density &rho = this->density;
-
-    Timer timer;
-    rho.alloc(NUMBER::Real);
-    density::compute(prec, rho, Phi, DENSITY::Total);
-    timer.stop();
-    double t = timer.getWallTime();
-    int n = rho.getNNodes();
-    Printer::printTree(0, "Coulomb density", n, t);
+    QMFunction::free(NUMBER::Total);   // delete FunctionTree pointers
+    this->density.free(NUMBER::Total); // delete FunctionTree pointers
+    clearApplyPrec();                  // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential
@@ -92,27 +68,25 @@ void CoulombPotential::setupDensity(double prec) {
  */
 void CoulombPotential::setupPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
-    if (hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (hasImag()) MSG_ERROR("Potential not properly cleared");
 
     PoissonOperator &P = *this->poisson;
-    QMPotential &V = *this;
-    Density &rho = this->density;
+    QMFunction &V = *this;
+    QMFunction &rho = this->density;
+
+    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
+    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
 
     // Adjust precision by system size
-    double abs_prec = prec / rho.real().integrate();
+    double abs_prec = prec / rho.norm();
+    bool need_to_apply = not(V.isShared()) or mpi::share_master();
 
     Timer timer;
     V.alloc(NUMBER::Real);
-    if (V.isShared()) {
-        int tag = 22445;
-        if (mpi::share_master()) mrcpp::apply(abs_prec, V.real(), P, rho.real());
-        mrcpp::share_tree(V.real(), 0, tag, mpi::comm_share);
-    } else {
-        mrcpp::apply(abs_prec, V.real(), P, rho.real());
-    }
+    if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
+    mpi::share_function(V, 0, 22445, mpi::comm_share);
     timer.stop();
-    int n = V.getNNodes();
+
+    int n = V.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(0, "Coulomb potential", n, t);
 }

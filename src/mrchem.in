@@ -210,7 +210,6 @@ def setup_keywords(input_dir):
     dft.add_kw('spin',                  'BOOL', False)
     dft.add_kw('orbital_free',          'BOOL', False)
     dft.add_kw('use_gamma',             'BOOL', False)
-    dft.add_kw('exact_exchange',        'DBL', 0.0)
     dft.add_kw('density_cutoff',        'DBL', 0.0)
     dft.add_kw('functionals',           'DATA')
     dft.add_kw('func_coefs',            'DBL_ARRAY')
@@ -514,38 +513,34 @@ def verify_wf(wf):
         'DFT'
     }
     default_functionals = {
-        #functional:exact_exchange
-        'LDA':0.00,
-        'PBE':0.00,
-        'PBE0':0.25,
-        'BLYP':0.0,
-        'B3LYP':0.20,
-        'BP86':0.0,
-        'PW91':0.0
+        'LDA',
+        'PBE',
+        'PBE0',
+        'BLYP',
+        'B3LYP',
+        'BP86',
+        'PW91',
     }
     method = wf['method'][0]
     if method in default_functionals:
         dft = topsect.fetch_sect('DFT')
-        exx = default_functionals[method]
         if dft['functionals'].is_set():
             print('Cannot overwrite default functional: ' + method)
             exit()
-        if dft['exact_exchange'].is_set():
-            print('Cannot overwrite default exact exchange: ' + str(exx))
-            exit()
         wf['method'][0] = 'DFT'
         dft['functionals'].get().append(method + ' 1.00')
-        dft['exact_exchange'][0] = exx
     elif not (method in valid_methods):
         print('Invalid WaveFunction method: ' + method)
         exit()
 
 def verify_dft(dft):
-    if not dft['spin'].is_set():
-        wf = topsect.fetch_sect('WaveFunction')
-        if wf['restricted'][0]:
-            dft['spin'][0] = False
-        else:
+    wf = topsect.fetch_sect('WaveFunction')
+    # does not allow spin-separated functionals for a closed shell system
+    if wf['restricted'][0]:
+        dft['spin'][0] = False
+    else:
+        # allows spin-restricted functionals if the user requests it explicitly for an open shell system
+        if not dft['spin'].is_set():
             dft['spin'][0] = True
 
     n = 0

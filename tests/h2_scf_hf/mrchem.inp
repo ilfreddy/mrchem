@@ -1,0 +1,50 @@
+# vim:syntax=sh:
+
+rel_prec = 1.0e-3                 # Overall relative precision
+
+MPI {
+  numerically_exact = true
+  share_coulomb_density = true
+  share_coulomb_potential = true
+  share_nuclear_potential = true
+  share_xc_density = false
+  share_xc_potential = false
+}
+
+MRA {
+  order = 7                       # Polynomial order of the MW basis
+  basis_type = Legendre           # Polynomial type (Legendre or Interpolating)
+  min_scale = -4                  # Root scale defines world size 2^{-n}
+  max_scale = 25                  # Maximum refinement 2^{-n}
+  corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]
+  boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
+}
+
+Molecule {
+$coords
+H   0.0     0.0    -0.7
+H   0.0     0.0     0.7
+$end
+}
+
+WaveFunction {
+  method = HF                     # Wave function method (HF or DFT)
+}
+
+Properties {
+  scf_energy = true               # Compute ground state energy
+  dipole_moment = true            # Compute ground state energy
+}
+
+SCF {
+  kain = 3                        # Length of KAIN iterative history
+  max_iter = 5
+  orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
+  initial_guess = SAD_DZ          # Type of initial guess: none, mw, gto
+}
+
+KineticFree {
+  run = true
+  max_iter = 5
+  property_thrs = 1.0e-3          # Convergence threshold in total energy
+}

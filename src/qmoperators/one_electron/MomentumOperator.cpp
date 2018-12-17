@@ -15,10 +15,9 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 QMMomentum::QMMomentum(int d, DerivativeOperator<3> &D)
-    : QMOperator(),
-      apply_dir(d),
-      derivative(&D) {
-}
+        : QMOperator()
+        , apply_dir(d)
+        , derivative(&D) {}
 
 Orbital QMMomentum::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
@@ -44,7 +43,7 @@ Orbital QMMomentum::apply(Orbital inp) {
     }
     timer.stop();
 
-    int n = out.getNNodes();
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QMMomentum", n, t);
 

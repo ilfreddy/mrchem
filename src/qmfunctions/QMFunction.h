@@ -25,56 +25,55 @@
 
 #pragma once
 
-#include "mrchem.h"
+#include <memory>
+
+#include "ComplexFunction.h"
 #include "qmfunction_fwd.h"
 
 namespace mrchem {
 
-/* POD struct for function meta data. Used for simple MPI communication. */
-struct FunctionData {
-    int nChunksReal;
-    int nChunksImag;
-    bool conjugate;
-};
-
 class QMFunction {
 public:
-    QMFunction(bool share, mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
+    explicit QMFunction(bool share = false);
     QMFunction(const QMFunction &func);
     QMFunction &operator=(const QMFunction &func);
-    virtual ~QMFunction();
+    QMFunction dagger();
+    virtual ~QMFunction() = default;
 
-    void set(int type, mrcpp::FunctionTree<3> *func);
     void alloc(int type);
-    void free(int type = NUMBER::Total);
+    void free(int type);
 
-    int getNNodes(int type = NUMBER::Total) const;
-    bool conjugate() const { return this->func_data.conjugate; }
+    bool isShared() const { return this->func_ptr->func_data.is_shared; }
+    bool hasReal() const { return (this->func_ptr->re == nullptr) ? false : true; }
+    bool hasImag() const { return (this->func_ptr->im == nullptr) ? false : true; }
+
+    int getNNodes(int type) const;
     FunctionData &getFunctionData();
+
+    void setReal(mrcpp::FunctionTree<3> *tree);
+    void setImag(mrcpp::FunctionTree<3> *tree);
+
+    mrcpp::FunctionTree<3> &real() { return *this->func_ptr->re; }
+    mrcpp::FunctionTree<3> &imag() { return *this->func_ptr->im; }
+
+    const mrcpp::FunctionTree<3> &real() const { return *this->func_ptr->re; }
+    const mrcpp::FunctionTree<3> &imag() const { return *this->func_ptr->im; }
+
+    void release() { this->func_ptr.reset(); }
+    bool conjugate() const { return this->conj; }
 
     double norm() const;
     double squaredNorm() const;
     ComplexDouble integrate() const;
 
-    void add(ComplexDouble c, QMFunction inp);
-    void rescale(ComplexDouble c);
     void crop(double prec);
-
-    bool isShared() const { return (this->shared_mem == nullptr) ? false : true; }
-    bool hasReal() const { return (this->re == nullptr) ? false : true; }
-    bool hasImag() const { return (this->im == nullptr) ? false : true; }
-
-    mrcpp::FunctionTree<3> &real() { return *this->re; }
-    mrcpp::FunctionTree<3> &imag() { return *this->im; }
-
-    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
-    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
+    void rescale(double c);
+    void rescale(ComplexDouble c);
+    void add(ComplexDouble c, QMFunction inp);
 
 protected:
-    FunctionData func_data;
-    mrcpp::SharedMemory *shared_mem;
-    mrcpp::FunctionTree<3> *re; ///< Real part of function
-    mrcpp::FunctionTree<3> *im; ///< Imaginary part of function
+    bool conj;
+    std::shared_ptr<ComplexFunction> func_ptr;
 };
 
 } // namespace mrchem

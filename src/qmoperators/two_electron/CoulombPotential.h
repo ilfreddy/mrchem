@@ -1,7 +1,7 @@
 #pragma once
 
-#include "qmoperators/one_electron/QMPotential.h"
 #include "qmfunctions/Density.h"
+#include "qmoperators/one_electron/QMPotential.h"
 
 /** @class CoulombPotential
  *
@@ -23,16 +23,15 @@
 
 namespace mrchem {
 
-class CoulombPotential final : public QMPotential {
+class CoulombPotential : public QMPotential {
 public:
-    CoulombPotential(mrcpp::PoissonOperator *P, OrbitalVector *Phi = nullptr);
-    ~CoulombPotential();
-
+    CoulombPotential(mrcpp::PoissonOperator *P);
+    virtual ~CoulombPotential() = default;
+    
     friend class CoulombOperator;
 
 protected:
-    Density density;                  ///< Electron density defining the potential
-    OrbitalVector *orbitals;          ///< Orbitals defining the electron density
+    Density density;                  ///< Ground-state electron density
     mrcpp::PoissonOperator *poisson;  ///< Operator used to compute the potential
 
     Density &getDensity() { return this->density; }
@@ -41,7 +40,7 @@ protected:
     void setup(double prec);
     void clear();
 
-    void setupDensity(double prec);
+    virtual void setupDensity(double prec) { }
     void setupPotential(double prec);
 };
 

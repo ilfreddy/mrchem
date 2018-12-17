@@ -19,7 +19,7 @@ namespace mrchem {
 
 class QMPotential : public QMFunction, public QMOperator {
 public:
-    QMPotential(int adap, bool shared = false);
+    explicit QMPotential(int adap, bool shared = false);
     QMPotential(const QMPotential &pot) = delete;
     QMPotential &operator=(const QMPotential &pot) = delete;
     virtual ~QMPotential();
@@ -30,8 +30,8 @@ protected:
     virtual Orbital apply(Orbital inp);
     virtual Orbital dagger(Orbital inp);
 
-    mrcpp::FunctionTree<3> *calcRealPart(Orbital &phi, bool dagger);
-    mrcpp::FunctionTree<3> *calcImagPart(Orbital &phi, bool dagger);
+    void calcRealPart(Orbital &out, Orbital &inp, bool dagger);
+    void calcImagPart(Orbital &out, Orbital &inp, bool dagger);
 };
 
-} //namespace mrchem;
+} // namespace mrchem

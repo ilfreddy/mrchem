@@ -81,7 +81,7 @@ ComplexVector orbital::dot(OrbitalVector &Bra, OrbitalVector &Ket) {
             if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i], src, tag, mpi::comm_orb);
         }
         result[i] = orbital::dot(Bra[i], Ket[i]);
-        if (not mpi::my_orb(Bra[i])) Bra[i].free();
+        if (not mpi::my_orb(Bra[i])) Bra[i].free(NUMBER::Total);
     }
     mpi::allreduce_vector(result, mpi::comm_orb);
     return result;
@@ -168,7 +168,6 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, inter_prec);
             out[i].add(1.0, tmp_i); // In place addition
             out[i].crop(inter_prec);
-            tmp_i.free();
         }
     }
 
@@ -189,7 +188,8 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
 OrbitalVector orbital::deep_copy(OrbitalVector &Phi) {
     OrbitalVector out;
     for (int i = 0; i < Phi.size(); i++) {
-        Orbital out_i = Phi[i].deepCopy();
+        Orbital out_i = Phi[i].paramCopy();
+        if (mpi::my_orb(out_i)) qmfunction::deep_copy(out_i, Phi[i]);
         out.push_back(out_i);
     }
     return out;
@@ -223,6 +223,17 @@ OrbitalVector orbital::adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b) {
     Phi_a.clear();
     Phi_b.clear();
     return out;
+}
+
+/** @brief Appends a vector to another
+ *
+ * Aappends the orbitals of the second vector to the first one.  The
+ * ownership is transferred and the second vector is left empty.
+ *
+ */
+void orbital::append(OrbitalVector &Phi, OrbitalVector &Psi) {
+    Phi.insert(std::end(Phi), std::begin(Psi), std::end(Psi));
+    Psi.clear();
 }
 
 /** @brief Disjoin vector in two parts
@@ -291,7 +302,7 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
         if (phi_i.hasReal() or phi_i.hasImag()) {
             phi_i.setRankID(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (not mpi::my_orb(phi_i)) phi_i.free();
+            if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         } else {
             break;
         }
@@ -304,16 +315,6 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
     mpi::allreduce_vector(errors, mpi::comm_orb);
     orbital::set_errors(Phi, errors);
     return Phi;
-}
-
-/** @brief Frees each orbital in the vector
- *
- * Leaves an empty vector. Orbitals are freed.
- *
- */
-void orbital::free(OrbitalVector &Phi) {
-    for (auto &phi_i : Phi) phi_i.free();
-    Phi.clear();
 }
 
 /** @brief Normalize single orbital. Private function. */
@@ -349,7 +350,7 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
                 if (mpi::my_orb(Phi[i])) {
                     mpi::recv_function(Phi[j], src, tag, mpi::comm_orb);
                     orbital::orthogonalize(Phi[i], Phi[j]);
-                    Phi[j].free();
+                    Phi[j].free(NUMBER::Total);
                 }
                 if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j], dst, tag, mpi::comm_orb);
             }
@@ -459,9 +460,45 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
     return S_m12;
 }
 
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
+    Printer::printHeader(0, "Localizing orbitals");
+    Timer timer;
+    if (not orbital_vector_is_sane(Phi)) {
+        orbital::print(Phi);
+        MSG_FATAL("Orbital vector is not sane");
+    }
+    int nO = Phi.size();
+    int nP = size_paired(Phi);
+    int nA = size_alpha(Phi);
+    int nB = size_beta(Phi);
+    ComplexMatrix U = ComplexMatrix::Identity(nO, nO);
+    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired);
+    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha);
+    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
+    return U;
+}
+
+/** @brief Localize a set of orbitals with the same spin
+
+@param Phi_s: Orbital vector containig orbitals with given spin (p/a/b)
+
+Localization is done for each set of spins separately (we don't want to mix spins when localizing).
+The localization matrix is returned for further processing.
+
+*/
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin) {
+    OrbitalVector Phi_s = orbital::disjoin(Phi, spin);
+    ComplexMatrix U = calc_localization_matrix(prec, Phi_s);
+    Phi_s = orbital::rotate(U, Phi_s, prec);
+    orbital::append(Phi, Phi_s);
+    return U;
+}
+
 /** @brief Minimize the spatial extension of orbitals, by orbital rotation
  *
- * @param Phi: orbitals to localize
+ * @param Phi: orbitals to localize (they should all be of the same spin)
  *
  * Minimizes \f$  \sum_{i=1,N}\langle i| {\bf R^2}  | i \rangle - \langle i| {\bf R}| i \rangle^2 \f$
  * which is equivalent to maximizing \f$  \sum_{i=1,N}\langle i| {\bf R}| i \rangle^2\f$
@@ -469,10 +506,7 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
  * The resulting transformation includes the orthonormalization of the orbitals.
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
-    Printer::printHeader(0, "Localizing orbitals");
-    Timer timer;
-
+ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi) {
     ComplexMatrix U;
     int n_it = 0;
     if (Phi.size() > 1) {
@@ -494,7 +528,6 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
     } else {
         println(0, " Cannot localize less than two orbitals");
     }
-
     if (n_it <= 0) {
         Timer orth_t;
         U = orbital::calc_lowdin_matrix(Phi);
@@ -503,14 +536,9 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
     }
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
-    orbital::free(Phi);
-    Phi = Psi;
+    Phi = orbital::rotate(U, Phi, prec);
     rot_t.stop();
     Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
-
-    timer.stop();
-    Printer::printFooter(0, timer, 2);
     return U;
 }
 
@@ -546,9 +574,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
-    orbital::free(Phi);
-    Phi = Psi;
+    Phi = orbital::rotate(U, Phi, prec);
     rot_t.stop();
     Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
 
@@ -566,9 +592,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
  */
 ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
-    orbital::free(Phi);
-    Phi = Psi;
+    Phi = orbital::rotate(U, Phi, prec);
     return U;
 }
 
@@ -600,7 +624,7 @@ int orbital::size_singly(const OrbitalVector &Phi) {
 int orbital::size_doubly(const OrbitalVector &Phi) {
     int nDoubly = 0;
     for (auto &phi_i : Phi)
-        if (phi_i.occ() == 1) nDoubly++;
+        if (phi_i.occ() == 2) nDoubly++;
     return nDoubly;
 }
 
@@ -655,6 +679,13 @@ int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
         }
     }
     return nElectrons;
+}
+
+/** @brief Returns the total number of nodes in the vector */
+int orbital::get_n_nodes(const OrbitalVector &Phi) {
+    int nNodes = 0;
+    for (auto &phi_i : Phi) nNodes += phi_i.getNNodes(NUMBER::Total);
+    return nNodes;
 }
 
 /** @brief Returns a vector containing the orbital errors */
@@ -742,6 +773,36 @@ ComplexVector orbital::get_integrals(const OrbitalVector &Phi) {
     }
     mpi::allreduce_vector(ints, mpi::comm_orb);
     return ints;
+}
+
+/** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
+bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
+    int nO = Phi.size();
+    int nP = size_paired(Phi);
+    int nA = size_alpha(Phi);
+    int nB = size_beta(Phi);
+    int previous_spin = 0;
+
+    if (nO != nP + nA + nB) return false; // not all orbitals are accounted for
+
+    for (int i = 0; i < nO; i++) {
+        if (Phi[i].spin() < previous_spin) return false; // wrong orbital order
+        previous_spin = Phi[i].spin();
+    }
+    return true; // sane orbital set
+}
+/** @brief Returns the start index of a given orbital type (p/a/b) 
+ *
+ *  Returns a negative number if the type of orbitals is not present.
+ *  The ordering of orbitals in a given OrbitalVector is fixed and
+ *  this can be used to determine the end index as well.
+ */
+int orbital::start_index(const OrbitalVector &Phi, int spin) {
+    int nOrbs = Phi.size();
+    for (int i = 0; i < nOrbs; i++) {
+        if (Phi[i].spin() == spin) return i;
+    }
+    return -1;
 }
 
 void orbital::print(const OrbitalVector &Phi) {

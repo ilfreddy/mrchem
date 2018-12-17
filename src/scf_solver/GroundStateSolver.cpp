@@ -96,8 +96,8 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     Printer::printDouble(0, "Matrix part", timer_2.getWallTime(), 5);
 
     OrbitalVector out = orbital::add(coef, part_1, coef, part_2);
-    orbital::free(part_1);
-    orbital::free(part_2);
+    part_1.clear();
+    part_2.clear();
 
     Printer::printSeparator(0, '-');
     for (int i = 0; i < out.size(); i++) {

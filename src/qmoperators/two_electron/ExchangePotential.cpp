@@ -49,7 +49,7 @@ void ExchangePotential::setup(double prec) {
  *  Clears deletes the precomputed exchange contributions.
  */
 void ExchangePotential::clear() {
-    orbital::free(this->exchange);
+    this->exchange.clear();
     clearApplyPrec();
 }
 
@@ -59,10 +59,7 @@ void ExchangePotential::clear() {
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
-
-    OrbitalVector tmp = orbital::rotate(U, this->exchange, this->apply_prec);
-    orbital::free(this->exchange);
-    this->exchange = tmp;
+    this->exchange = orbital::rotate(U, this->exchange, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!
     //
@@ -90,7 +87,9 @@ Orbital ExchangePotential::apply(Orbital inp) {
         return calcExchange(inp);
     } else {
         println(1, "Precomputed exchange");
-        return this->exchange[i].deepCopy();
+        Orbital out = this->exchange[i].paramCopy();
+        qmfunction::deep_copy(out, this->exchange[i]);
+        return out;
     }
 }
 
@@ -124,7 +123,7 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
         for (int i = 0; i < iter.get_size(); i++) {
             Orbital &phi_i = iter.orbital(i);
 
-            double spin_fac = getSpinFactor(phi_i.spin(), phi_p.spin());
+            double spin_fac = getSpinFactor(phi_i, phi_p);
             if (std::abs(spin_fac) < mrcpp::MachineZero) continue;
 
             // compute phi_ip = phi_i^dag * phi_p
@@ -141,12 +140,11 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
                 V_ip.alloc(NUMBER::Imag);
                 mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
             }
-            phi_ip.free();
+            phi_ip.release();
 
             // compute phi_iip = phi_i * V_ip
             Orbital phi_iip = phi_p.paramCopy();
             qmfunction::multiply(phi_iip, phi_i, V_ip, -1.0);
-            V_ip.free();
 
             coef_vec(i) = spin_fac / phi_i.squaredNorm();
             func_vec.push_back(phi_iip);
@@ -156,10 +154,9 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
     // compute ex_p = sum_i c_i*phi_iip
     Orbital ex_p = phi_p.paramCopy();
     qmfunction::linear_combination(ex_p, coef_vec, func_vec, -1.0);
-    qmfunction::free(func_vec);
 
     timer.stop();
-    double n = ex_p.getNNodes();
+    double n = ex_p.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied exchange", n, t);
 
@@ -210,7 +207,7 @@ void ExchangePotential::setupInternal(double prec) {
 
             if (not iter.get_step(0) and not mpi::my_orb(phi_i))
                 mpi::send_function(Ex[idx], phi_i.rankID(), idx, mpi::comm_orb);
-            if (not mpi::my_orb(Ex[idx])) Ex[idx].free();
+            if (not mpi::my_orb(Ex[idx])) Ex[idx].free(NUMBER::Total);
         } else {
             if (iter.get_sent_size()) { //must receive exchange computed by other
                 //get exchange from where we sent orbital to
@@ -220,14 +217,14 @@ void ExchangePotential::setupInternal(double prec) {
                 Ex[idx_sent].add(1.0, ex_rcv);
             }
         }
-        ex_rcv.free();
+        ex_rcv.free(NUMBER::Total);
     }
 
     int n = 0;
     // Collect info from the calculation
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) this->tot_norms(i) = Ex[i].norm();
-        n += Ex[i].getNNodes();
+        n += Ex[i].getNNodes(NUMBER::Total);
     }
 
     mpi::allreduce_vector(this->tot_norms, mpi::comm_orb);  //to be checked
@@ -265,15 +262,13 @@ void ExchangePotential::calcInternal(int i) {
             V_ii.alloc(NUMBER::Imag);
             mrcpp::apply(prec, V_ii.imag(), P, phi_ii.imag());
         }
-        phi_ii.free();
+        phi_ii.release();
 
         // compute phi_iii = phi_i * V_ii
         Orbital phi_iii = phi_i.paramCopy();
         qmfunction::multiply(phi_iii, phi_i, V_ii, prec);
         phi_iii.rescale(1.0 / phi_i.squaredNorm());
         this->part_norms(i, i) = phi_iii.norm();
-        V_ii.free();
-
         this->exchange.push_back(phi_iii);
     } else {
         //put empty orbital to fill the exchange vector
@@ -327,7 +322,7 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
         V_ij.alloc(NUMBER::Imag);
         mrcpp::apply(prec, V_ij.imag(), P, phi_ij.imag());
     }
-    phi_ij.free();
+    phi_ij.release();
 
     // compute phi_jij = phi_j * V_ij
     Orbital phi_jij = phi_j.paramCopy();
@@ -340,16 +335,15 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
     qmfunction::multiply(phi_iij, phi_i, V_ij, prec);
     phi_iij.rescale(1.0 / phi_i.squaredNorm());
     this->part_norms(i, j) = phi_iij.norm();
-
-    V_ij.free();
+    V_ij.release();
 
     // compute x_i += phi_jij
     Ex[i].add(i_fac, phi_jij);
-    phi_jij.free();
+    phi_jij.release();
 
     // compute x_j += phi_iij
     Ex[j].add(j_fac, phi_iij);
-    phi_iij.free();
+    phi_iij.release();
 }
 
 /** @brief Test if a given contribution has been precomputed

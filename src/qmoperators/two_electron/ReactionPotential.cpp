@@ -21,17 +21,21 @@ ReactionPotential::ReactionPotential(Cavity *cav,  mrcpp::PoissonOperator *P, mr
 }
 
 //  ~ReactionPotential();
-/*
-void ReactionPotential::setup_eps(double prec){
-  Cavity.eval_epsilon(false, Cavity.is_linear);
-  mrcpp::project(prec, Cavity_tree, Cavity.evalf);
-  Cavity_tree.rescale(Cavity.dcoeff);
 
-  Cavity.eval_epsilon(true, Cavity.is_linear);
-  mrcpp::project(prec, inv_eps_tree, Cavity.evalf);
+void ReactionPotential::setup_eps(double prec){
+  cavity->eval_epsilon(false, cavity->is_linear);
+
+  //auto c_evalf = [cavity] (const double *r) -> double {return cavity->evalf(r);};  
+
+  mrcpp::project<3>(prec, *Cavity_tree, *cavity);
+  Cavity_tree->rescale(cavity->dcoeff);
+
+  cavity->eval_epsilon(true, cavity->is_linear);
+  mrcpp::project<3>(prec, *inv_eps_tree, *cavity);
 
 }
 
+/*
 void ReactionPotential::calc_rho_eff(double prec) {
   
   // make rho as a gaussian

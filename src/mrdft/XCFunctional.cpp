@@ -88,7 +88,7 @@ XCFunctional::~XCFunctional() {
  *
  * Prepare the XCFun object for evaluation based on the chosen parameters.
  */
-void XCFunctional::evalSetup(int order) {
+void XCFunctional::evalSetup(int ord) {
     unsigned int func_type = isGGA();               //!< only LDA and GGA supported for now
     unsigned int dens_type = 1 + isSpinSeparated(); //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
     unsigned int mode_type = 1;                     //!< only derivatives (neither potential nor contracted)
@@ -96,6 +96,7 @@ void XCFunctional::evalSetup(int order) {
     unsigned int kinetic = 0;                       //!< no kinetic energy density
     unsigned int current = 0;                       //!< no current density
     unsigned int exp_derivative = not useGamma();   //!< use gamma or explicit derivatives
+    order = ord;                                    //!< update the order parameter in the object
     if (isLDA()) exp_derivative = 0;                //!< fall back to gamma-type derivatives if LDA (bad hack: no der are actually needed here!)
     xc_user_eval_setup(functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, exp_derivative);
 }
@@ -624,7 +625,10 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
  * deep copied into the corresponding potential functions.
  */
 void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
-    int nPotentials = isSpinSeparated() ? 2 : 1;
+    int nPotentials = this->order;
+    if (isSpinSeparated()) {
+        nPotentials = (this->order + 1) * (this->order + 2) / 2 - 1;
+    }
     for (int i = 0; i < nPotentials; i++) {
         FunctionTree<3> &out_i = mrcpp::get_func(xcOutput, i+1);
         FunctionTree<3> *pot = new FunctionTree<3>(MRA);
@@ -641,6 +645,7 @@ void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
  * and whether explicit or gamma-type derivatives have been used in xcfun.
  */
 void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
+    if(this->order > 1) NOT_IMPLEMENTED_ABORT;
     FunctionTree<3> * pot;
     if (isSpinSeparated()) {
         FunctionTree<3> & df_da = mrcpp::get_func(xcOutput, 1);
@@ -795,6 +800,48 @@ FunctionTree<3> * XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
     timer.stop();
     Printer::printTree(2, "Gradient", result->getNNodes(), timer.getWallTime());
     return result;
+}
+
+/** @brief Compute the XC potential(s)
+ *
+ * Combines the xcfun output functions into the final XC hessian functions.
+ * Different calls for LDA and GGA, and for gamma-type vs explicit derivatives.
+ */
+FunctionTreeVector<3> XCFunctional::calcHessian() {
+    FunctionTreeVector<3> xc_hes;
+    if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
+
+    Timer timer;
+    if (isLDA()) {
+        calcHessianLDA(xc_hes);
+    } else if (isGGA()) {
+        NOT_IMPLEMENTED_ABORT;
+        //        calcPotentialGGA(xc_pot);
+    } else {
+        MSG_FATAL("Invalid functional type");
+    }
+    timer.stop();
+    int n = mrcpp::sum_nodes(xc_hes);
+    double t = timer.getWallTime();
+    Printer::printTree(0, "XC Hessian", n, t);
+    return xc_hes;
+}
+
+/** @brief Hessian calculation for LDA functionals
+ *
+ * The hessian conicides with the xcfun output, which is then
+ * deep copied into the corresponding potential functions.
+ */
+void XCFunctional::calcHessianLDA(FunctionTreeVector<3> &hessians) {
+    int nHessians = isSpinSeparated() ? 3 : 1;
+    int offset =  isSpinSeparated() ? 3 : 2;
+    for (int i = offset; i < offset + nHessians; i++) {
+        FunctionTree<3> &out_i = mrcpp::get_func(hessians, i);
+        FunctionTree<3> *pot = new FunctionTree<3>(MRA);
+        mrcpp::copy_grid(*pot, out_i);
+        mrcpp::copy_func(*pot, out_i);
+        hessians.push_back(std::make_tuple(1.0, pot));
+    }
 }
 
 } //namespace mrdft

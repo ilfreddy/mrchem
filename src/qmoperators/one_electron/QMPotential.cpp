@@ -23,7 +23,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * beyond this initial refinement.
  */
 QMPotential::QMPotential(int adap, bool shared)
-        : QMFunction(shared, nullptr, nullptr)
+        : QMFunction(shared)
         , QMOperator()
         , adap_build(adap) {}
 
@@ -32,8 +32,8 @@ QMPotential::QMPotential(int adap, bool shared)
  * The potential components should be cleared already at this point using clear().
  */
 QMPotential::~QMPotential() {
-    if (this->hasReal()) MSG_ERROR("Potential not cleared");
-    if (this->hasImag()) MSG_ERROR("Potential not cleared");
+    if (hasReal()) MSG_ERROR("Potential not cleared");
+    if (hasImag()) MSG_ERROR("Potential not cleared");
 }
 
 /** @brief apply potential
@@ -48,13 +48,11 @@ Orbital QMPotential::apply(Orbital inp) {
 
     Timer timer;
     Orbital out = inp.paramCopy();
-    FunctionTree<3> *re = calcRealPart(inp, false);
-    FunctionTree<3> *im = calcImagPart(inp, false);
-    out.set(NUMBER::Real, re);
-    out.set(NUMBER::Imag, im);
+    calcRealPart(out, inp, false);
+    calcImagPart(out, inp, false);
     timer.stop();
 
-    int n = out.getNNodes();
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QM potential", n, t);
 
@@ -73,13 +71,11 @@ Orbital QMPotential::dagger(Orbital inp) {
 
     Timer timer;
     Orbital out = inp.paramCopy();
-    FunctionTree<3> *re = calcRealPart(inp, true);
-    FunctionTree<3> *im = calcImagPart(inp, true);
-    out.set(NUMBER::Real, re);
-    out.set(NUMBER::Imag, im);
+    calcRealPart(out, inp, true);
+    calcImagPart(out, inp, true);
     timer.stop();
 
-    int n = out.getNNodes();
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QM adjoint potential", n, t);
 
@@ -88,94 +84,74 @@ Orbital QMPotential::dagger(Orbital inp) {
 
 /** @brief compute real part of output
  *
- * @param phi: input orbital
+ * @param inp: input orbital
  * @param dagger: apply complex conjugate potential
  *
  * Computes the real part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3> *QMPotential::calcRealPart(Orbital &phi, bool dagger) {
+void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
-    QMPotential &V = *this;
-    FunctionTreeVector<3> vec;
+    if (out.hasReal()) MSG_FATAL("Output not empty");
+    if (out.isShared()) MSG_FATAL("Cannot share this function");
 
-    if (V.hasReal() and phi.hasReal()) {
+    QMFunction &V = *this;
+    if (V.hasReal() and inp.hasReal()) {
         double coef = 1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.real());
-        mrcpp::multiply(prec, *tree, coef, V.real(), phi.real(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        Orbital tmp = out.paramCopy();
+        tmp.alloc(NUMBER::Real);
+        mrcpp::copy_grid(tmp.real(), inp.real());
+        mrcpp::multiply(prec, tmp.real(), coef, V.real(), inp.real(), adap);
+        out.add(1.0, tmp);
     }
-    if (V.hasImag() and phi.hasImag()) {
+    if (V.hasImag() and inp.hasImag()) {
         double coef = -1.0;
         if (dagger) coef *= -1.0;
-        if (phi.conjugate()) coef *= -1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.imag());
-        mrcpp::multiply(prec, *tree, coef, V.imag(), phi.imag(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        if (inp.conjugate()) coef *= -1.0;
+        Orbital tmp = out.paramCopy();
+        tmp.alloc(NUMBER::Real);
+        mrcpp::copy_grid(tmp.real(), inp.imag());
+        mrcpp::multiply(prec, tmp.real(), coef, V.imag(), inp.imag(), adap);
+        out.add(1.0, tmp);
     }
-
-    FunctionTree<3> *out = 0;
-    if (vec.size() == 1) {
-        out = &mrcpp::get_func(vec, 0);
-        mrcpp::clear(vec, false);
-    }
-    if (vec.size() == 2) {
-        out = new FunctionTree<3>(*MRA);
-        mrcpp::build_grid(*out, vec);
-        mrcpp::add(-1.0, *out, vec, 0);
-        mrcpp::clear(vec, true);
-    }
-    return out;
 }
 
 /** @brief compute imaginary part of output
  *
- * @param phi: input orbital
+ * @param inp: input orbital
  * @param dagger: apply complex conjugate potential
  *
  * Computes the imaginary part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3> *QMPotential::calcImagPart(Orbital &phi, bool dagger) {
+void QMPotential::calcImagPart(Orbital &out, Orbital &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
-    QMPotential &V = *this;
-    FunctionTreeVector<3> vec;
+    if (out.hasImag()) MSG_FATAL("Output not empty");
+    if (out.isShared()) MSG_FATAL("Cannot share this function");
 
-    if (V.hasReal() and phi.hasImag()) {
+    QMFunction &V = *this;
+    if (V.hasReal() and inp.hasImag()) {
         double coef = 1.0;
-        if (phi.conjugate()) coef *= -1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.imag());
-        mrcpp::multiply(prec, *tree, coef, V.real(), phi.imag(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        if (inp.conjugate()) coef *= -1.0;
+        Orbital tmp = out.paramCopy();
+        tmp.alloc(NUMBER::Imag);
+        mrcpp::copy_grid(tmp.imag(), inp.imag());
+        mrcpp::multiply(prec, tmp.imag(), coef, V.real(), inp.imag(), adap);
+        out.add(1.0, tmp);
     }
-    if (V.hasImag() and phi.hasReal()) {
+    if (V.hasImag() and inp.hasReal()) {
         double coef = 1.0;
         if (dagger) coef *= -1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.real());
-        mrcpp::multiply(prec, *tree, coef, V.imag(), phi.real(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        Orbital tmp = out.paramCopy();
+        tmp.alloc(NUMBER::Imag);
+        mrcpp::copy_grid(tmp.imag(), inp.real());
+        mrcpp::multiply(prec, tmp.imag(), coef, V.imag(), inp.real(), adap);
+        out.add(1.0, tmp);
     }
-
-    FunctionTree<3> *out = 0;
-    if (vec.size() == 1) {
-        out = &mrcpp::get_func(vec, 0);
-        mrcpp::clear(vec, false);
-    }
-    if (vec.size() == 2) {
-        out = new FunctionTree<3>(*MRA);
-        mrcpp::build_grid(*out, vec);
-        mrcpp::add(-1.0, *out, vec, 0);
-        mrcpp::clear(vec, true);
-    }
-    return out;
 }
 
 } //namespace mrchem

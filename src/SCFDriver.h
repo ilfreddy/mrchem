@@ -44,11 +44,7 @@ public:
             , imag(im)
             , dir(d)
             , name(n) {}
-
-    bool isDynamic() const {
-        if (std::abs(this->freq) > mrcpp::MachineZero) return true;
-        return false;
-    }
+    bool isDynamic() const { return (std::abs(this->freq) > mrcpp::MachineZero); }
     bool isImaginary() const { return this->imag; }
     std::string getFileSuffix() const {
         std::stringstream suffix;
@@ -71,8 +67,9 @@ public:
         for (int i = 0; i < this->calculations.size(); i++) {
             const ResponseCalculation &i_calc = calculations[i];
             if ((i_calc.pert == rsp_calc.pert) and (std::abs(i_calc.freq - rsp_calc.freq) < mrcpp::MachineZero) and
-                (i_calc.dir == rsp_calc.dir))
+                (i_calc.dir == rsp_calc.dir)) {
                 unique = false;
+            }
         }
         if (unique) this->calculations.push_back(rsp_calc);
     }
@@ -149,7 +146,6 @@ protected:
     // DFT input
     bool dft_spin;
     bool dft_use_gamma;
-    double dft_x_fac;
     double dft_cutoff;
     std::vector<double> dft_func_coefs;
     std::vector<std::string> dft_func_names;

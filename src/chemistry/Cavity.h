@@ -42,12 +42,12 @@ public:
     void eval_epsilon(bool argument, bool implement);
 
     double dcoeff;
+    bool is_eps = false;
+    bool is_linear = false;
 
 protected:
     double e_i = 1;
     double e_o = 2;
-    bool is_eps = false;
-    bool is_linear = false;
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     double d;

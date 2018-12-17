@@ -5,6 +5,10 @@ target_sources(mrchem-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/momentum_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/kinetic_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/nuclear_operator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/coulomb_operator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/coulomb_hessian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/xc_operator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/xc_hessian.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/electric_field_operator.cpp
   )
 
@@ -31,6 +35,26 @@ add_Catch_test(
 add_Catch_test(
   NAME nuclear_operator
   LABELS "nuclear_operator"
+  )
+
+add_Catch_test(
+  NAME coulomb_operator
+  LABELS "coulomb_operator"
+  )
+
+add_Catch_test(
+  NAME coulomb_hessian
+  LABELS "coulomb_hessian"
+  )
+
+add_Catch_test(
+  NAME xc_operator
+  LABELS "xc_operator"
+  )
+
+add_Catch_test(
+  NAME xc_hessian
+  LABELS "xc_hessian"
   )
 
 add_Catch_test(

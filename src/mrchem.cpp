@@ -9,12 +9,12 @@
  *
  */
 
-#include "getkw/Getkw.hpp"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 
 #include "SCFDriver.h"
@@ -43,4 +43,3 @@ int main(int argc, char **argv) {
     mpi::finalize();
     return 0;
 }
-

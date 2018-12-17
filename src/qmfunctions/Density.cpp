@@ -39,35 +39,8 @@ namespace mrchem {
  * NO transfer of ownership.
  */
 Density &Density::operator=(const Density &dens) {
-    if (this != &dens) {
-        if (dens.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
-        this->func_data = dens.func_data;
-        this->re = dens.re;
-        this->im = dens.im;
-    }
+    if (this != &dens) QMFunction::operator=(dens);
     return *this;
-}
-
-/** @brief Deep copy
- *
- * Returns a new density which is a full blueprint copy of *this density. This is
- * achieved by building a new grid for the real and imaginary parts and adding
- * in place.
- */
-Density Density::deepCopy() {
-    Density out(*this);              // Shallow copy (should copy all meta data)
-    out.set(NUMBER::Total, nullptr); // Clear *re and *im pointers
-    if (this->hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::copy_grid(out.real(), this->real());
-        mrcpp::copy_func(out.real(), this->real());
-    }
-    if (this->hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::copy_grid(out.imag(), this->imag());
-        mrcpp::copy_func(out.imag(), this->imag());
-    }
-    return out; // Return shallow copy
 }
 
 /** @brief Write density to disk
@@ -96,14 +69,14 @@ void Density::saveDensity(const std::string &file) {
     if (hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        this->real().saveTree(fname.str());
+        real().saveTree(fname.str());
     }
 
     //writing imaginary part
     if (hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        this->imag().saveTree(fname.str());
+        imag().saveTree(fname.str());
     }
 }
 
@@ -132,19 +105,19 @@ void Density::loadDensity(const std::string &file) {
     f.close();
 
     //reading real part
-    if (func_data.nChunksReal > 0) {
+    if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
         alloc(NUMBER::Real);
-        this->real().loadTree(fname.str());
+        real().loadTree(fname.str());
     }
 
     //reading imaginary part
-    if (func_data.nChunksImag > 0) {
+    if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
         alloc(NUMBER::Imag);
-        this->imag().loadTree(fname.str());
+        imag().loadTree(fname.str());
     }
 }
 
