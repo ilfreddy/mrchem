@@ -43,8 +43,8 @@
  * compute the gradient invariants if and when necessary.
  *
  * The XCFunctional keeps track of the density grid, whose size is
- * controlled through the interface functions buildGrid(), pruneGrid()
- * and refineGrid(). The grid is kept _fixed_ for all internal calculations
+ * initially defined through the interface function buildGrid().
+ * The grid is kept _fixed_ for all internal calculations
  * within the module.
  *
  * Typical usage within one SCF cycle:
@@ -54,7 +54,6 @@
  * 3) evaluate()
  * 4) calcEnergy()
  * 5) calcPotential()
- * 6) refineGrid()
  * 7) clear()
  *
  */
@@ -71,16 +70,18 @@ public:
     ~XCFunctional();
 
     bool hasDensity() const;
-    mrcpp::FunctionTree<3> &getDensity(DensityType type);
+    bool checkDensity(FunctionTreeVector<3> density) const;
+    mrcpp::FunctionTreeVector<3> &getDensity(DensityType type);
 
     int getNNodes() const;
     int getNPoints() const;
 
     void buildGrid(double Z, const mrcpp::Coord<3> &R);
-    void pruneGrid(double prec, bool abs_prec = true);
-    void refineGrid(double prec, bool abs_prec = true);
+    void copyGrid(FunctionTreeVector<3> densities);
     void clearGrid();
 
+    void setNDensities(int n) { this->nDensities = n; }
+    int getNDensities() { return this->nDensities; }
     void setDensityCutoff(double thrs) { this->cutoff = thrs; }
     void setFunctional(const std::string &name, double coef = 1.0);
 
@@ -110,8 +111,10 @@ public:
 
 protected:
     int order;
-    const bool spin_separated;                   ///< Spin polarization
-    const mrcpp::MultiResolutionAnalysis<3> MRA; ///< Computational domain
+    int nDensities;
+    unsigned int mode;
+    const bool spin_separated;                  ///< Spin polarization
+    const mrcpp::MultiResolutionAnalysis<3> MRA;///< Computational domain
 
     bool use_gamma; ///< Whether gamma-type or explicit derivatives are used
     double cutoff;  ///< Below the cutoff value, the density will be considered zero
@@ -119,20 +122,26 @@ protected:
     xc_functional functional;                 ///< The functional in the XCFun library (struct from xcfun library)
     mrcpp::DerivativeOperator<3> *derivative; ///< Derivative operator
 
-    mrcpp::FunctionTree<3> *rho_a;       ///< Alpha density
-    mrcpp::FunctionTree<3> *rho_b;       ///< Beta density
-    mrcpp::FunctionTree<3> *rho_t;       ///< Total density
-    mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density
-    mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density
-    mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total density
-    mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)
+    mrcpp::FunctionTreeVector<3> rho_a;  ///< Alpha densities
+    mrcpp::FunctionTreeVector<3> rho_b;  ///< Beta densities
+    mrcpp::FunctionTreeVecroe<3> rho_t;  ///< Total densities
+    mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha densities
+    mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  densities
+    mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total densities
+    mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s)
 
     mrcpp::FunctionTreeVector<3> xcInput;  ///< Bookkeeping array to feed XCFun
     mrcpp::FunctionTreeVector<3> xcOutput; ///< Bookkeeping array returned by XCFun
 
+    void clearGrid();
+    void clearGrid(FunctionTreeVector<3> densities);
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
 
+    void setup_partial();
+    void setup_partial(FunctionTree<3> &rho_a, FunctionTree<3> &rho_b);
+    void setup_partial(FunctionTree<3> &rho_t);
+    void setup_contracted();
     void setupXCInput();
     void setupXCOutput();
     int setupXCInputDensity();
@@ -160,7 +169,6 @@ protected:
                                             mrcpp::FunctionTreeVector<3> grad_rhob);
 
     mrcpp::FunctionTree<3> *calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V, mrcpp::FunctionTreeVector<3> &rho);
-    mrcpp::FunctionTree<3> *doubleDivergence(mrcpp::FunctionTreeVector<3> &df2dg2);
 };
 
 } // namespace mrdft
