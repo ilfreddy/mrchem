@@ -144,7 +144,8 @@ bool XCFunctional::hasDensity() const {
 bool checkDensity(FunctionTreeVector<3> density) const {
     bool out = true;
     if (density.size() < nDensities) out = false;
-    for (int i = 0; i < order; i++) {
+    std::cout << 'HACK Check only GS density for now...' << std::eendl;
+    for (int i = 0; i < 1; i++) {
         FunctionTree<3> dens = mrcpp::get_func(density, i);
         if (temp->getSquareNorm() < 0.0) out = false;
     }
@@ -158,14 +159,35 @@ bool checkDensity(FunctionTreeVector<3> density) const {
  * Returns a reference to the internal vector of density functions so that it can be
  * computed by the host program. This needs to be done before setup().
  */
-FunctionTreeVector<3> & XCFunctional::getDensity(DensityType type) {
+FunctionTreeVector<3> & XCFunctional::getDensityVector(DensityType type) {
     switch (type) {
         case DensityType::Total:
-            if (checkDensity(rho_t)) return rho_t;
+            return rho_t;
         case DensityType::Alpha:
-            if (checkDensity(rho_a)) return rho_a;
+            return rho_a;
         case DensityType::Beta:
-            if (checkDensity(rho_b)) return rho_b;
+            return rho_b;
+        default:
+            MSG_FATAL("Invalid density type");
+    }
+    MSG_FATAL("Total density functions not properly initialized");
+}
+
+/** @brief Return FunctionTree for the input density
+ *
+ * @param[in] type Which density to return (alpha, beta or total)
+ *
+ * Returns a reference to the internal vector of density functions so that it can be
+ * computed by the host program. This needs to be done before setup().
+ */
+FunctionTree<3> & XCFunctional::getDensity(DensityType type, int index) {
+    switch (type) {
+        case DensityType::Total:
+            return mrcpp::get_func(rho_t, index);
+        case DensityType::Alpha:
+            return mrcpp::get_func(rho_a, index);
+        case DensityType::Beta:
+            return mrcpp::get_func(rho_b, index);
         default:
             MSG_FATAL("Invalid density type");
     }
