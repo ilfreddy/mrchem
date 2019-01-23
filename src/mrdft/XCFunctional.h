@@ -71,7 +71,8 @@ public:
 
     bool hasDensity() const;
     bool checkDensity(FunctionTreeVector<3> density) const;
-    mrcpp::FunctionTreeVector<3> &getDensity(DensityType type);
+    mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
+    mrcpp::FunctionTreeVector<3> &getDensity(DensityType type, int index = 0);
 
     int getNNodes() const;
     int getNPoints() const;
