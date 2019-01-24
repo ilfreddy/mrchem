@@ -102,6 +102,8 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     fun.setUseGamma(true);
     fun.setDensityCutoff(1.0e-10);
     fun.evalSetup(MRDFT::Hessian);
+    fun.setNDensities(1);
+    fun.allocateDensities();
     XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
 
     V.setup(prec);
