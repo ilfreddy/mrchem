@@ -261,7 +261,7 @@ protected:
     void calcGroundStateProperties();
     void calcLinearResponseProperties(const ResponseCalculation &rsp_calc);
 
-    mrdft::XCFunctional *setupFunctional(int order);
+    mrdft::XCFunctional *setupFunctional(int order, int n_dens = 1);
     void setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol);
     void setupInitialGroundState();
     void setupPerturbedOperators(const ResponseCalculation &rsp_calc);

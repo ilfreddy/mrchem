@@ -75,6 +75,8 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
     fun.setUseGamma(false);
     fun.setDensityCutoff(1.0e-10);
     fun.evalSetup(1);
+    fun.setNDensities(1);
+    fun.allocateDensities();
     XCOperator V(&fun, &Phi);
 
     // reference values obtained with a test run at order=9 in unit_test.cpp and prec=1.0e-5 here

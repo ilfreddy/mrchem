@@ -596,7 +596,7 @@ void SCFDriver::setupPerturbedOperators(const ResponseCalculation &rsp_calc) {
         xFac = 1.0;
     } else if (wf_method == "dft") {
         xFac = xcfun->amountEXX();
-        xcfun = setupFunctional(MRDFT::Hessian);
+        xcfun = setupFunctional(MRDFT::Hessian, 2);
         dXC = new XCOperator(xcfun, phi, phi_x, phi_y);
     }
     if (xFac > mrcpp::MachineZero) NOT_IMPLEMENTED_ABORT;
@@ -997,7 +997,7 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
  *
  */
 
-mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
+mrdft::XCFunctional *SCFDriver::setupFunctional(int order, int n_dens) {
     mrdft::XCFunctional *fun = new mrdft::XCFunctional(*MRA, dft_spin);
     for (int i = 0; i < dft_func_names.size(); i++) {
         double f_coef = dft_func_coefs[i];
@@ -1006,8 +1006,9 @@ mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
     }
     fun->setUseGamma(dft_use_gamma);
     fun->setDensityCutoff(dft_cutoff);
+    fun->setNDensities(n_dens);
     fun->evalSetup(order);
-    // setupInitialGrid(*fun, *molecule);
+    fun->allocateDensities();
     return fun;
 }
 
