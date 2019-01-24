@@ -62,12 +62,6 @@ XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
         , functional(xc_new_functional())
         , derivative(nullptr) {
     derivative = new mrcpp::ABGVOperator<3>(MRA, 0.0, 0.0);
-    if (isSpinSeparated()) {
-        rho_a = new FunctionTree<3>(MRA);
-        rho_b = new FunctionTree<3>(MRA);
-    } else {
-        rho_t = new FunctionTree<3>(MRA);
-    }
 }
 
 /** @brief Destructor */
@@ -85,7 +79,7 @@ XCFunctional::~XCFunctional() {
  *
  * Prepare the XCFun object for evaluation based on the chosen parameters.
  */
-void XCFunctional::evalSetup(int ord) {
+void XCFunctional::evalSetup(int ord, int mod) {
     if (mod != 1 and mod != 3) {
         MSG_FATAL("Only contracted or partial derivative modes are available")
     }
@@ -98,7 +92,7 @@ void XCFunctional::evalSetup(int ord) {
     unsigned int current = 0;   //!< no current density
     unsigned int exp_derivative = not useGamma(); //!< use gamma or explicit derivatives
     if (isLDA()) exp_derivative = 0; //!< fall back to gamma-type derivatives if LDA (bad hack: no der are actually needed here!)
-    xc_user_eval_setup(functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, exp_derivative);
+    xc_user_eval_setup(functional, order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
 }
 
 /** @brief Set density functional
@@ -121,6 +115,7 @@ void XCFunctional::setFunctional(const std::string &name, double coef) {
  * and beta densities are tested, otherwise only the total density.
  */
 bool XCFunctional::hasDensity() const {
+    bool out = true;
     if (isSpinSeparated()) {
         out = checkDensity(rho_a);
         out = checkDensity(rho_b);
@@ -141,13 +136,13 @@ bool XCFunctional::hasDensity() const {
  * not be used in reality.
  *
  */
-bool checkDensity(FunctionTreeVector<3> density) const {
+bool XCFunctional::checkDensity(FunctionTreeVector<3> density) const {
     bool out = true;
     if (density.size() < nDensities) out = false;
-    std::cout << 'HACK Check only GS density for now...' << std::eendl;
+    std::cout << "HACK Check only GS density for now..." << std::endl;
     for (int i = 0; i < 1; i++) {
-        FunctionTree<3> dens = mrcpp::get_func(density, i);
-        if (temp->getSquareNorm() < 0.0) out = false;
+        FunctionTree<3> &dens = mrcpp::get_func(density, i);
+        if (dens.getSquareNorm() < 0.0) out = false;
     }
     return out;
 }
@@ -198,13 +193,13 @@ FunctionTree<3> & XCFunctional::getDensity(DensityType type, int index) {
 int XCFunctional::getNNodes() const {
     int nodes = 0;
     if (isSpinSeparated()) {
-        FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
-        FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
-        nodes = rho_gs_a->getNNodes();
-        if (nodes != rho_gs_b->getNNodes()) MSG_ERROR("Alpha and beta grids not equal");
+        const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
+        const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
+        nodes = rho_gs_a.getNNodes();
+        if (nodes != rho_gs_b.getNNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
-        FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
-        nodes = rho_gs_t->getNNodes();
+        const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
+        nodes = rho_gs_t.getNNodes();
     }
     return nodes;
 }
@@ -214,15 +209,15 @@ int XCFunctional::getNPoints() const {
     int nodes = 0;
     int points = 0;
     if (isSpinSeparated()) {
-        FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
-        FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
-        nodes = rho_gs_a->getNEndNodes();
-        points = rho_gs_a->getTDim()*rho_a->getKp1_d();
-        if (nodes != rho_gs_b->getNEndNodes()) MSG_ERROR("Alpha and beta grids not equal");
+        const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
+        const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
+        nodes = rho_gs_a.getNEndNodes();
+        points = rho_gs_a.getTDim()*rho_gs_a.getKp1_d();
+        if (nodes != rho_gs_b.getNEndNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
-        FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
-        nodes = rho_t->getNEndNodes();
-        points = rho_t->getTDim() * rho_t->getKp1_d();
+        const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
+        nodes = rho_gs_t.getNEndNodes();
+        points = rho_gs_t.getTDim() * rho_gs_t.getKp1_d();
     }
     return nodes * points;
 }
@@ -245,12 +240,12 @@ void XCFunctional::buildGrid(double Z, const mrcpp::Coord<3> &R) {
             FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
             mrcpp::build_grid(rho_gs_a, gauss);
             mrcpp::build_grid(rho_gs_b, gauss);
-            distributeGrid(rho_a)
-            distributeGrid(rho_b)
+            copyGrid(rho_a);
+            copyGrid(rho_b);
         } else {
             FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
             mrcpp::build_grid(rho_gs_t, gauss);
-            distributeGrid(rho_t)
+            copyGrid(rho_t);
         }
     }
 }
@@ -304,7 +299,7 @@ void XCFunctional::refineGrid(double prec, bool abs_prec) {
  * This will _remove_ all existing grid refinement and leave only root nodes
  * in the density grids.
  */
-void XCFunctional::clearGrid(densities) {
+void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
     for (int i = 0; i < densities.size(); i++) {
         FunctionTree<3> &rho = mrcpp::get_func(densities, i);
         rho_a.clear();
@@ -338,11 +333,11 @@ void XCFunctional::setup_contracted() {
  */
 void XCFunctional::setup_partial() {
     if (isSpinSeparated()) {
-        FunctionTreeVector &rho_gs_a = mrcpp::get_function(rho_a, 0);
-        FunctionTreeVector &rho_gs_b = mrcpp::get_function(rho_b, 0);
+        FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
+        FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         setup_partial(rho_gs_a, rho_gs_b);
     } else {
-        FunctionTreeVector &rho_gs_t = mrcpp::get_function(rho_t, 0);
+        FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
         setup_partial(rho_gs_t);
     }
 }
@@ -429,13 +424,13 @@ void XCFunctional::setupXCInput() {
 int XCFunctional::setupXCInputDensity() {
     int nUsed = 0;
     if (isSpinSeparated()) {
-        if (rho_a == nullptr) MSG_FATAL("Invalid alpha density");
-        if (rho_b == nullptr) MSG_FATAL("Invalid beta density");
+        if (rho_a.size() <= 0) MSG_FATAL("Invalid alpha density");
+        if (rho_b.size() <= 0) MSG_FATAL("Invalid beta density");
         xcInput.push_back(rho_a[0]);
         xcInput.push_back(rho_b[0]);
         nUsed = 2;
     } else {
-        if (rho_t == nullptr) MSG_FATAL("Invalid total density");
+        if (rho_t.size() <= 0) MSG_FATAL("Invalid total density");
         xcInput.push_back(rho_t[0]);
         nUsed = 1;
     }

@@ -70,16 +70,15 @@ public:
     ~XCFunctional();
 
     bool hasDensity() const;
-    bool checkDensity(FunctionTreeVector<3> density) const;
+    bool checkDensity(mrcpp::FunctionTreeVector<3> density) const;
     mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
-    mrcpp::FunctionTreeVector<3> &getDensity(DensityType type, int index = 0);
+    mrcpp::FunctionTree<3> &getDensity(DensityType type, int index = 0);
 
     int getNNodes() const;
     int getNPoints() const;
 
     void buildGrid(double Z, const mrcpp::Coord<3> &R);
-    void copyGrid(FunctionTreeVector<3> densities);
-    void clearGrid();
+    void copyGrid(mrcpp::FunctionTreeVector<3> densities);
 
     void setNDensities(int n) { this->nDensities = n; }
     int getNDensities() { return this->nDensities; }
@@ -102,7 +101,7 @@ public:
         return exx;
     }
 
-    void evalSetup(int order);
+    void evalSetup(int order, int mod = 1);
     void setup();
     void clear();
 
@@ -125,7 +124,7 @@ protected:
 
     mrcpp::FunctionTreeVector<3> rho_a;  ///< Alpha densities
     mrcpp::FunctionTreeVector<3> rho_b;  ///< Beta densities
-    mrcpp::FunctionTreeVecroe<3> rho_t;  ///< Total densities
+    mrcpp::FunctionTreeVector<3> rho_t;  ///< Total densities
     mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha densities
     mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  densities
     mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total densities
@@ -135,13 +134,13 @@ protected:
     mrcpp::FunctionTreeVector<3> xcOutput; ///< Bookkeeping array returned by XCFun
 
     void clearGrid();
-    void clearGrid(FunctionTreeVector<3> densities);
+    void clearGrid(mrcpp::FunctionTreeVector<3> densities);
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
 
     void setup_partial();
-    void setup_partial(FunctionTree<3> &rho_a, FunctionTree<3> &rho_b);
-    void setup_partial(FunctionTree<3> &rho_t);
+    void setup_partial(mrcpp::FunctionTree<3> &rho_a, mrcpp::FunctionTree<3> &rho_b);
+    void setup_partial(mrcpp::FunctionTree<3> &rho_t);
     void setup_contracted();
     void setupXCInput();
     void setupXCOutput();
