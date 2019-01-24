@@ -125,6 +125,27 @@ bool XCFunctional::hasDensity() const {
     return out;
 }
 
+/** @brief Allocate the elements of the density vector arrays
+ *
+ * The density arrays which will contain the GS and the perturbed
+ * densities are allocated as empty FunctinTree objects. The pointers
+ * ae then stored in the corresponding FunctionTreeVector
+ */
+void XCFunctional::allocateDensities() {
+    bool out = true;
+    for (int i = 0; i < nDensities; i ++) {
+        if (isSpinSeparated()) {
+            FunctionTree<3> *temp_a = new FunctionTree<3>(MRA);
+            FunctionTree<3> *temp_b = new FunctionTree<3>(MRA);
+            rho_a.push_back(std::make_tuple(1.0, temp_a));
+            rho_b.push_back(std::make_tuple(1.0, temp_b));
+        } else {
+            FunctionTree<3> *temp_t = new FunctionTree<3>(MRA);
+            rho_t.push_back(std::make_tuple(1.0, temp_t));
+        }
+    }
+}
+
 /** @brief Check whether the density vector has all required components
  *
  * Checks if the required input densities have been computed and are
@@ -138,9 +159,9 @@ bool XCFunctional::hasDensity() const {
  */
 bool XCFunctional::checkDensity(FunctionTreeVector<3> density) const {
     bool out = true;
-    if (density.size() < nDensities) out = false;
+    if (density.size() < nDensities) out = false; //Not all required densities are present and we should make them
     std::cout << "HACK Check only GS density for now..." << std::endl;
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < nDensities; i++) {
         FunctionTree<3> &dens = mrcpp::get_func(density, i);
         if (dens.getSquareNorm() < 0.0) out = false;
     }
