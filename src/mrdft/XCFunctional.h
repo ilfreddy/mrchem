@@ -76,6 +76,7 @@ public:
 
     int getNNodes() const;
     int getNPoints() const;
+    void allocateDensities();
 
     void buildGrid(double Z, const mrcpp::Coord<3> &R);
     void copyGrid(mrcpp::FunctionTreeVector<3> densities);
@@ -109,7 +110,7 @@ public:
     double calcEnergy();
     mrcpp::FunctionTreeVector<3> calcPotential();
 
-protected:
+private:
     int order;
     int nDensities;
     unsigned int mode;
