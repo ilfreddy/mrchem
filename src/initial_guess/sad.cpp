@@ -78,7 +78,10 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     mrdft::XCFunctional xcfun(*MRA, not restricted);
     xcfun.setFunctional("SLATERX");
     xcfun.setFunctional("VWN5C");
-    xcfun.evalSetup(1);
+    xcfun.evalSetup(MRDFT::Gradient);
+    xcfun.setNDensities(1);
+    xcfun.allocateDensities();
+    
     KineticOperator T(D);
     NuclearOperator V_nuc(mol.getNuclei(), prec);
     CoulombOperator J(&P);

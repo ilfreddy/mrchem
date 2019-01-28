@@ -304,7 +304,7 @@ void XCFunctional::clearGrid() {
 void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
     for (int i = 0; i < densities.size(); i++) {
         FunctionTree<3> &rho = mrcpp::get_func(densities, i);
-        rho_a.clear();
+        rho.clear();
     }
 }
 
