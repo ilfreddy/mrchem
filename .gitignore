@@ -120,3 +120,5 @@ doc/html/
 doc/xml/
 
 .direnv/
+*_inst
+*_build
