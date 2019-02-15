@@ -61,6 +61,7 @@
 namespace mrdft {
 
 enum class DensityType { Total, Alpha, Beta };
+enum class ModeType { Partial = 1, Potential = 2, Contracted = 3 };
 
 class XCFunctional final {
 public:
@@ -69,8 +70,9 @@ public:
     XCFunctional &operator=(const XCFunctional &func) = delete;
     ~XCFunctional();
 
-    bool hasDensity() const;
-    bool checkDensity(mrcpp::FunctionTreeVector<3> density) const;
+    bool hasDensity(int n_dens_a = 1
+                    ) const;
+    bool checkDensity(mrcpp::FunctionTreeVector<3> density, int n_dens = 1) const;
     mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
     mrcpp::FunctionTree<3> &getDensity(DensityType type, int index = 0);
 
@@ -138,7 +140,8 @@ private:
     void clearGrid(mrcpp::FunctionTreeVector<3> densities);
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
-
+    int getContractedLength() const; 
+    
     void setup_partial();
     void setup_partial(mrcpp::FunctionTree<3> &rho_a, mrcpp::FunctionTree<3> &rho_b);
     void setup_partial(mrcpp::FunctionTree<3> &rho_t);
