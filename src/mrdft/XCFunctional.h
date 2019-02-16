@@ -60,8 +60,7 @@
 
 namespace mrdft {
 
-enum class DensityType { Total, Alpha, Beta };
-enum class ModeType { Partial = 1, Potential = 2, Contracted = 3 };
+enum class DensityType { Total, Spin, Alpha, Beta }; //This should be kept in sync with the DENSITY namespace of MRChem
 
 class XCFunctional final {
 public:
@@ -75,6 +74,7 @@ public:
     bool checkDensity(mrcpp::FunctionTreeVector<3> density, int n_dens = 1) const;
     mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
     mrcpp::FunctionTree<3> &getDensity(DensityType type, int index = 0);
+    void setDensity(mrcpp::FunctionTree<3> &Density, int index = 0);
 
     int getNNodes() const;
     int getNPoints() const;
@@ -133,8 +133,9 @@ private:
     mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total densities
     mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s)
 
-    mrcpp::FunctionTreeVector<3> xcInput;  ///< Bookkeeping array to feed XCFun
-    mrcpp::FunctionTreeVector<3> xcOutput; ///< Bookkeeping array returned by XCFun
+    mrcpp::FunctionTreeVector<3> xcInput;   ///< Bookkeeping array to feed XCFun
+    mrcpp::FunctionTreeVector<3> xcOutput;  ///< Bookkeeping array returned by XCFun
+    mrcpp::FunctionTreeVector<3> xcDensity; ///< Bookkeeping array with density variables
 
     void clearGrid();
     void clearGrid(mrcpp::FunctionTreeVector<3> densities);
@@ -157,20 +158,8 @@ private:
 
     void calcPotentialLDA(mrcpp::FunctionTreeVector<3> &potentials);
     void calcPotentialGGA(mrcpp::FunctionTreeVector<3> &potentials);
-    void calcGradientGGA(mrcpp::FunctionTreeVector<3> &potentials);
-    void calcHessianGGA(mrcpp::FunctionTreeVector<3> &potentials);
-    void calcHessianGGAgamma(mrcpp::FunctionTreeVector<3> &potentials);
-    void calcHessianGGAgrad(mrcpp::FunctionTreeVector<3> &potentials);
 
-    mrcpp::FunctionTree<3> *calcGradientGGA(mrcpp::FunctionTree<3> &df_drho, mrcpp::FunctionTreeVector<3> &df_dgr);
-    mrcpp::FunctionTree<3> *calcGradientGGA(mrcpp::FunctionTree<3> &df_drho,
-                                            mrcpp::FunctionTree<3> &df_dgamma,
-                                            mrcpp::FunctionTreeVector<3> grad_rho);
-    mrcpp::FunctionTree<3> *calcGradientGGA(mrcpp::FunctionTree<3> &df_drhoa,
-                                            mrcpp::FunctionTree<3> &df_dgaa,
-                                            mrcpp::FunctionTree<3> &df_dgab,
-                                            mrcpp::FunctionTreeVector<3> grad_rhoa,
-                                            mrcpp::FunctionTreeVector<3> grad_rhob);
+    mrcpp::FunctionTree<3> *calcPotentialGGA(mrcpp::FunctionTree<3> &df_drho, mrcpp::FunctionTreeVector<3> &df_dgr);
 
     mrcpp::FunctionTree<3> *calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V, mrcpp::FunctionTreeVector<3> &rho);
 };

@@ -86,43 +86,4 @@ void XCPotentialD1::setupPotential(double prec) {
     this->functional->clear();
 }
 
-/** @brief Return FunctionTree for the XC spin potential
- *
- * @param[in] type Which spin potential to return (alpha, beta or total)
- */
-FunctionTree<3> &XCPotentialD1::getPotential(int spin) {
-    bool spinFunctional = this->functional->isSpinSeparated();
-    int pot_idx = -1;
-    if (spinFunctional and spin == SPIN::Alpha) {
-        pot_idx = 0;
-    } else if (spinFunctional and spin == SPIN::Beta) {
-        pot_idx = 1;
-    } else if (not spinFunctional) {
-        pot_idx = 0;
-    } else {
-        NOT_IMPLEMENTED_ABORT;
-    }
-    return mrcpp::get_func(this->potentials, pot_idx);
-}
-
-/** @brief XCPotentialD1 application
- *
- * @param[in] phi Orbital to which the potential is applied
- *
- * The operator is applied by choosing the correct potential function
- * which is then assigned to the real function part of the operator
- * base-class before the base class function is called.
- */
-Orbital XCPotentialD1::apply(Orbital phi) {
-    QMPotential &V = *this;
-    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
-
-    FunctionTree<3> &tree = getPotential(phi.spin());
-    V.setReal(&tree);
-    Orbital Vphi = QMPotential::apply(phi);
-    V.setReal(nullptr);
-
-    return Vphi;
-}
-
-} // namespace mrchem
+} //namespace mrchem

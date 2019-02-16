@@ -36,12 +36,9 @@ public:
     ~XCPotentialD2() override;
 
 private:
-    std::shared_ptr<OrbitalVector> orbitals_x; ///< 1st external set of perturbed orbitals used to build the density
-    std::shared_ptr<OrbitalVector> orbitals_y; ///< 2nd external set of perturbed orbitals used to build the density
-    mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
-    Density *pertDensity_t;                    ///< total first-order perturbed electronic density
-    Density *pertDensity_a;                    ///< alpha first-order perturbed electronic density
-    Density *pertDensity_b;                    ///< beta  first-order perturbed electronic density
+    std::shared_ptr<OrbitalVector> *orbitals_x; ///< 1st external set of perturbed orbitals used to build the density
+    std::shared_ptr<OrbitalVector> *orbitals_y; ///< 2nd external set of perturbed orbitals used to build the density
+    mrcpp::FunctionTreeVector<3> potentials;    ///< XC Potential functions collected in a vector
 
     void setup(double prec) override;
     void clear() override;
