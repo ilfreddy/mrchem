@@ -24,37 +24,26 @@ void XCPotential::setupDensity(double prec) {
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
-        Timer time_a;
-        FunctionTree<3> &func_a = this->getDensity(DENSITY::Alpha);
-        Density rho_a(false);
-        rho_a.setReal(&func_a);
-        density::compute(prec, rho_a, Phi, DENSITY::Alpha);
-        rho_a.setReal(nullptr);
-        time_a.stop();
-        Printer::printTree(0, "XC alpha density", func_a.getNNodes(), time_a.getWallTime());
-
-        Timer time_b;
-        FunctionTree<3> &func_b = this->getDensity(DENSITY::Beta);
-        Density rho_b(false);
-        rho_b.setReal(&func_b);
-        density::compute(prec, rho_b, Phi, DENSITY::Beta);
-        rho_b.setReal(nullptr);
-        time_b.stop();
-        Printer::printTree(0, "XC beta density", func_b.getNNodes(), time_b.getWallTime());
-
-        // Extend to union grid
+        buildDensity(DENSITY::Alpha, prec);
+        buildDensity(DENSITY::Beta, prec);
+        FunctionTree<3> &func = this->getDensity(DENSITY::Alpha);
+        FunctionTree<3> &func = this->getDensity(DENSITY::Beta);
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
-        Timer time_t;
-        FunctionTree<3> &func_t = this->getDensity(DENSITY::Total);
-        Density rho_t(false);
-        rho_t.setReal(&func_t);
-        density::compute(prec, rho_t, Phi, DENSITY::Total);
-        rho_t.setReal(nullptr);
-        time_t.stop();
-        Printer::printTree(0, "XC total density", func_t.getNNodes(), time_t.getWallTime());
+        buildDensity(DENSITY::Total, prec);
     }
+}
+
+void XCPotential::buildDensity(int spin, double prec) {
+    Timer time;
+    FunctionTree<3> &func = this->getDensity(spin);
+    Density rho(false);
+    rho.setReal(&func);
+    density::compute(prec, rho, Phi, spin);
+    rho.setReal(nullptr);
+    time_a.stop();
+    Printer::printTree(0, "XC GS density", func.getNNodes(), time.getWallTime());
 }
 
 mrcpp::FunctionTree<3> &XCPotential::getDensity(int spin) {
@@ -64,9 +53,49 @@ mrcpp::FunctionTree<3> &XCPotential::getDensity(int spin) {
     MSG_FATAL("Invalid density type");
 }
 
-// NOTE AFTER DISCUSSION WITH STIG: Need to move stuff that is
-// iteration-independent out of the response loop, so that all required
-// functions, which only depend on the GS density are computed
-// once. Comment: still the grid for rho_1 is borrowed from rho_0 and
-// rho_0 should still be available.
+/** @brief Return FunctionTree for the XC spin potential
+ *
+ * @param[in] type Which spin potential to return (alpha, beta or total)
+ */
+FunctionTree<3> &XCPotential::getPotential(int spin) {
+    bool spinFunctional = this->functional->isSpinSeparated();
+    int pot_idx = -1;
+    if (spinFunctional and spin == SPIN::Alpha) {
+        pot_idx = 0;
+    } else if (spinFunctional and spin == SPIN::Beta) {
+        pot_idx = 1;
+    } else if (not spinFunctional) {
+        pot_idx = 0;
+    } else {
+        NOT_IMPLEMENTED_ABORT;
+    }
+    return mrcpp::get_func(this->potentials, pot_idx);
+}
+
+/** @brief XCPotentialD1 application
+ *
+ * @param[in] phi Orbital to which the potential is applied
+ *
+ * The operator is applied by choosing the correct potential function
+ * which is then assigned to the real function part of the operator
+ * base-class before the base class function is called.
+ */
+Orbital XCPotential::apply(Orbital phi) {
+    QMPotential &V = *this;
+    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+
+    FunctionTree<3> &tree = getPotential(phi.spin());
+    V.setReal(&tree);
+    Orbital Vphi = QMPotential::apply(phi);
+    V.setReal(nullptr);
+
+    return Vphi;
+}
+
+//NOTE AFTER DISCUSSION WITH STIG: Need to move stuff that is
+//iteration-independent out of the response loop, so that all required
+//functions, which only depend on the GS density are computed
+//once. Comment: still the grid for rho_1 is borrowed from rho_0 and
+//rho_0 should still be available.
+
 } // namespace mrchem
