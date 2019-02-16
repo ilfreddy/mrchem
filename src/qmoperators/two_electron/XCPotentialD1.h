@@ -36,11 +36,7 @@ private:
 
     void setup(double prec) override;
     void clear() override;
-
-    void setupPotential(double prec) override;
-    mrcpp::FunctionTree<3> &getPotential(int spin);
-
-    Orbital apply(Orbital phi) override;
+    void setupPotential(double prec);
 };
 
 } // namespace mrchem
