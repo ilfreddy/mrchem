@@ -48,8 +48,9 @@ protected:
     std::shared_ptr<mrdft::XCFunctional> &getFunctional() { return this->functional; }
 
     virtual void setupPotential(double prec) {}
-    Orbital apply(Orbital phi) override = 0;
-
+    FunctionTree<3> getPotential(int spin);
+    Orbital apply(Orbital phi);
+    void buildDensity(int spin, double prec = -1.0);
     void setupDensity(double prec = -1.0);
 };
 
