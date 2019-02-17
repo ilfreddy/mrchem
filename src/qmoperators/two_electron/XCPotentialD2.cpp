@@ -38,16 +38,10 @@ XCPotentialD2::XCPotentialD2(XCFunctional_p F,
                              bool mpi_shared)
         : XCPotential(F, Phi, mpi_shared)
         , orbitals_x(X)
-        , orbitals_y(Y)
-        , pertDensity_t(nullptr)
-        , pertDensity_a(nullptr)
-        , pertDensity_b(nullptr) {}
+        , orbitals_y(Y) {}
 
 XCPotentialD2::~XCPotentialD2() {
     mrcpp::clear(this->potentials, true);
-    if (this->pertDensity_t != nullptr) MSG_ABORT("Operator not properly cleared");
-    if (this->pertDensity_a != nullptr) MSG_ABORT("Operator not properly cleared");
-    if (this->pertDensity_b != nullptr) MSG_ABORT("Operator not properly cleared");
 }
 
 /** @brief Prepare the operator for application
@@ -68,18 +62,6 @@ void XCPotentialD2::setup(double prec) {
     setupDensity(prec);
     setupPerturbedDensity(prec);
     setupPotential(prec);
-}
-
-/** @brief Clears all data in the XCPotentialD2 object */
-void XCPotentialD2::clear() {
-    this->energy = 0.0;
-    if (this->pertDensity_t != nullptr) delete this->pertDensity_t;
-    if (this->pertDensity_a != nullptr) delete this->pertDensity_a;
-    if (this->pertDensity_b != nullptr) delete this->pertDensity_b;
-    this->pertDensity_t = nullptr;
-    this->pertDensity_a = nullptr;
-    this->pertDensity_b = nullptr;
-    clearApplyPrec();
 }
 
 // LUCA This does not work in the case of a non spin separated functional used for an open-shell system!!
@@ -105,13 +87,12 @@ void XCPotentialD2::buildPerturbedDensity(OrbitalVector &Phi,
                                           int density_spin) {
     Timer time;
     FunctionTree<3> &rho = this->getDensity(density_spin);
-    pert_dens = new Density(false);
-    Density &dRho = *pert_dens;
-    mrcpp::build_grid(dRho.real(), rho);
-    density::compute(-1.0, dRho, Phi, X, Y, density_spin);
+    Density *pert_dens = new Density(false);
+    mrcpp::build_grid(*pert_dens.real(), rho);
+    density::compute(-1.0, *pert_dens, Phi, X, Y, density_spin);
     time.stop();
-    Printer::printTree(0, "XC perturbed density", dRho_b.getNNodes(NUMBER::Total), time_b.getWallTime());
-    this->functional->setDensity;
+    Printer::printTree(0, "XC perturbed density", *pert_dens.getNNodes(NUMBER::Total), time.getWallTime());
+    this->functional->setDensity(*pert_dens.real(), density_spin, 1);
 }
 
 /** @brief Compute XC potential(s)
