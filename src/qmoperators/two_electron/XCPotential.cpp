@@ -25,25 +25,33 @@ void XCPotential::setupDensity(double prec) {
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
-        buildDensity(DENSITY::Alpha, prec);
-        buildDensity(DENSITY::Beta, prec);
-        FunctionTree<3> &func = this->getDensity(DENSITY::Alpha);
-        FunctionTree<3> &func = this->getDensity(DENSITY::Beta);
+        buildDensity(Phi, DENSITY::Alpha, prec);
+        buildDensity(Phi, DENSITY::Beta, prec);
+        FunctionTree<3> &func_a = this->getDensity(DENSITY::Alpha);
+        FunctionTree<3> &func_b = this->getDensity(DENSITY::Beta);
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
-        buildDensity(DENSITY::Total, prec);
+        buildDensity(Phi, DENSITY::Total, prec);
     }
 }
 
-void XCPotential::buildDensity(int spin, double prec) {
+/** @brief Clears all data in the XCPotential object */
+void XCPotential::clear() {
+    this->energy = 0.0;
+    mrcpp::clear(this->potentials, true);
+    clearApplyPrec();
+}
+
+void XCPotential::buildDensity(OrbitalVector &Phi, int spin, double prec) {
     Timer time;
+    time.start();
     FunctionTree<3> &func = this->getDensity(spin);
     Density rho(false);
     rho.setReal(&func);
     density::compute(prec, rho, Phi, spin);
     rho.setReal(nullptr);
-    time_a.stop();
+    time.stop();
     Printer::printTree(0, "XC GS density", func.getNNodes(), time.getWallTime());
 }
 

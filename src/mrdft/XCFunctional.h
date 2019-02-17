@@ -74,7 +74,7 @@ public:
     bool checkDensity(mrcpp::FunctionTreeVector<3> density, int n_dens = 1) const;
     mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
     mrcpp::FunctionTree<3> &getDensity(DensityType type, int index = 0);
-    void setDensity(mrcpp::FunctionTree<3> &Density, int index = 0);
+    void setDensity(mrcpp::FunctionTree<3> &Density, DensityType spin, int index = 0);
 
     int getNNodes() const;
     int getNPoints() const;

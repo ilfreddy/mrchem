@@ -32,10 +32,7 @@ public:
                            bool mpi_shared = false);
 
 private:
-    mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
-
     void setup(double prec) override;
-    void clear() override;
     void setupPotential(double prec);
 };
 

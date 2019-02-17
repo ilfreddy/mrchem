@@ -50,13 +50,6 @@ void XCPotentialD1::setup(double prec) {
     setupPotential(prec);
 }
 
-/** @brief Clears all data in the XCPotentialD1 object */
-void XCPotentialD1::clear() {
-    this->energy = 0.0;
-    mrcpp::clear(this->potentials, true);
-    clearApplyPrec();
-}
-
 /** @brief Compute XC potential(s)
  *
  * @param prec Precision used in refinement of density grid
