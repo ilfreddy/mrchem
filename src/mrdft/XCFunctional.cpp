@@ -217,8 +217,8 @@ FunctionTree<3> &XCFunctional::getDensity(FunctionTreeVector<3> &density, int in
     return mrcpp::get_func(density, index);
 }
 
-void XCFunctional::setDensity(FunctionTree<3> *density, DensityType type, int index) {
-    FunctionTreeVector<3> dens_vec = getDensityVector(type);
+void XCFunctional::setDensity(FunctionTree<3> *density, DensityType spin, int index) {
+    FunctionTreeVector<3> dens_vec = getDensityVector(spin);
     if (dens_vec.size() != index) {
         MSG_FATAL("Index mismatch");
     }

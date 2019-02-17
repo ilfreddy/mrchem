@@ -30,11 +30,7 @@ public:
     XCPotentialD1(mrdft::XCFunctional *F, OrbitalVector *Phi = nullptr);
 
 private:
-    mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
-
     void setup(double prec);
-    void clear();
-
     void setupPotential(double prec);
 };
 
