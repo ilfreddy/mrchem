@@ -39,18 +39,20 @@ public:
     friend class XCOperator;
 
 protected:
-    double energy;                                   ///< XC energy
-    std::shared_ptr<OrbitalVector> orbitals;         ///< External set of orbitals used to build the density
-    std::shared_ptr<mrdft::XCFunctional> functional; ///< External XC functional to be used
+    double energy;                           ///< XC energy
+    std::shared_ptr<OrbitalVector> *orbitals;                 ///< External set of orbitals used to build the density
+    std::shared_ptr<mrdft::XCFunctional> *functional;         ///< External XC functional to be used
+    mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
 
     double getEnergy() const { return this->energy; }
     mrcpp::FunctionTree<3> &getDensity(int spin);
     std::shared_ptr<mrdft::XCFunctional> &getFunctional() { return this->functional; }
 
     virtual void setupPotential(double prec) {}
-    FunctionTree<3> getPotential(int spin);
+    mrcpp::FunctionTree<3> &getPotential(int spin);
     Orbital apply(Orbital phi);
-    void buildDensity(int spin, double prec = -1.0);
+    void clear();
+    void buildDensity(OrbitalVector &Phi, int spin, double prec = -1.0);
     void setupDensity(double prec = -1.0);
 };
 

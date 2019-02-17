@@ -36,28 +36,17 @@ public:
     ~XCPotentialD2() override;
 
 private:
-    std::shared_ptr<OrbitalVector> *orbitals_x; ///< 1st external set of perturbed orbitals used to build the density
-    std::shared_ptr<OrbitalVector> *orbitals_y; ///< 2nd external set of perturbed orbitals used to build the density
-    mrcpp::FunctionTreeVector<3> potentials;    ///< XC Potential functions collected in a vector
+    std::shared_ptr<OrbitalVector> *orbitals_x;               ///< 1st external set of perturbed orbitals used to build the density
+    std::shared_ptr<OrbitalVector> *orbitals_y;               ///< 2nd external set of perturbed orbitals used to build the density
 
     void setup(double prec) override;
-    void clear() override;
-
     void setupPotential(double prec) override;
-    mrcpp::FunctionTree<3> &getPotential(int orbitalSpin, int densitySpin);
-    mrcpp::FunctionTree<3> *buildComponent(int orbital_spin, int density_spin, mrcpp::FunctionTree<3> &pert_dens);
-    mrcpp::FunctionTree<3> *buildComponentGamma(int orbital_spin, int density_spin, mrcpp::FunctionTree<3> &pert_dens);
-    mrcpp::FunctionTree<3> *buildComponentGrad(int orbital_spin, int density_spin, mrcpp::FunctionTree<3> &pert_dens);
-    mrcpp::FunctionTree<3> *buildComponentLDA(int orbital_spin, int density_spin, mrcpp::FunctionTree<3> &pert_dens);
+    void buildPerturbedDensity(OrbitalVector &Phi,
+                               OrbitalVector &X,
+                               OrbitalVector &Y,
+                               int density_spin);
 
-    Orbital apply(Orbital phi) override;
-
-    // LUCA I wanted to include the following declarations in the cpp
-    // file but i did not manage to get the syntax (copied from
-    // density_utils.copp) right.
-    int getPotentialIndex(int orbitalSpin, int densitySpin);
     void setupPerturbedDensity(double prec = -1.0);
-    mrcpp::FunctionTree<3> *calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V, mrcpp::FunctionTreeVector<3> &rho);
 };
 
 } // namespace mrchem
