@@ -47,12 +47,12 @@ protected:
     double getEnergy() const { return this->energy; }
     int getOrder() const { return this->functional->getOrder(); }
 
-    mrcpp::FunctionTree<3> &getDensity(int spin);
+    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin);
     virtual void setupPotential(double prec) {}
     mrcpp::FunctionTree<3> &getPotential(int spin);
     Orbital apply(Orbital phi);
     void clear();
-    void buildDensity(OrbitalVector &Phi, int spin, double prec = -1.0);
+    void buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec = -1.0);
     void setupDensity(double prec = -1.0);
 };
 

@@ -29,7 +29,7 @@ void CoulombPotentialD2::setupGlobalDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     Timer timer;
-    density::compute(prec, rho, Phi, X, Y, DENSITY::Total);
+    density::compute(prec, rho, Phi, X, Y, DENSITY::DensityType::Total);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes(NUMBER::Total);
