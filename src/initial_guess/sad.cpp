@@ -113,12 +113,12 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
 
     // Compute XC density
     if (restricted) {
-        mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::Total);
+        mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::DensityType::Total);
         mrcpp::copy_grid(rho_xc, rho_j.real());
         mrcpp::copy_func(rho_xc, rho_j.real());
     } else {
-        mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::Alpha);
-        mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::Beta);
+        mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::DensityType::Alpha);
+        mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::DensityType::Beta);
         mrcpp::add(prec, rho_a, 1.0, rho_j.real(), -1.0 * Nb / Ne, rho_j.real());
         mrcpp::add(prec, rho_b, 1.0, rho_j.real(), -1.0 * Na / Ne, rho_j.real());
 

@@ -39,6 +39,8 @@ using mrcpp::FunctionTreeVector;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
+using Eigen::MatrixXi;
+using Eigen::VectorXi;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
@@ -87,11 +89,8 @@ XCFunctional::~XCFunctional() {
  *
  * Prepare the XCFun object for evaluation based on the chosen parameters.
  */
-void XCFunctional::evalSetup(int ord, int mod) {
-    if (mod != 1 and mod != 3) {
-        MSG_FATAL("Only contracted or partial derivative modes are available")
-    }
-    mode = ModeType::Partial; //! HACK HACK HACK
+void XCFunctional::evalSetup(int ord) {
+    unsigned int mode = 1; //!< only partial derivative mode implemented
     order = ord; //!< update the order parameter in the object
     unsigned int func_type = isGGA(); //!< only LDA and GGA supported for now
     unsigned int dens_type = 1 + isSpinSeparated();  //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
@@ -183,13 +182,13 @@ bool XCFunctional::checkDensity(FunctionTreeVector<3> density, int n_dens) const
  * Returns a reference to the internal vector of density functions so that it can be
  * computed by the host program. This needs to be done before setup().
  */
-FunctionTreeVector<3> & XCFunctional::getDensityVector(DensityType type) {
+FunctionTreeVector<3> & XCFunctional::getDensityVector(DENSITY::DensityType type) {
     switch (type) {
-        case DensityType::Total:
+        case DENSITY::DensityType::Total:
             return rho_t;
-        case DensityType::Alpha:
+        case DENSITY::DensityType::Alpha:
             return rho_a;
-        case DensityType::Beta:
+        case DENSITY::DensityType::Beta:
             return rho_b;
         default:
             MSG_FATAL("Invalid density type");
@@ -204,25 +203,18 @@ FunctionTreeVector<3> & XCFunctional::getDensityVector(DensityType type) {
  * Returns a reference to the internal vector of density functions so that it can be
  * computed by the host program. This needs to be done before setup().
  */
-FunctionTree<3> &XCFunctional::getDensity(DensityType type, int index) {
+FunctionTree<3> &XCFunctional::getDensity(DENSITY::DensityType type, int index) {
     FunctionTreeVector<3> dens_vec = getDensityVector(type);
-    return getDensity(dens_vec, index);
+    if(index >= dens_vec.size()) MSG_FATAL("Vector out of boounds");
+    return mrcpp::get_func(dens_vec, index);
 }
 
-FunctionTree<3> &XCFunctional::getDensity(FunctionTreeVector<3> &density, int index) {
-    try { density.at(index); } 
-    catch (const std::out_of_range& oor) {
-        MSG_FATAL("Out of Range error: " << oor.what());
-    }
-    return mrcpp::get_func(density, index);
-}
-
-void XCFunctional::setDensity(FunctionTree<3> *density, DensityType spin, int index) {
+void XCFunctional::setDensity(FunctionTree<3> &density, DENSITY::DensityType spin, int index) {
     FunctionTreeVector<3> dens_vec = getDensityVector(spin);
     if (dens_vec.size() != index) {
         MSG_FATAL("Index mismatch");
     }
-    dens_vec.push_back(std::make_tuple(1.0, density));
+    dens_vec.push_back(std::make_tuple(1.0, &density));
 }
 
 /** @brief Return the number of nodes in the density grid (including branch nodes)*/
@@ -344,12 +336,12 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) {
-        MSG_ABORT("Not enough density functions initialized");
+        MSG_FATAL("Not enough density functions initialized");
     }
-    setupGradient(order);
+    setupGradient();
     setupXCInput();
     setupXCOutput();
-    setupXCDensityVariable();
+    setupXCDensityVariables();
 }
 
 void XCFunctional::setupGradient() {
@@ -357,12 +349,12 @@ void XCFunctional::setupGradient() {
     int n_grad;
     for (int i = 0; i < nDensities; i++) {
         if(isSpinSeparated()) {
-            FunctionTreeVector<3> temp_a = mrcpp::gradient(*derivative, getDensity(DensityType::Alpha, i));
-            FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DensityType::Beta, i));
+            FunctionTreeVector<3> temp_a = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Alpha, i));
+            FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
             grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
             grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
         } else {
-            FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DensityType::Total, i));
+            FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Total, i));
             grad_t.insert(grad_t.end(), temp_t.begin(), temp_t.end());
         }
     }
@@ -378,7 +370,7 @@ void XCFunctional::setupGradient() {
  */
 void XCFunctional::clear() {
     mrcpp::clear(xcInput, false);
-    mrcpp::clear(xcDensityVariables, false);
+    mrcpp::clear(xcDensity, false);
     mrcpp::clear(xcOutput, true);
     mrcpp::clear(grad_a, true);
     mrcpp::clear(grad_b, true);
@@ -523,15 +515,15 @@ void XCFunctional::evaluate() {
     {
         int nNodes = mrcpp::get_func(xcInput, 0).getNEndNodes();
 #pragma omp for schedule(guided)
-        for (int n = 0; n < nNodes; n++) {
+        for (int n_idx = 0; n_idx < nNodes; n_idx++) {
             MatrixXd inpData, outData, conData, denData;
             inpData = MatrixXd::Zero(nPts, nInp);
             outData = MatrixXd::Zero(nPts, nOut);
             conData = MatrixXd::Zero(nPts, nCon);
-            compressNodeData(n, nInp, xcInput, inpData);
+            compressNodeData(n_idx, nInp, xcInput, inpData);
             evaluateBlock(inpData, outData);
-            contractNodeData(n, outData, conData);
-            expandNodeData(n, nCon, xcOutput, conData);
+            contractNodeData(n_idx, nPts, outData, conData);
+            expandNodeData(n_idx, nCon, xcOutput, conData);
         }
     }
     for (int i = 0; i < nOut; i++) {
@@ -547,20 +539,20 @@ void XCFunctional::evaluate() {
 
 
 
-void XCFunctional::contractNodeData(int n, int n_coefs, MatrixXd &out_data, MatrixXd &con_data) {
+void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_data, MatrixXd &con_data) {
 
     MatrixXi output_mask = build_output_mask(isLDA(), isSpinSeparated(), order);
     VectorXi density_mask = build_density_mask(isLDA(), isSpinSeparated(), order);
     if(output_mask.rows() != density_mask.size()) MSG_FATAL("Inconsistent lengths");
 
     VectorXd cont_i;
-    for (int i = 0; i < output_mask.cols()) {
-        cont_i = VectorXd::Zero(n_coefs);
-        for (int j = 0; i < output_mask.rows()) {
+    for (int i = 0; i < output_mask.cols(); i++) {
+        cont_i = VectorXd::Zero(n_points);
+        for (int j = 0; j < output_mask.rows(); j++) {
             int out_index = output_mask(i,j);
             int den_index = density_mask(j);
             if(den_index >= 0) {
-                FunctionNode<3> &dens_node = mrcpp::get_func(xcDensity, density_index(i)).getEndFuncNode(n);
+                FunctionNode<3> &dens_node = mrcpp::get_func(xcDensity, density_mask(i)).getEndFuncNode(node_index);
                 VectorXd dens_i;
                 dens_node.getValues(dens_i);
                 cont_i += out_data.col(out_index).array() * dens_i.array();

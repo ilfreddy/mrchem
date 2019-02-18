@@ -65,8 +65,8 @@ TEST_CASE("Density", "[density]") {
             Density rho_t(false);
             Density rho_s(false);
 
-            density::compute(prec, rho_t, Phi, DENSITY::Total);
-            density::compute(prec, rho_s, Phi, DENSITY::Spin);
+            density::compute(prec, rho_t, Phi, DENSITY::DensityType::Total);
+            density::compute(prec, rho_s, Phi, DENSITY::DensityType::Spin);
 
             REQUIRE(rho_t.integrate().real() == Approx(7.0));
             REQUIRE(rho_s.integrate().real() == Approx(3.0));
@@ -76,8 +76,8 @@ TEST_CASE("Density", "[density]") {
             Density rho_a(true);
             Density rho_b(true);
 
-            density::compute(prec, rho_a, Phi, DENSITY::Alpha);
-            density::compute(prec, rho_b, Phi, DENSITY::Beta);
+            density::compute(prec, rho_a, Phi, DENSITY::DensityType::Alpha);
+            density::compute(prec, rho_b, Phi, DENSITY::DensityType::Beta);
 
             REQUIRE(rho_a.integrate().real() == Approx(5.0));
             REQUIRE(rho_b.integrate().real() == Approx(2.0));

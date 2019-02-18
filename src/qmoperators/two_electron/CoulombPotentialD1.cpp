@@ -27,7 +27,7 @@ void CoulombPotentialD1::setupGlobalDensity(double prec) {
     Density &rho = this->density;
 
     Timer timer;
-    density::compute(prec, rho, Phi, DENSITY::Total);
+    density::compute(prec, rho, Phi, DENSITY::DensityType::Total);
     print_utils::qmfunction(2, "Coulomb density", rho, timer);
 }
 

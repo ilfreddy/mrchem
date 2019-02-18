@@ -15,6 +15,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "config.h"
+#include "mrenum.h"
 
 // clang-format off
 namespace mrchem {
@@ -39,9 +40,7 @@ const double sqrt_pi =    1.7724538509055160273;
 
 namespace SPIN { enum type { Paired, Alpha, Beta }; }
 namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 namespace MRDFT {enum type {Function, Gradient, Hessian}; }
-
 
 using ComplexInt = std::complex<int>;
 using ComplexDouble = std::complex<double>;
