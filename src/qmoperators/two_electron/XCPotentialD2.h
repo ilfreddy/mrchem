@@ -44,7 +44,7 @@ private:
     void buildPerturbedDensity(OrbitalVector &Phi,
                                OrbitalVector &X,
                                OrbitalVector &Y,
-                               int density_spin);
+                               DENSITY::DensityType spin);
 
     void setupPerturbedDensity(double prec = -1.0);
 };

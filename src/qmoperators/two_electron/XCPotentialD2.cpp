@@ -74,25 +74,25 @@ void XCPotentialD2::setupPerturbedDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     if (this->functional->isSpinSeparated()) {
-        buildPerturbedDensity(Phi, X, Y, DENSITY::Alpha);
-        buildPerturbedDensity(Phi, X, Y, DENSITY::Beta);
+        buildPerturbedDensity(Phi, X, Y, DENSITY::DensityType::Alpha);
+        buildPerturbedDensity(Phi, X, Y, DENSITY::DensityType::Beta);
     } else {
-        buildPerturbedDensity(Phi, X, Y, DENSITY::Total);
+        buildPerturbedDensity(Phi, X, Y, DENSITY::DensityType::Total);
     }
 }
 
 void XCPotentialD2::buildPerturbedDensity(OrbitalVector &Phi,
                                           OrbitalVector &X,
                                           OrbitalVector &Y,
-                                          int density_spin) {
+                                          DENSITY::DensityType density_spin) {
     Timer time;
     FunctionTree<3> &rho = this->getDensity(density_spin);
     Density *pert_dens = new Density(false);
-    mrcpp::build_grid(*pert_dens.real(), rho);
+    mrcpp::build_grid(pert_dens->real(), rho);
     density::compute(-1.0, *pert_dens, Phi, X, Y, density_spin);
     time.stop();
-    Printer::printTree(0, "XC perturbed density", *pert_dens.getNNodes(NUMBER::Total), time.getWallTime());
-    this->functional->setDensity(*pert_dens.real(), density_spin, 1);
+    Printer::printTree(0, "XC perturbed density", pert_dens->getNNodes(NUMBER::Total), time.getWallTime());
+    this->functional->setDensity(pert_dens->real(), density_spin, 1);
 }
 
 /** @brief Compute XC potential(s)
