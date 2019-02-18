@@ -25,14 +25,14 @@ void XCPotential::setupDensity(double prec) {
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
-        buildDensity(Phi, DENSITY::Alpha, prec);
-        buildDensity(Phi, DENSITY::Beta, prec);
-        FunctionTree<3> &func_a = this->getDensity(DENSITY::Alpha);
-        FunctionTree<3> &func_b = this->getDensity(DENSITY::Beta);
+        buildDensity(Phi, DENSITY::DensityType::Alpha, prec);
+        buildDensity(Phi, DENSITY::DensityType::Beta, prec);
+        FunctionTree<3> &func_a = this->getDensity(DENSITY::DensityType::Alpha);
+        FunctionTree<3> &func_b = this->getDensity(DENSITY::DensityType::Beta);
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
-        buildDensity(Phi, DENSITY::Total, prec);
+        buildDensity(Phi, DENSITY::DensityType::Total, prec);
     }
 }
 
@@ -43,7 +43,7 @@ void XCPotential::clear() {
     clearApplyPrec();
 }
 
-void XCPotential::buildDensity(OrbitalVector &Phi, int spin, double prec) {
+void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec) {
     Timer time;
     time.start();
     FunctionTree<3> &func = this->getDensity(spin);
@@ -55,11 +55,8 @@ void XCPotential::buildDensity(OrbitalVector &Phi, int spin, double prec) {
     Printer::printTree(0, "XC GS density", func.getNNodes(), time.getWallTime());
 }
 
-mrcpp::FunctionTree<3> &XCPotential::getDensity(int spin) {
-    if (spin == DENSITY::Total) return this->functional->getDensity(mrdft::DensityType::Total);
-    if (spin == DENSITY::Alpha) return this->functional->getDensity(mrdft::DensityType::Alpha);
-    if (spin == DENSITY::Beta) return this->functional->getDensity(mrdft::DensityType::Beta);
-    MSG_ABORT("Invalid density type");
+mrcpp::FunctionTree<3> &XCPotential::getDensity(DENSITY::DensityType spin) {
+    return this->functional->getDensity(spin);
 }
 
 /** @brief Return FunctionTree for the XC spin potential

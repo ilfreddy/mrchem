@@ -29,6 +29,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "XCFun/xcfun.h"
+#include "mrenum.h"
 
 /**
  *  @class XCFunctional
@@ -58,9 +59,8 @@
  *
  */
 
-namespace mrdft {
 
-enum class DensityType { Total, Spin, Alpha, Beta }; //This should be kept in sync with the DENSITY namespace of MRChem
+namespace mrdft {
 
 class XCFunctional final {
 public:
@@ -72,9 +72,9 @@ public:
     bool hasDensity(int n_dens_a = 1
                     ) const;
     bool checkDensity(mrcpp::FunctionTreeVector<3> density, int n_dens = 1) const;
-    mrcpp::FunctionTreeVector<3> &getDensityVector(DensityType type);
-    mrcpp::FunctionTree<3> &getDensity(DensityType type, int index = 0);
-    void setDensity(mrcpp::FunctionTree<3> &Density, DensityType spin, int index = 0);
+    mrcpp::FunctionTreeVector<3> &getDensityVector(DENSITY::DensityType spin);
+    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType type, int index = 0);
+    void setDensity(mrcpp::FunctionTree<3> &density, DENSITY::DensityType spin, int index = 0);
 
     int getNNodes() const;
     int getNPoints() const;
@@ -104,7 +104,7 @@ public:
         return exx;
     }
 
-    void evalSetup(int order, int mod = 1);
+    void evalSetup(int order);
     void setup();
     void clear();
 
@@ -142,19 +142,21 @@ private:
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
     int getContractedLength() const; 
+    int getDensityLength() const;
+    int getNodeLength() const;
     
-    void setup_partial();
-    void setup_partial(mrcpp::FunctionTree<3> &rho_a, mrcpp::FunctionTree<3> &rho_b);
-    void setup_partial(mrcpp::FunctionTree<3> &rho_t);
-    void setup_contracted();
+    void setupGradient();
+        
     void setupXCInput();
     void setupXCOutput();
     int setupXCInputDensity();
     int setupXCInputGradient();
+    void setupXCDensityVariables();
 
     void evaluateBlock(Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
     void compressNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
     void expandNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);
+    void contractNodeData(int n, int n_coefs, Eigen::MatrixXd &out_data, Eigen::MatrixXd &con_data);
 
     void calcPotentialLDA(mrcpp::FunctionTreeVector<3> &potentials);
     void calcPotentialGGA(mrcpp::FunctionTreeVector<3> &potentials);

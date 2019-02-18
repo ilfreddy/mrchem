@@ -45,8 +45,8 @@ public:
     void setupPotential(double prec = -1.0) { potential->setupPotential(prec); }
 
     double getEnergy() { return potential->getEnergy(); }
-    mrcpp::FunctionTree<3> &getDensity(int spin) { return potential->getDensity(spin); }
-    std::shared_ptr<mrdft::XCFunctional> &getFunctional() { return potential->getFunctional(); }
+    int getOrder() { return potential->getOrder(); }
+    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin) { return potential->getDensity(spin); }
 
 private:
     std::shared_ptr<XCPotential> potential{nullptr};
