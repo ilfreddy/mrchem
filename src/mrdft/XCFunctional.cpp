@@ -48,6 +48,82 @@ namespace {
 MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order);
 VectorXi build_density_mask(bool is_lda, bool is_spin_sep, int order);
 void fill_output_mask(MatrixXi &mask, int start);
+
+
+MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order) {
+    bool is_gga = not is_lda;
+    MatrixXi mask(1,1) ;
+    int start = 1;
+    switch (order) {
+    case 0:
+        break;
+    case 1:
+        if (is_lda and is_spin_sep) {
+            mask.resize(2,1);
+        } else if (is_gga and not is_spin_sep) {
+            mask.resize(4,1);
+        } else if (is_gga and is_spin_sep) {
+            mask.resize(8,1);
+        }
+        break;
+    case 2:
+        start = 2;
+        if (is_lda and is_spin_sep) {
+            start = 3;
+            mask.resize(2,2);
+        } else if (is_gga and not is_spin_sep) {
+            start = 5;
+            mask.resize(4,4);
+        } else if (is_gga and is_spin_sep) {
+            start = 9;
+            mask.resize(8,8);
+        }
+        break;
+    default:
+        MSG_FATAL("Not implemented");
+    }
+    fill_output_mask(mask, start);
+    return mask;
+}
+
+VectorXi build_density_mask(bool is_lda, bool is_spin_sep, int order) {
+    bool is_gga = not is_lda;
+    VectorXi mask(1) ;
+    switch (order) {
+    case 0:
+    case 1:
+        mask(0) = -1;
+        break;
+    case 2:
+        mask(0) = 1;
+        if (is_lda and is_spin_sep) {
+            mask.resize(2);
+            mask << 2, 3;
+        } else if (is_gga and not is_spin_sep) {
+            mask.resize(4);
+            mask << 4, 5, 6, 7;
+        } else if (is_gga and is_spin_sep) {
+            mask.resize(8);
+            mask << 8, 9, 10, 11, 12, 13, 14, 15;
+        }
+        break;
+    default:
+        MSG_FATAL("Not implemented");
+    }
+    return mask;
+}
+
+void fill_output_mask(MatrixXi &mask, int value) {
+    for (int i = 0; i < mask.rows(); i++) {
+        mask(i,i) = value;
+        value++;
+        for (int j = i+1; j < mask.cols(); j++) {
+            mask(i,j) = value;
+            mask(i,j) = value;
+            value++;
+        }
+    }   
+}
 }
 
 namespace mrdft {
@@ -139,7 +215,6 @@ bool XCFunctional::hasDensity(int n_dens) const {
  * ae then stored in the corresponding FunctionTreeVector
  */
 void XCFunctional::allocateDensities() {
-    bool out = true;
     for (int i = 0; i < nDensities; i++) {
         if (isSpinSeparated()) {
             FunctionTree<3> *temp_a = new FunctionTree<3>(MRA);
@@ -346,7 +421,6 @@ void XCFunctional::setup() {
 
 void XCFunctional::setupGradient() {
     if(isLDA()) return;
-    int n_grad;
     for (int i = 0; i < nDensities; i++) {
         if(isSpinSeparated()) {
             FunctionTreeVector<3> temp_a = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Alpha, i));
@@ -546,19 +620,22 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
     if(output_mask.rows() != density_mask.size()) MSG_FATAL("Inconsistent lengths");
 
     VectorXd cont_i;
+    VectorXd cont_ij;
     for (int i = 0; i < output_mask.cols(); i++) {
         cont_i = VectorXd::Zero(n_points);
         for (int j = 0; j < output_mask.rows(); j++) {
+            cont_i = VectorXd::Zero(n_points);
             int out_index = output_mask(i,j);
             int den_index = density_mask(j);
             if(den_index >= 0) {
                 FunctionNode<3> &dens_node = mrcpp::get_func(xcDensity, density_mask(i)).getEndFuncNode(node_index);
                 VectorXd dens_i;
                 dens_node.getValues(dens_i);
-                cont_i += out_data.col(out_index).array() * dens_i.array();
-            } else if (density_index(i) == -1) {
-                cont_i += out_data.col(output_index(i));
+                cont_ij = out_data.col(out_index).array() * dens_i.array();
+            } else if (density_mask(i) == -1) {
+                cont_ij = out_data.col(out_index);
             }
+            cont_i += cont_ij;
         }
         con_data.col(i) = cont_i;
     }
@@ -730,7 +807,7 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
  * deep copied into the corresponding potential functions.
  */
 void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
-    int nPotentials = isSpinSeparated()? 2 : 1
+    int nPotentials = isSpinSeparated()? 2 : 1;
     for (int i = 0; i < nPotentials; i++) {
         FunctionTree<3> &out_i = mrcpp::get_func(xcOutput, i);
         auto *pot = new FunctionTree<3>(MRA);
@@ -765,66 +842,6 @@ void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
         potentials.push_back(std::make_tuple(1.0, pot));
     }
     pot = nullptr;
-}
-
-/** @brief XC potential calculation
- *
- * @param[in] df_drho Functional derivative wrt rho
- * @param[in] df_dgamma Functional_derivative wrt gamma
- * @param[in] grad_rho Gradient of rho
- *
- * Computes the XC potential for a non-spin separated functional and
- * gamma-type derivatives.
- */
-FunctionTree<3> *XCFunctional::calcPotentialGGA(FunctionTree<3> &df_drho,
-                                               FunctionTree<3> &df_dgamma,
-                                               FunctionTreeVector<3> grad_rho) {
-    FunctionTreeVector<3> funcs;
-    funcs.push_back(std::make_tuple(1.0, &df_drho));
-
-    FunctionTree<3> *tmp = calcGradDotPotDensVec(df_dgamma, grad_rho);
-    funcs.push_back(std::make_tuple(-2.0, tmp));
-
-    auto *V = new FunctionTree<3>(MRA);
-    mrcpp::build_grid(*V, funcs);
-    mrcpp::add(-1.0, *V, funcs);
-    delete tmp;
-    return V;
-}
-
-/** @brief XC potential calculation
- *
- * @param[in] df_drhoa Functional derivative wrt rhoa
- * @param[in] df_dgaa  Functional_derivative wrt gamma_aa
- * @param[in] df_dgab  Functional_derivative wrt gamma_ab
- * @param[in] df_dgbb  Functional_derivative wrt gamma_bb
- * @param[in] grad_rhoa Gradient of rho_a
- * @param[in] grad_rhob Gradient of rho_b
- *
- * Computes the XC potential for a spin separated functional and
- * gamma-type derivatives. Can be used both for alpha and beta
- * potentials by permuting the spin parameter.
- */
-FunctionTree<3> *XCFunctional::calcPotentialGGA(FunctionTree<3> &df_drhoa,
-                                               FunctionTree<3> &df_dgaa,
-                                               FunctionTree<3> &df_dgab,
-                                               FunctionTreeVector<3> grad_rhoa,
-                                               FunctionTreeVector<3> grad_rhob) {
-    FunctionTreeVector<3> funcs;
-    funcs.push_back(std::make_tuple(1.0, &df_drhoa));
-
-    FunctionTree<3> *tmp1 = calcGradDotPotDensVec(df_dgaa, grad_rhoa);
-    funcs.push_back(std::make_tuple(-2.0, tmp1));
-
-    FunctionTree<3> *tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob);
-    funcs.push_back(std::make_tuple(-1.0, tmp2));
-
-    auto *V = new FunctionTree<3>(MRA);
-    mrcpp::build_grid(*V, funcs);
-    mrcpp::add(-1.0, *V, funcs);
-    delete tmp1;
-    delete tmp2;
-    return V;
 }
 
 /** @brief XC potential calculation
@@ -875,14 +892,12 @@ FunctionTree<3> *XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V, Functio
     return result;
 }
 
-} // namespace mrdft
-
 int XCFunctional::getNodeLength() {
     FunctionTree<3> &tree = mrcpp::get_func(xcInput, 0);
     return tree.getTDim() * tree.getKp1_d();
 }
 
-int XCFunctional::getContractedLength() {
+int XCFunctional::getContractedLength() const {
     int length = -1;
     if(isLDA()) length = 1; //only one function needed for LDA
     if(isGGA()) length = 4; //four functions for LDA
@@ -890,91 +905,16 @@ int XCFunctional::getContractedLength() {
     return length;
 }
 
-int XCFunctional::getDensityLength() {
+int XCFunctional::getDensityLength() const {
     int length = -1;
     if(this->order < 2) {
         length = 0; // no contractions for order 0 or 1
-    } else if (order = 2) {
+    } else if (order == 2) {
         length = getContractedLength(); //same length as contracted fcns for order = 2
     }
     return length;
 }
 
-} //namespace mrdft
+} // namespace mrdft
 
-MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order) {
-    int size 1;
-    int start = 0;
-    MatrixXi mask(1,1) ;
-    switch (order) {
-    case 0:
-        break;
-    case 1:
-        start = 1;
-        if (is_lda and is_spin_sep) {
-            mask.resize(2,1);
-        } else if (is_gga and not is_spin_sep) {
-            mask.resize(4,1);
-        } else if (is_gga and is_spin_sep) {
-            mask.resize(8,1);
-        }
-        break;
-    case 2:
-        start = 2;
-        if (is_lda and is_spin_sep) {
-            start = 3;
-            mask.resize(2,2);
-        } else if (is_gga and not is_spin_sep) {
-            start = 5;
-            mask.resize(4,4);
-        } else if (is_gga and is_spin_sep) {
-            start = 9;
-            mask.resize(8,8);
-        }
-        break;
-    default:
-        MSG_FATAL("Not implemented");
-    }
-    fillMask(mask, start);
-    return mask;
-}
 
-VectorXi build_density_mask(bool is_lda, bool is_spin_sep, int order) {
-    int size 1;
-    int start = 0;
-    VectorXi mask(1) ;
-    switch (order) {
-    case 0:
-    case 1:
-        mask(0) = -1;
-        break;
-    case 2:
-        mask(0) = 1;
-        if (is_lda and is_spin_sep) {
-            mask.resize(2);
-            mask << 2, 3;
-        } else if (is_gga and not is_spin_sep) {
-            mask.resize(4);
-            mask << 4, 5, 6, 7;
-        } else if (is_gga and is_spin_sep) {
-            mask.resize(8);
-            mask << 8, 9, 10, 11, 12, 13, 14, 15;
-        }
-        break;
-    default:
-        MSG_FATAL("Not implemented");
-    }
-    return mask;
-}
-
-void fill_output_mask(MatrixXi &mask, int value) {
-    for (int i = 0, i < mask.rows(); i++) {
-        mask(i,i) = value;
-        value++;
-        for (int j = i+1, j < mask.cols(); j++) {
-            mask(i,j) = value;
-            mask(i,j) = value;
-            value++;
-        }
-    }   
-}

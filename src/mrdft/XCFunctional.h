@@ -115,7 +115,6 @@ public:
 private:
     int order;
     int nDensities;
-    unsigned int mode;
     const bool spin_separated;                  ///< Spin polarization
     const mrcpp::MultiResolutionAnalysis<3> MRA;///< Computational domain
 
@@ -143,7 +142,7 @@ private:
     int getOutputLength() const { return xc_output_length(this->functional); }
     int getContractedLength() const; 
     int getDensityLength() const;
-    int getNodeLength() const;
+    int getNodeLength();
     
     void setupGradient();
         
