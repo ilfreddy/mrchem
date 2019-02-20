@@ -89,7 +89,7 @@ FunctionTree<3> &XCPotential::getPotential(int spin) {
 Orbital XCPotential::apply(Orbital phi) {
     QMPotential &V = *this;
     if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
-
+    
     FunctionTree<3> &tree = getPotential(phi.spin());
     V.setReal(&tree);
     Orbital Vphi = QMPotential::apply(phi);
@@ -97,6 +97,8 @@ Orbital XCPotential::apply(Orbital phi) {
 
     return Vphi;
 }
+
+
 
 //NOTE AFTER DISCUSSION WITH STIG: Need to move stuff that is
 //iteration-independent out of the response loop, so that all required
