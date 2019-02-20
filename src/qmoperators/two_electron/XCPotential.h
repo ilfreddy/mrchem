@@ -4,8 +4,8 @@
 #include "parallel.h"
 #include "qmoperators/one_electron/QMPotential.h"
 
-/** @class XCPotential
- *
+/** 
+ * @class XCPotential
  * @brief Exchange-Correlation potential defined by a particular (spin) density
  *
  * The XC potential is computed by mapping of the density through a XC functional,
@@ -23,6 +23,7 @@
  *
  * LDA and GGA functionals are supported as well as two different ways to compute
  * the XC potentials: either with explicit derivatives or gamma-type derivatives.
+ *
  */
 
 namespace mrchem {
