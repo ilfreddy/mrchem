@@ -51,23 +51,26 @@ void fill_output_mask(MatrixXi &mask, int start);
 
 
 MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order) {
+    int start = 2;
     bool is_gga = not is_lda;
     MatrixXi mask(1,1) ;
-    int start = 1;
+    mask << 1;
     switch (order) {
     case 0:
         break;
     case 1:
         if (is_lda and is_spin_sep) {
             mask.resize(2,1);
+            mask << 1, 2;
         } else if (is_gga and not is_spin_sep) {
             mask.resize(4,1);
+            mask << 1, 2, 3, 4;
         } else if (is_gga and is_spin_sep) {
             mask.resize(8,1);
+            mask << 1, 2, 3, 4, 5, 6, 7, 8;
         }
         break;
     case 2:
-        start = 2;
         if (is_lda and is_spin_sep) {
             start = 3;
             mask.resize(2,2);
@@ -78,11 +81,11 @@ MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order) {
             start = 9;
             mask.resize(8,8);
         }
+        fill_output_mask(mask, start);
         break;
     default:
         MSG_FATAL("Not implemented");
     }
-    fill_output_mask(mask, start);
     return mask;
 }
 
@@ -584,7 +587,7 @@ void XCFunctional::evaluate() {
     int nOut = getOutputLength();         // Output parameters from XCFun
     int nCon = getContractedLength();     // Contracted parameters to XCPotential 
     int nPts = getNodeLength();           // Number of gridpoints in a node
-        
+
 #pragma omp parallel firstprivate(nInp, nOut)
     {
         int nNodes = mrcpp::get_func(xcInput, 0).getNEndNodes();
@@ -600,7 +603,7 @@ void XCFunctional::evaluate() {
             expandNodeData(n_idx, nCon, xcOutput, conData);
         }
     }
-    for (int i = 0; i < nOut; i++) {
+    for (int i = 0; i < nCon; i++) {
         mrcpp::get_func(xcOutput, i).mwTransform(mrcpp::BottomUp);
         mrcpp::get_func(xcOutput, i).calcSquareNorm();
     }
@@ -617,14 +620,14 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
 
     MatrixXi output_mask = build_output_mask(isLDA(), isSpinSeparated(), order);
     VectorXi density_mask = build_density_mask(isLDA(), isSpinSeparated(), order);
-    if(output_mask.rows() != density_mask.size()) MSG_FATAL("Inconsistent lengths");
+    if(output_mask.cols() != density_mask.size()) MSG_FATAL("Inconsistent lengths");
 
     VectorXd cont_i;
     VectorXd cont_ij;
-    for (int i = 0; i < output_mask.cols(); i++) {
+    for (int i = 0; i < output_mask.rows(); i++) {
         cont_i = VectorXd::Zero(n_points);
-        for (int j = 0; j < output_mask.rows(); j++) {
-            cont_i = VectorXd::Zero(n_points);
+        for (int j = 0; j < output_mask.cols(); j++) {
+            cont_ij = VectorXd::Zero(n_points);
             int out_index = output_mask(i,j);
             int den_index = density_mask(j);
             if(den_index >= 0) {
@@ -632,7 +635,7 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
                 VectorXd dens_i;
                 dens_node.getValues(dens_i);
                 cont_ij = out_data.col(out_index).array() * dens_i.array();
-            } else if (density_mask(i) == -1) {
+            } else {
                 cont_ij = out_data.col(out_index);
             }
             cont_i += cont_ij;
