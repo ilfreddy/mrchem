@@ -48,7 +48,7 @@ protected:
     double getEnergy() const { return this->energy; }
     int getOrder() const { return this->functional->getOrder(); }
 
-    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin);
+    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin, int index = 0);
     virtual void setupPotential(double prec) {}
     mrcpp::FunctionTree<3> &getPotential(int spin);
     Orbital apply(Orbital phi);
