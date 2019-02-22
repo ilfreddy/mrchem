@@ -111,13 +111,11 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     fun.setUseGamma(true);
     fun.setDensityCutoff(1.0e-10);
     fun.evalSetup(MRDFT::Hessian);
-    fun.setNDensities(1);
+    fun.setNDensities(2);
     fun.allocateDensities();
-    XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
 
+    XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
     V.setup(prec);
-    V.setupDensity(prec);
-    V.setupPotential(prec);
 
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);

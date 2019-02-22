@@ -55,8 +55,8 @@ void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, do
     Printer::printTree(0, "XC GS density", func.getNNodes(), time.getWallTime());
 }
 
-mrcpp::FunctionTree<3> &XCPotential::getDensity(DENSITY::DensityType spin) {
-    return this->functional->getDensity(spin);
+mrcpp::FunctionTree<3> &XCPotential::getDensity(DENSITY::DensityType spin, int index) {
+    return this->functional->getDensity(spin, index);
 }
 
 /** @brief Return FunctionTree for the XC spin potential
