@@ -86,13 +86,15 @@ void XCPotentialD2::buildPerturbedDensity(OrbitalVector &Phi,
                                           OrbitalVector &Y,
                                           DENSITY::DensityType density_spin) {
     Timer time;
-    FunctionTree<3> &rho = this->getDensity(density_spin);
-    Density *pert_dens = new Density(false);
-    mrcpp::build_grid(pert_dens->real(), rho);
-    density::compute(-1.0, *pert_dens, Phi, X, Y, density_spin);
+    FunctionTree<3> &rho = this->getDensity(density_spin, 0);
+    FunctionTree<3> &rho_pert = this->getDensity(density_spin, 1);
+    Density pert_dens(false);
+    pert_dens.setReal(&rho_pert);
+    density::compute(-1.0, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
+    while (mrcpp::refine_grid(rho_pert, rho)) {}
+    pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
     time.stop();
-    Printer::printTree(0, "XC perturbed density", pert_dens->getNNodes(NUMBER::Total), time.getWallTime());
-    this->functional->setDensity(pert_dens->real(), density_spin, 1);
+    Printer::printTree(0, "XC perturbed density", pert_dens.getNNodes(NUMBER::Total), time.getWallTime());
 }
 
 /** @brief Compute XC potential(s)

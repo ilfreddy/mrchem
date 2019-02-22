@@ -108,17 +108,15 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
 
     mrdft::XCFunctional fun(*MRA, false);
     fun.setFunctional("PBE", 1.0);
-    fun.setUseGamma(true);
+    fun.setUseGamma(false);
     fun.setDensityCutoff(1.0e-10);
     fun.evalSetup(MRDFT::Hessian);
-    fun.setNDensities(1);
+    fun.setNDensities(2);
     fun.allocateDensities();
-    XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
 
+    XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
     V.setup(prec);
-    V.setupDensity(prec);
-    V.setupPotential(prec);
-    V.setupDensity(prec);
+
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
