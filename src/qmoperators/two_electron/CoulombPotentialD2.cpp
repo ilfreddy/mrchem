@@ -52,7 +52,7 @@ void CoulombPotentialD2::setupLocalDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     Timer timer;
-    density::compute_local(prec, rho, Phi, X, Y, DENSITY::Total);
+    density::compute_local(prec, rho, Phi, X, Y, DENSITY::DensityType::Total);
     print_utils::qmfunction(2, "Perturbed Coulomb density", rho, timer);
 }
 
