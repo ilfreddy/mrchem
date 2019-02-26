@@ -47,7 +47,7 @@ void CoulombPotentialD1::setupLocalDensity(double prec) {
     Density &rho = this->density;
 
     Timer timer;
-    density::compute_local(prec, rho, Phi, DENSITY::Total);
+    density::compute_local(prec, rho, Phi, DENSITY::DensityType::Total);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes(NUMBER::Total);
