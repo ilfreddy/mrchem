@@ -580,7 +580,8 @@ void XCFunctional::evaluate() {
 
     int nInp = getInputLength();          // Input parameters to XCFun
     int nOut = getOutputLength();         // Output parameters from XCFun
-    int nCon = getContractedLength();     // Contracted parameters to XCPotential 
+    int nCon = getContractedLength();     // Contracted parameters to XCPotential
+    int nFcs = nCon + 1;                  // One extra function for the energy density
     int nPts = getNodeLength();           // Number of gridpoints in a node
 
 #pragma omp parallel firstprivate(nInp, nOut)
@@ -591,15 +592,15 @@ void XCFunctional::evaluate() {
             MatrixXd inpData, outData, conData, denData;
             inpData = MatrixXd::Zero(nPts, nInp);
             outData = MatrixXd::Zero(nPts, nOut);
-            conData = MatrixXd::Zero(nPts, nCon + 1);
+            conData = MatrixXd::Zero(nPts, nFcs);
             compressNodeData(n_idx, nInp, xcInput, inpData);
             evaluateBlock(inpData, outData);
-            conData.col(0) = outData.col(0); // we always keep the density functional
+            conData.col(0) = outData.col(0); // we always keep the energy functional
             contractNodeData(n_idx, nPts, outData, conData);
-            expandNodeData(n_idx, nCon, xcOutput, conData);
+            expandNodeData(n_idx, nFcs, xcOutput, conData);
         }
     }
-    for (int i = 0; i < nCon + 1; i++) {
+    for (int i = 0; i < nFcs; i++) {
         mrcpp::get_func(xcOutput, i).mwTransform(mrcpp::BottomUp);
         mrcpp::get_func(xcOutput, i).calcSquareNorm();
     }
