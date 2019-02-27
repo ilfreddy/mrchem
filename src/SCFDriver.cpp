@@ -1005,6 +1005,7 @@ mrdft::XCFunctional *SCFDriver::setupFunctional(int order, int n_dens) {
         const std::string &f_name = dft_func_names[i];
         fun->setFunctional(f_name, f_coef);
     }
+    if(dft_use_gamma) NOT_IMPLEMENTED_ABORT;
     fun->setUseGamma(dft_use_gamma);
     fun->setDensityCutoff(dft_cutoff);
     fun->setNDensities(n_dens);

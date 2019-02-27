@@ -37,7 +37,8 @@ private:
 
     void setup(double prec);
     void setupPotential(double prec);
-    void buildPerturbedDensity(OrbitalVector &Phi,
+    void buildPerturbedDensity(double prec,
+                               OrbitalVector &Phi,
                                OrbitalVector &X,
                                OrbitalVector &Y,
                                DENSITY::DensityType spin);
