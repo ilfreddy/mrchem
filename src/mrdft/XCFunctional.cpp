@@ -125,7 +125,7 @@ void fill_output_mask(MatrixXi &mask, int value) {
             mask(j,i) = value;
             value++;
         }
-    }   
+    }
 }
 }
 
@@ -474,7 +474,7 @@ void XCFunctional::setupXCDensityVariables() {
         }
         if (isGGA()) {
             if (isSpinSeparated()) {
-                xcDensity.insert(xcDensity.begin() + 1, grad_a.begin() + 3, grad_a.begin() + 6);
+                xcDensity.insert(xcDensity.begin() + 2, grad_a.begin() + 3, grad_a.begin() + 6);
                 xcDensity.insert(xcDensity.begin() + 5, grad_b.begin() + 3, grad_b.begin() + 6);
             } else {
                 xcDensity.insert(xcDensity.begin() + 1, grad_t.begin() + 3, grad_t.begin() + 6);
@@ -583,8 +583,15 @@ void XCFunctional::evaluate() {
         }
     }
     for (int i = 0; i < nFcs; i++) {
-        mrcpp::get_func(xcOutput, i).mwTransform(mrcpp::BottomUp);
-        mrcpp::get_func(xcOutput, i).calcSquareNorm();
+        FunctionTree<3> &func = mrcpp::get_func(xcOutput, i);
+        func.mwTransform(mrcpp::BottomUp);
+        func.calcSquareNorm();
+        std::cout << "Potential norm " << i << " " << func.getSquareNorm() << std::endl;
+    }
+
+    for (int i = 0; i < xcDensity.size(); i++) {
+        FunctionTree<3> &func = mrcpp::get_func(xcDensity, i);
+        std::cout << "Density norm " << i << " " << func.getSquareNorm() << std::endl;
     }
     timer.stop();
     Printer::printTree(0, "XC evaluate xcfun", mrcpp::sum_nodes(xcOutput), timer.getWallTime());
