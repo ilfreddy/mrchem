@@ -29,12 +29,14 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include "MRCPP/trees/FunctionNode.h"
+#include "MRCPP/utils/Plotter.h"
 
 #include "XCFunctional.h"
 
 using mrcpp::DerivativeOperator;
 using mrcpp::FunctionNode;
 using mrcpp::FunctionTree;
+using mrcpp::Plotter;
 using mrcpp::FunctionTreeVector;
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -43,6 +45,8 @@ using Eigen::MatrixXi;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+
+static int xc_iteration = 0;
 
 namespace {
 MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order);
@@ -283,7 +287,7 @@ FunctionTreeVector<3> &XCFunctional::getDensityVector(DENSITY::DensityType type)
  */
 FunctionTree<3> &XCFunctional::getDensity(DENSITY::DensityType type, int index) {
     FunctionTreeVector<3> dens_vec = getDensityVector(type);
-    if(index >= dens_vec.size()) MSG_FATAL("Vector out of boounds");
+    if(index >= dens_vec.size()) MSG_FATAL("Vector out of bounds");
     return mrcpp::get_func(dens_vec, index);
 }
 
@@ -302,6 +306,8 @@ int XCFunctional::getNNodes() const {
         const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNNodes();
+        std::cout << "nnodes " << rho_gs_a.getNNodes()    << std::endl;
+        std::cout << "nnodes " << rho_gs_b.getNNodes()    << std::endl;        
         if (nodes != rho_gs_b.getNNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
         const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
@@ -319,6 +325,8 @@ int XCFunctional::getNPoints() const {
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNEndNodes();
         points = rho_gs_a.getTDim()*rho_gs_a.getKp1_d();
+        std::cout << "enodes  " << rho_gs_a.getNEndNodes() << std::endl;
+        std::cout << "enodes  " << rho_gs_b.getNEndNodes() << std::endl;
         if (nodes != rho_gs_b.getNEndNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
         const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
@@ -499,8 +507,30 @@ void XCFunctional::setupXCDensityVariables() {
             }
         }
     }
+    
+    plot_densities();
 
     if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
+
+}
+
+void XCFunctional::plot_densities() {
+    
+    int nPts = 1000;                                // Number of points
+    double a[3] = { 0.0, 0.0, -2.0};                // Start point of plot
+    double b[3] = { 0.0, 0.0,  2.0};                // End point of plot
+    mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
+    plot.setNPoints(nPts);                          // Set number of points
+    plot.setRange(a, b);                            // Set plot range
+
+    for (int i = 0; i < xcDensity.size(); i++) {
+        mrcpp::FunctionTree<3> &func = mrcpp::get_func(xcDensity, i);
+        std::string name="Dens_" + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
+        plot.linePlot(func, name);
+    }
+    
+    xc_iteration++;
+
 }
 
 /** @brief Sets xcInput pointers for the density
@@ -632,6 +662,9 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
             cont_ij = VectorXd::Zero(n_points);
             int out_index = output_mask(i,j);
             int den_index = density_mask(j);
+            //            if(den_index >= 2) {
+            //                continue;
+            //            } else if(den_index >= 0) {
             if(den_index >= 0) {
                 FunctionTree<3> &dens_func = mrcpp::get_func(xcDensity, den_index);
                 FunctionNode<3> &dens_node = dens_func.getEndFuncNode(node_index);
