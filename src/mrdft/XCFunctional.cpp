@@ -508,13 +508,13 @@ void XCFunctional::setupXCDensityVariables() {
         }
     }
     
-    plot_densities();
+    plot_function_tree_vector(xcDensity, "Dens_");
 
     if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
 
 }
 
-void XCFunctional::plot_densities() {
+void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, std::string prefix) {
     
     int nPts = 1000;                                // Number of points
     double a[3] = { 0.0, 0.0, -2.0};                // Start point of plot
@@ -523,9 +523,11 @@ void XCFunctional::plot_densities() {
     plot.setNPoints(nPts);                          // Set number of points
     plot.setRange(a, b);                            // Set plot range
 
-    for (int i = 0; i < xcDensity.size(); i++) {
-        mrcpp::FunctionTree<3> &func = mrcpp::get_func(xcDensity, i);
-        std::string name="Dens_" + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
+    for (int i = 0; i < functions.size(); i++) {
+        mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
+        std::string name= prefix + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
+        std::cout << name << std::endl;
+        std::cout << func << std::endl;
         plot.linePlot(func, name);
     }
     
