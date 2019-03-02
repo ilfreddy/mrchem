@@ -29,8 +29,16 @@ void XCPotential::setupDensity(double prec) {
         buildDensity(Phi, DENSITY::DensityType::Beta, prec);
         FunctionTree<3> &func_a = this->getDensity(DENSITY::DensityType::Alpha);
         FunctionTree<3> &func_b = this->getDensity(DENSITY::DensityType::Beta);
+        std::cout << "nnodes before  " << func_a.getNNodes()    << std::endl;
+        std::cout << "nnodes before  " << func_b.getNNodes()    << std::endl;
+        std::cout << "enodes before  " << func_a.getNEndNodes() << std::endl;
+        std::cout << "enodes before  " << func_b.getNEndNodes() << std::endl;
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
+        std::cout << "nnodes after   " << func_a.getNNodes()    << std::endl;
+        std::cout << "nnodes after   " << func_b.getNNodes()    << std::endl;
+        std::cout << "enodes after   " << func_a.getNEndNodes() << std::endl;
+        std::cout << "enodes after   " << func_b.getNEndNodes() << std::endl;
     } else {
         buildDensity(Phi, DENSITY::DensityType::Total, prec);
     }
