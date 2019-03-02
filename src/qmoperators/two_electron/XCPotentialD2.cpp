@@ -91,7 +91,7 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     FunctionTree<3> &rho_pert = this->getDensity(density_spin, 1);
     Density pert_dens(false);
     pert_dens.setReal(&rho_pert);
-    density::compute(-1.0, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
+    density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
     while (mrcpp::refine_grid(rho_pert, rho)) {}
     //    while (mrcpp::refine_grid(rho, rho_pert)) {}
     time.stop();
