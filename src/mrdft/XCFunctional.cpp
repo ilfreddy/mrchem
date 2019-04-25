@@ -507,7 +507,7 @@ void XCFunctional::setupXCDensityVariables() {
             }
         }
     }
-    
+    std::cout << "Plotting densities" << std::endl;
     plot_function_tree_vector(xcDensity, "Dens_");
 
     if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
@@ -516,19 +516,20 @@ void XCFunctional::setupXCDensityVariables() {
 
 void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, std::string prefix) {
     
-    int nPts = 1000;                                // Number of points
-    double a[3] = { 0.0, 0.0, -2.0};                // Start point of plot
-    double b[3] = { 0.0, 0.0,  2.0};                // End point of plot
+    int nPts = 10000;                               // Number of points
+    double a[3] = { 0.0,  0.0,  8.0};               // Start point of plot
+    double b[3] = { 0.0,  8.0,  0.0};               // End point of plot
+    double o[3] = { 0.0, -4.0, -4.0};               // Origin of plot
     mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
     plot.setNPoints(nPts);                          // Set number of points
-    plot.setRange(a, b);                            // Set plot range
+    plot.setRange(a, b, o);                         // Set plot range
 
     for (int i = 0; i < functions.size(); i++) {
         mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
         std::string name= prefix + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
         std::cout << name << std::endl;
         std::cout << func << std::endl;
-        plot.linePlot(func, name);
+        plot.surfPlot(func, name);
     }
     
     xc_iteration++;
@@ -664,9 +665,9 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
             cont_ij = VectorXd::Zero(n_points);
             int out_index = output_mask(i,j);
             int den_index = density_mask(j);
-            //            if(den_index >= 2) {
-            //                continue;
-            //            } else if(den_index >= 0) {
+            //if(den_index >= 2) {  //WARNING: This HACK works for Open shell only
+            //        continue;
+            //} else if(den_index >= 0) {
             if(den_index >= 0) {
                 FunctionTree<3> &dens_func = mrcpp::get_func(xcDensity, den_index);
                 FunctionNode<3> &dens_node = dens_func.getEndFuncNode(node_index);
@@ -838,7 +839,8 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
     auto m = mrcpp::get_size_nodes(xc_pot);
     auto t = timer.elapsed();
     mrcpp::print::tree(2, "XC potential", n, m, t);
-
+    std::cout << "Plotting potentials" << std::endl;
+    plot_function_tree_vector(xc_pot, "Potential_");
     return xc_pot;
 }
 
