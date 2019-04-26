@@ -48,6 +48,7 @@ private:
                                DENSITY::DensityType spin);
 
     void setupPerturbedDensity(double prec = -1.0);
+    void syncGrids();
 };
 
 } // namespace mrchem

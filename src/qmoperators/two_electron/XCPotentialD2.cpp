@@ -61,6 +61,7 @@ void XCPotentialD2::setup(double prec) {
     setApplyPrec(prec);
     setupDensity(prec);
     setupPerturbedDensity(prec);
+    syncGrids();
     setupPotential(prec);
 }
 
@@ -92,8 +93,8 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     Density pert_dens(false);
     pert_dens.setReal(&rho_pert);
     density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
-    while (mrcpp::refine_grid(rho_pert, rho)) {}
-    while (mrcpp::refine_grid(rho, rho_pert)) {}  //LUCA: this does not work with open shell
+    //    while (mrcpp::refine_grid(rho_pert, rho)) {}
+    //    while (mrcpp::refine_grid(rho, rho_pert)) {}  //LUCA: this does not work with open shell
     time.stop();
     Printer::printTree(0, "XC perturbed density", pert_dens.getNNodes(NUMBER::Total), time.getWallTime());
     pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
@@ -136,4 +137,21 @@ void XCPotentialD2::setupPotential(double prec) {
     println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }
 
+void XCPotentialD2::syncGrids() {
+    if (this->functional->isSpinSeparated()) {
+        FunctionTree<3> &rho1 = this->getDensity(DENSITY::DensityType::Alpha, 0);
+        FunctionTree<3> &rho2 = this->getDensity(DENSITY::DensityType::Alpha, 1);
+        FunctionTree<3> &rho3 = this->getDensity(DENSITY::DensityType::Beta, 0);
+        FunctionTree<3> &rho4 = this->getDensity(DENSITY::DensityType::Beta, 1);
+        while (mrcpp::refine_grid(rho1, rho2)) {};
+        while (mrcpp::refine_grid(rho2, rho3)) {};
+        while (mrcpp::refine_grid(rho3, rho4)) {};
+        while (mrcpp::refine_grid(rho4, rho1)) {};
+    } else {
+        FunctionTree<3> &rho1 = this->getDensity(DENSITY::DensityType::Total, 0);
+        FunctionTree<3> &rho2 = this->getDensity(DENSITY::DensityType::Total, 1);
+        while (mrcpp::refine_grid(rho1, rho2)) {};
+        while (mrcpp::refine_grid(rho2, rho1)) {};
+    }
+}
 } // namespace mrchem
