@@ -489,8 +489,8 @@ void XCFunctional::setupXCDensityVariables() {
             }
         }
     }
-    std::cout << "Plotting densities" << std::endl;
-    plot_function_tree_vector(xcDensity, "Dens_");
+	//    std::cout << "Plotting densities" << std::endl;
+	//    plot_function_tree_vector(xcDensity, "Dens_");
 
     if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
 
@@ -500,11 +500,11 @@ void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, s
     
     int nPts = 10000;                               // Number of points
     double a[3] = { 0.0,  0.0,  8.0};               // Start point of plot
-    double b[3] = { 0.0,  8.0,  0.0};               // End point of plot
+	double b[3] = { 0.0,  8.0,  0.0};               // End point of plot
     double o[3] = { 0.0, -4.0, -4.0};               // Origin of plot
     mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
     plot.setNPoints(nPts);                          // Set number of points
-    plot.setRange(a, b, o);                         // Set plot range
+	//    plot.setRange(a, b, o);                         // Set plot range
 
     for (int i = 0; i < functions.size(); i++) {
         mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
@@ -818,10 +818,10 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
     }
     timer.stop();
     int n = mrcpp::sum_nodes(xc_pot);
-    double t = timer.getWallTime();
+	double t = timer.getWallTime();
     Printer::printTree(0, "XC potential", n, t);
-    std::cout << "Plotting potentials" << std::endl;
-    plot_function_tree_vector(xc_pot, "Potential_");
+	//    std::cout << "Plotting potentials" << std::endl;
+	//    plot_function_tree_vector(xc_pot, "Potential_");
     return xc_pot;
 }
 
