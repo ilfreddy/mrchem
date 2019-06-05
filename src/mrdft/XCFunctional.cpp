@@ -29,6 +29,7 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include "MRCPP/trees/FunctionNode.h"
+#include "MRCPP/operators/BSOperator.h"
 #include "MRCPP/utils/Plotter.h"
 
 #include "XCFunctional.h"
@@ -154,7 +155,7 @@ XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
         , cutoff(-1.0)
         , functional(xc_new_functional())
         , derivative(nullptr) {
-    derivative = new mrcpp::ABGVOperator<3>(MRA, 0.0, 0.0);
+    derivative = new mrcpp::BSOperator<3>(MRA, 1);
 }
 
 /** @brief Destructor */
@@ -507,8 +508,8 @@ void XCFunctional::setupXCDensityVariables() {
             }
         }
     }
-	//    std::cout << "Plotting densities" << std::endl;
-	//    plot_function_tree_vector(xcDensity, "Dens_");
+	std::cout << "Plotting densities" << std::endl;
+	plot_function_tree_vector(xcDensity, "Dens_");
 
     if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
 
@@ -522,7 +523,7 @@ void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, s
     double o[3] = { 0.0, -4.0, -4.0};               // Origin of plot
     mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
     plot.setNPoints(nPts);                          // Set number of points
-	//    plot.setRange(a, b, o);                         // Set plot range
+	plot.setRange(a, b, o);                         // Set plot range
 
     for (int i = 0; i < functions.size(); i++) {
         mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
@@ -637,12 +638,14 @@ void XCFunctional::evaluate() {
         FunctionTree<3> &func = mrcpp::get_func(xcOutput, i);
         func.mwTransform(mrcpp::BottomUp);
         func.calcSquareNorm();
-        std::cout << "Potential norm " << i << " " << func.getSquareNorm() << std::endl;
+        std::cout << "Potential norm " << i << " " << func.getSquareNorm() 
+				  << " nEndNodes " << func.getNEndNodes() << std::endl;
     }
 
     for (int i = 0; i < xcDensity.size(); i++) {
         FunctionTree<3> &func = mrcpp::get_func(xcDensity, i);
-        std::cout << "Density norm " << i << " " << func.getSquareNorm() << std::endl;
+        std::cout << "Density norm " << i << " " << func.getSquareNorm() 
+				  << " nEndNodes " << func.getNEndNodes() << std::endl;
     }
     auto n = mrcpp::get_n_nodes(xcOutput);
     auto m = mrcpp::get_size_nodes(xcOutput);
@@ -839,6 +842,9 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
     auto m = mrcpp::get_size_nodes(xc_pot);
     auto t = timer.elapsed();
     mrcpp::print::tree(2, "XC potential", n, m, t);
+    Printer::printTree(0, "XC potential", n, t);
+	std::cout << "Plotting potentials" << std::endl;
+	plot_function_tree_vector(xc_pot, "Potential_");
     return xc_pot;
 }
 
