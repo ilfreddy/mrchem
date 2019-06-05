@@ -31,7 +31,7 @@ namespace mrchem {
 class XCPotential : public QMPotential {
 public:
     XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
-            : QMPotential(1, mpi::share_xc_pot)
+            : QMPotential(0, mpi::share_xc_pot)
             , energy(0.0)
             , orbitals(Phi)
             , functional(F) {}
