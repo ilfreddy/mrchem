@@ -518,9 +518,9 @@ void XCFunctional::setupXCDensityVariables() {
 void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, std::string prefix) {
     
     int nPts = 10000;                               // Number of points
-    double a[3] = { 0.0,  0.0,  8.0};               // Start point of plot
-	double b[3] = { 0.0,  8.0,  0.0};               // End point of plot
-    double o[3] = { 0.0, -4.0, -4.0};               // Origin of plot
+    double a[3] = { 0.0,  0.0, 16.0};               // Start point of plot
+	double b[3] = { 0.0, 16.0,  0.0};               // End point of plot
+    double o[3] = { 0.0, -8.0, -8.0};               // Origin of plot
     mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
     plot.setNPoints(nPts);                          // Set number of points
 	plot.setRange(a, b, o);                         // Set plot range
