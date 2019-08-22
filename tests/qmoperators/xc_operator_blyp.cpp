@@ -56,7 +56,10 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
     fun_p->setUseGamma(false);
     fun_p->setDensityCutoff(1.0e-10);
     fun_p->evalSetup(1);
+    fun_p->setNDensities(1);
+    fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p);
+    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     for (int n = 1; n <= nShells; n++) {
@@ -78,15 +81,6 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
         if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
-    mrdft::XCFunctional fun(*MRA, false);
-    fun.setFunctional("BLYP", 1.0);
-    fun.setUseGamma(false);
-    fun.setDensityCutoff(1.0e-10);
-    fun.evalSetup(1);
-    fun.setNDensities(1);
-    fun.allocateDensities();
-    XCOperator V(&fun, &Phi);
-
     // reference values obtained with a test run at order=9 in unit_test.cpp and prec=1.0e-5 here
 
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
@@ -98,7 +92,6 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
     E_P(3, 3) = -0.1988746843;
     E_P(4, 4) = -0.1988746843;
 
-    V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);

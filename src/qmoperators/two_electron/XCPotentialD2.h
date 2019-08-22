@@ -36,8 +36,8 @@ public:
     ~XCPotentialD2() override;
 
 private:
-    std::shared_ptr<OrbitalVector> *orbitals_x;               ///< 1st external set of perturbed orbitals used to build the density
-    std::shared_ptr<OrbitalVector> *orbitals_y;               ///< 2nd external set of perturbed orbitals used to build the density
+    std::shared_ptr<OrbitalVector> orbitals_x;               ///< 1st external set of perturbed orbitals used to build the density
+    std::shared_ptr<OrbitalVector> orbitals_y;               ///< 2nd external set of perturbed orbitals used to build the density
 
     void setup(double prec) override;
     void setupPotential(double prec) override;

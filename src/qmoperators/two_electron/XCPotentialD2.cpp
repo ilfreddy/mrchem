@@ -95,8 +95,7 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
     //    while (mrcpp::refine_grid(rho_pert, rho)) {}
     //    while (mrcpp::refine_grid(rho, rho_pert)) {}  //LUCA: this does not work with open shell
-    time.stop();
-    Printer::printTree(0, "XC perturbed density", pert_dens.getNNodes(NUMBER::Total), time.getWallTime());
+    print_utils::qmfunction(0, "XC perturbed density", pert_dens, time);
     pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
 }
 
