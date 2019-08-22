@@ -41,12 +41,13 @@ public:
 
 protected:
     double energy;                           ///< XC energy
-    std::shared_ptr<OrbitalVector> *orbitals;                 ///< External set of orbitals used to build the density
-    std::shared_ptr<mrdft::XCFunctional> *functional;         ///< External XC functional to be used
+    std::shared_ptr<OrbitalVector> orbitals;                 ///< External set of orbitals used to build the density
+    std::shared_ptr<mrdft::XCFunctional> functional;         ///< External XC functional to be used
     mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
 
     double getEnergy() const { return this->energy; }
     int getOrder() const { return this->functional->getOrder(); }
+    std::shared_ptr<mrdft::XCFunctional> getFunctional() const { return this->functional; }
 
     mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin, int index = 0);
     virtual void setupPotential(double prec) {}

@@ -59,8 +59,7 @@ void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, do
     rho.setReal(&func);
     density::compute(prec, rho, Phi, spin);
     rho.setReal(nullptr);
-    time.stop();
-    Printer::printTree(0, "XC GS density", func.getNNodes(), time.getWallTime());
+    print_utils::qmfunction(0, "XC GS density", rho, time);
 }
 
 mrcpp::FunctionTree<3> &XCPotential::getDensity(DENSITY::DensityType spin, int index) {
@@ -104,9 +103,9 @@ Orbital XCPotential::apply(Orbital phi) {
     V.setReal(nullptr);
 
 	std::cout << "nodes at operator application" << std::endl;
-	std::cout << tree << std::endl;
-	if(phi.hasReal()) std::cout << phi.real() << std::endl;
-	if(Vphi.hasReal()) std::cout << Vphi.real() << std::endl;
+	std::cout << static_cast<mrcpp::MWTree<3> &>(tree) << std::endl;
+	if(phi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(phi.real()) << std::endl;
+	if(Vphi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(Vphi.real()) << std::endl;
 
     return Vphi;
 }

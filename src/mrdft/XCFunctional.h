@@ -162,7 +162,8 @@ private:
 
     mrcpp::FunctionTree<3> *calcPotentialGGA(mrcpp::FunctionTree<3> &df_drho, mrcpp::FunctionTreeVector<3> &df_dgr);
 
-    void plot_function_tree_vector(mrcpp::FunctionTreeVector<3> &functions, std::string prefix);
+    //    void plot_function_tree_vector(mrcpp::FunctionTreeVector<3> &functions, std::string prefix);
+    //    void refineGrid(double prec, bool abs_prec);
 
 };
 

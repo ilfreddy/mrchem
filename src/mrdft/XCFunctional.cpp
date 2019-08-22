@@ -89,7 +89,7 @@ MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order) {
         fill_output_mask(mask, start);
         break;
     default:
-        MSG_FATAL("Not implemented");
+        MSG_ABORT("Not implemented");
     }
     return mask;
 }
@@ -116,7 +116,7 @@ VectorXi build_density_mask(bool is_lda, bool is_spin_sep, int order) {
         }
         break;
     default:
-        MSG_FATAL("Not implemented");
+        MSG_ABORT("Not implemented");
     }
     return mask;
 }
@@ -274,9 +274,9 @@ FunctionTreeVector<3> &XCFunctional::getDensityVector(DENSITY::DensityType type)
         case DENSITY::DensityType::Beta:
             return rho_b;
         default:
-            MSG_FATAL("Invalid density type");
+            MSG_ABORT("Invalid density type");
     }
-    MSG_FATAL("Total density functions not properly initialized");
+    MSG_ABORT("Total density functions not properly initialized");
 }
 
 /** @brief Return FunctionTree for the input density
@@ -288,14 +288,14 @@ FunctionTreeVector<3> &XCFunctional::getDensityVector(DENSITY::DensityType type)
  */
 FunctionTree<3> &XCFunctional::getDensity(DENSITY::DensityType type, int index) {
     FunctionTreeVector<3> dens_vec = getDensityVector(type);
-    if(index >= dens_vec.size()) MSG_FATAL("Vector out of bounds");
+    if(index >= dens_vec.size()) MSG_ABORT("Vector out of bounds");
     return mrcpp::get_func(dens_vec, index);
 }
 
 void XCFunctional::setDensity(FunctionTree<3> &density, DENSITY::DensityType spin, int index) {
     FunctionTreeVector<3> &dens_vec = getDensityVector(spin);
     if (dens_vec.size() != index) {
-        MSG_FATAL("Index mismatch");
+        MSG_ABORT("Index mismatch");
     }
     dens_vec.push_back(std::make_tuple(1.0, &density));
 }
@@ -379,35 +379,33 @@ void XCFunctional::copyGrid(FunctionTreeVector<3> densities) {
     }
 }
 
-/** @brief Remove all grid refinement for all density vectors
- *
- * This will _remove_ all existing grid refinement and leave only root nodes
- * in the density grids.
- */
-void XCFunctional::refineGrid(double prec, bool abs_prec) {
-    if (not hasDensity()) return;
+    /*
+      void XCFunctional::refineGrid(double prec, bool abs_prec) {
+      if (not hasDensity()) return;
+      
+      double scale = 1.0;
+      if (isSpinSeparated()) {
+      if (rho_a.size() == 0) MSG_ABORT("Uninitialized alpha density");
+      if (rho_b.size() == 0) MSG_ABORT("Uninitialized beta density");
+      if (abs_prec) scale = rho_a[0]->integrate() + rho_b[0]->integrate();
+      mrcpp::refine_grid(rho_a, prec / scale);
+      mrcpp::refine_grid(rho_b, prec / scale);
+      
+      // Extend to union grid
+      int nNodes = 1;
+      while (nNodes > 0) {
+      int nAlpha = mrcpp::refine_grid(rho_a, rho_b);
+      int nBeta = mrcpp::refine_grid(rho_b, rho_a);
+      nNodes = nAlpha + nBeta;
+      }
+      } else {
+      if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
+      if (abs_prec) scale = rho_t->integrate();
+      mrcpp::refine_grid(*rho_t, prec / scale);
+      }
+      }
+    */
 
-    double scale = 1.0;
-    if (isSpinSeparated()) {
-        if (rho_a == nullptr) MSG_ABORT("Uninitialized alpha density");
-        if (rho_b == nullptr) MSG_ABORT("Uninitialized beta density");
-        if (abs_prec) scale = rho_a->integrate() + rho_b->integrate();
-        mrcpp::refine_grid(*rho_a, prec / scale);
-        mrcpp::refine_grid(*rho_b, prec / scale);
-
-        // Extend to union grid
-        int nNodes = 1;
-        while (nNodes > 0) {
-            int nAlpha = mrcpp::refine_grid(*rho_a, *rho_b);
-            int nBeta = mrcpp::refine_grid(*rho_b, *rho_a);
-            nNodes = nAlpha + nBeta;
-        }
-    } else {
-        if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
-        if (abs_prec) scale = rho_t->integrate();
-        mrcpp::refine_grid(*rho_t, prec / scale);
-    }
-}
 
 /** @brief Remove all grid refinement for a given density vector
  *
@@ -423,7 +421,7 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) {
-        MSG_FATAL("Not enough density functions initialized");
+        MSG_ABORT("Not enough density functions initialized");
     }
     setupGradient();
     setupXCInput();
@@ -462,7 +460,9 @@ void XCFunctional::clear() {
     mrcpp::clear(grad_b, true);
     mrcpp::clear(grad_t, true);
     mrcpp::clear(gamma, true);
-    clearGrid(); // We want to keep empty the density trees
+    clearGrid(rho_a); // We want to keep empty the density trees
+    clearGrid(rho_b); // We want to keep empty the density trees
+    clearGrid(rho_t); // We want to keep empty the density trees
 }
 
 /** @brief Allocate input arrays for xcfun
@@ -508,13 +508,14 @@ void XCFunctional::setupXCDensityVariables() {
             }
         }
     }
-	std::cout << "Plotting densities" << std::endl;
-	plot_function_tree_vector(xcDensity, "Dens_");
+    //	std::cout << "Plotting densities" << std::endl;
+    //	plot_function_tree_vector(xcDensity, "Dens_");
 
-    if (n_dens != xcDensity.size()) MSG_FATAL("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
+    if (n_dens != xcDensity.size()) MSG_ABORT("Mismatch between used vs requested " << n_dens << " : " << xcDensity.size());
 
 }
 
+    /*
 void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, std::string prefix) {
     
     int nPts = 10000;                               // Number of points
@@ -536,6 +537,7 @@ void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, s
     xc_iteration++;
 
 }
+    */
 
 /** @brief Sets xcInput pointers for the density
  *
@@ -544,13 +546,13 @@ void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, s
 int XCFunctional::setupXCInputDensity() {
     int nUsed = 0;
     if (isSpinSeparated()) {
-        if (rho_a.size() <= 0) MSG_FATAL("Invalid alpha density");
-        if (rho_b.size() <= 0) MSG_FATAL("Invalid beta density");
+        if (rho_a.size() <= 0) MSG_ABORT("Invalid alpha density");
+        if (rho_b.size() <= 0) MSG_ABORT("Invalid beta density");
         xcInput.push_back(rho_a[0]);
         xcInput.push_back(rho_b[0]);
         nUsed = 2;
     } else {
-        if (rho_t.size() <= 0) MSG_FATAL("Invalid total density");
+        if (rho_t.size() <= 0) MSG_ABORT("Invalid total density");
         xcInput.push_back(rho_t[0]);
         nUsed = 1;
     }
@@ -658,7 +660,7 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
 
     MatrixXi output_mask = build_output_mask(isLDA(), isSpinSeparated(), order);
     VectorXi density_mask = build_density_mask(isLDA(), isSpinSeparated(), order);
-    if(output_mask.cols() != density_mask.size()) MSG_FATAL("Inconsistent lengths");
+    if(output_mask.cols() != density_mask.size()) MSG_ABORT("Inconsistent lengths");
 
     VectorXd cont_i;
     VectorXd cont_ij;
@@ -842,9 +844,8 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
     auto m = mrcpp::get_size_nodes(xc_pot);
     auto t = timer.elapsed();
     mrcpp::print::tree(2, "XC potential", n, m, t);
-    Printer::printTree(0, "XC potential", n, t);
-	std::cout << "Plotting potentials" << std::endl;
-	plot_function_tree_vector(xc_pot, "Potential_");
+    //	std::cout << "Plotting potentials" << std::endl;
+    //	plot_function_tree_vector(xc_pot, "Potential_");
     return xc_pot;
 }
 
