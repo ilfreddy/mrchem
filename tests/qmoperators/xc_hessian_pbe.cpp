@@ -56,7 +56,10 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     fun_p->setUseGamma(true);
     fun_p->setDensityCutoff(1.0e-10);
     fun_p->evalSetup(MRDFT::Hessian);
+    fun_p->setNDensities(2);
+    fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p, X_p, X_p);
+    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     ns.push_back(1);
@@ -105,17 +108,6 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     E_P(0, 1) = -0.0234437207;
     E_P(1, 0) = -0.0234437207;
     E_P(1, 1) = 0.0061055193;
-
-    mrdft::XCFunctional fun(*MRA, false);
-    fun.setFunctional("PBE", 1.0);
-    fun.setUseGamma(false);
-    fun.setDensityCutoff(1.0e-10);
-    fun.evalSetup(MRDFT::Hessian);
-    fun.setNDensities(2);
-    fun.allocateDensities();
-
-    XCOperator V(&fun, &Phi, &Phi_x, &Phi_x);
-    V.setup(prec);
 
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);

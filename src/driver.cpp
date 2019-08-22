@@ -426,7 +426,7 @@ void driver::plot_scf_quantities(const json &json_plot, Molecule &mol) {
 
         t_lap.start();
         std::string fname = "plots/rho_t";
-        density::compute(-1.0, rho, Phi, DENSITY::Total);
+        density::compute(-1.0, rho, Phi, DENSITY::DensityType::Total);
         plt.cubePlot(npts, rho, fname);
         rho.free(NUMBER::Total);
         mrcpp::print::time(1, fname, t_lap);
@@ -434,21 +434,21 @@ void driver::plot_scf_quantities(const json &json_plot, Molecule &mol) {
         if (orbital::size_singly(Phi) > 0) {
             t_lap.start();
             fname = "plots/rho_s";
-            density::compute(-1.0, rho, Phi, DENSITY::Spin);
+            density::compute(-1.0, rho, Phi, DENSITY::DensityType::Spin);
             plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = "plots/rho_a";
-            density::compute(-1.0, rho, Phi, DENSITY::Alpha);
+            density::compute(-1.0, rho, Phi, DENSITY::DensityType::Alpha);
             plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = "plots/rho_b";
-            density::compute(-1.0, rho, Phi, DENSITY::Beta);
+            density::compute(-1.0, rho, Phi, DENSITY::DensityType::Beta);
             plt.cubePlot(npts, rho, fname);
             rho.free(NUMBER::Total);
             mrcpp::print::time(1, fname, t_lap);
