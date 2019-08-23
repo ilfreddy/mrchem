@@ -59,7 +59,6 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     fun_p->setNDensities(2);
     fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p, X_p, X_p);
-    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     ns.push_back(1);
@@ -110,6 +109,7 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     E_P(1, 1) = 0.00549970397828;
 
 
+    V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
