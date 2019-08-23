@@ -53,13 +53,12 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     auto X_p = std::make_shared<OrbitalVector>();
     auto fun_p = std::make_shared<mrdft::XCFunctional>(*MRA, false);
     fun_p->setFunctional("PBE", 1.0);
-    fun_p->setUseGamma(true);
+    fun_p->setUseGamma(false);
     fun_p->setDensityCutoff(1.0e-10);
     fun_p->evalSetup(MRDFT::Hessian);
     fun_p->setNDensities(2);
     fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p, X_p, X_p);
-    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     ns.push_back(1);
@@ -109,6 +108,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     E_P(1, 0) = -0.0234437207;
     E_P(1, 1) = 0.0061055193;
 
+    V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
