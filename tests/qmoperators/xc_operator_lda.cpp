@@ -41,7 +41,7 @@ using namespace orbital;
 
 namespace xc_operator {
 
-TEST_CASE("XCOperator", "[xc_operator]") {
+TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 

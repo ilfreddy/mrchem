@@ -32,7 +32,9 @@
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/Density.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/density_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
@@ -59,7 +61,6 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
     fun_p->setNDensities(1);
     fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p);
-    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     for (int n = 1; n <= nShells; n++) {
@@ -83,6 +84,7 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
 
     // reference values obtained with a test run at order=9 in unit_test.cpp and prec=1.0e-5 here
 
+
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
     E_P(0, 0) = -0.4632575525;
     E_P(0, 1) = -0.0654671939;
@@ -92,6 +94,7 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
     E_P(3, 3) = -0.1988746843;
     E_P(4, 4) = -0.1988746843;
 
+    V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
