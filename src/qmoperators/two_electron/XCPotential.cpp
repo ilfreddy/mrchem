@@ -29,16 +29,12 @@ void XCPotential::setupDensity(double prec) {
         buildDensity(Phi, DENSITY::DensityType::Beta, prec);
         FunctionTree<3> &func_a = this->getDensity(DENSITY::DensityType::Alpha);
         FunctionTree<3> &func_b = this->getDensity(DENSITY::DensityType::Beta);
-        std::cout << "nnodes before  " << func_a.getNNodes() << std::endl;
-        std::cout << "nnodes before  " << func_b.getNNodes() << std::endl;
-        std::cout << "enodes before  " << func_a.getNEndNodes() << std::endl;
-        std::cout << "enodes before  " << func_b.getNEndNodes() << std::endl;
+        println(5, static_cast<mrcpp::MWTree<3> &>(func_a));
+        println(5, static_cast<mrcpp::MWTree<3> &>(func_b));
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
-        std::cout << "nnodes after   " << func_a.getNNodes() << std::endl;
-        std::cout << "nnodes after   " << func_b.getNNodes() << std::endl;
-        std::cout << "enodes after   " << func_a.getNEndNodes() << std::endl;
-        std::cout << "enodes after   " << func_b.getNEndNodes() << std::endl;
+        println(5, static_cast<mrcpp::MWTree<3> &>(func_a));
+        println(5, static_cast<mrcpp::MWTree<3> &>(func_b));
     } else {
         buildDensity(Phi, DENSITY::DensityType::Total, prec);
     }
@@ -53,13 +49,11 @@ void XCPotential::clear() {
 
 void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec) {
     Timer time;
-    time.start();
     FunctionTree<3> &func = this->getDensity(spin);
     Density rho(false);
     rho.setReal(&func);
     density::compute(prec, rho, Phi, spin);
     rho.setReal(nullptr);
-    print_utils::qmfunction(0, "XC GS density", rho, time);
 }
 
 mrcpp::FunctionTree<3> &XCPotential::getDensity(DENSITY::DensityType spin, int index) {
@@ -97,15 +91,16 @@ Orbital XCPotential::apply(Orbital phi) {
     QMPotential &V = *this;
     if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
-    FunctionTree<3> &tree = getPotential(phi.spin());
-    V.setReal(&tree);
+    FunctionTree<3> &pot = getPotential(phi.spin());
+    V.setReal(&pot);
     Orbital Vphi = QMPotential::apply(phi);
     V.setReal(nullptr);
 
-    std::cout << "nodes at operator application" << std::endl;
-    std::cout << static_cast<mrcpp::MWTree<3> &>(tree) << std::endl;
-    if (phi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(phi.real()) << std::endl;
-    if (Vphi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(Vphi.real()) << std::endl;
+    if (phi.spin() == SPIN::Alpha) pot.setName("v_xc alpha");
+    if (phi.spin() == SPIN::Beta) pot.setName("v_xc beta");
+    println(5, static_cast<mrcpp::MWTree<3> &>(pot));
+    if (phi.hasReal()) println(5, static_cast<mrcpp::MWTree<3> &>(phi.real()));
+    if (Vphi.hasReal()) println(5, static_cast<mrcpp::MWTree<3> &>(Vphi.real()));
 
     return Vphi;
 }
