@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mrdft/XCFunctional.h"
-#include "parallel.h"
 #include "qmoperators/one_electron/QMPotential.h"
 
 /**
@@ -30,7 +29,9 @@ namespace mrchem {
 
 class XCPotential : public QMPotential {
 public:
-    XCPotential(std::shared_ptr<mrdft::XCFunctional> F, std::shared_ptr<OrbitalVector> Phi, bool mpi_shared = false)
+    explicit XCPotential(std::shared_ptr<mrdft::XCFunctional> F,
+                         std::shared_ptr<OrbitalVector> Phi = nullptr,
+                         bool mpi_shared = false)
             : QMPotential(1, mpi_shared)
             , energy(0.0)
             , orbitals(Phi)
@@ -45,17 +46,18 @@ protected:
     std::shared_ptr<mrdft::XCFunctional> functional; ///< External XC functional to be used
     mrcpp::FunctionTreeVector<3> potentials;         ///< XC Potential functions collected in a vector
 
-    double getEnergy() const { return this->energy; }
     int getOrder() const { return this->functional->getOrder(); }
+    double getEnergy() const { return this->energy; }
+    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin, int index = 0);
+    mrcpp::FunctionTree<3> &getPotential(int spin);
     std::shared_ptr<mrdft::XCFunctional> getFunctional() const { return this->functional; }
 
-    mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType spin, int index = 0);
-    virtual void setupPotential(double prec) {}
-    mrcpp::FunctionTree<3> &getPotential(int spin);
     Orbital apply(Orbital phi);
     void clear();
+
     void buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec = -1.0);
     void setupDensity(double prec = -1.0);
+    virtual void setupPotential(double prec) {}
 };
 
 } // namespace mrchem
