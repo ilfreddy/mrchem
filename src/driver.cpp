@@ -336,7 +336,7 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
     driver::build_fock_operator(json_fock_1, mol, F_1, 1);
 
     F_1.getXCOperator()->setupDensity(rsp_prec);
-    F_1.getXCOperator()->setupPotential(rsp_prec);
+    //    F_1.getXCOperator()->setupPotential(rsp_prec);
 
     auto &F_mat = mol.getFockMatrix();
     auto &Phi = mol.getOrbitals();
@@ -664,7 +664,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
             F.getCoulombOperator() = J_p;
         } else {
-            MSG_ABORT("Invalid perturbation order");
+            MSG_ABORT("Invalid perturbation orde>r");
         }
     }
     ///////////////////////////////////////////////////////////
@@ -691,7 +691,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         }
         xcfun_p->setUseGamma(xc_gamma);
         xcfun_p->setDensityCutoff(xc_cutoff);
+        xcfun_p->setNDensities(xc_order); //Nr of dens is the same as xc_order
         xcfun_p->evalSetup(xc_order);
+        xcfun_p->allocateDensities();
         exx = xcfun_p->amountEXX();
 
         if (order == 0) {
