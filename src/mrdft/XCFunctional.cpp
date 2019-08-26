@@ -305,8 +305,8 @@ int XCFunctional::getNNodes() const {
         const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNNodes();
-        std::cout << "nnodes " << rho_gs_a.getNNodes() << std::endl;
-        std::cout << "nnodes " << rho_gs_b.getNNodes() << std::endl;
+        println(5, "nnodes " << rho_gs_a.getNNodes());
+        println(5, "nnodes " << rho_gs_b.getNNodes());
         if (nodes != rho_gs_b.getNNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
         const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
@@ -323,9 +323,9 @@ int XCFunctional::getNPoints() const {
         const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNEndNodes();
-        points = rho_gs_a.getTDim() * rho_gs_a.getKp1_d();
-        std::cout << "enodes  " << rho_gs_a.getNEndNodes() << std::endl;
-        std::cout << "enodes  " << rho_gs_b.getNEndNodes() << std::endl;
+        points = rho_gs_a.getTDim()*rho_gs_a.getKp1_d();
+        println(5, "enodes  " << rho_gs_a.getNEndNodes());
+        println(5, "enodes  " << rho_gs_b.getNEndNodes());
         if (nodes != rho_gs_b.getNEndNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
         const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);
@@ -377,32 +377,33 @@ void XCFunctional::copyGrid(FunctionTreeVector<3> densities) {
     }
 }
 
-/*
-  void XCFunctional::refineGrid(double prec, bool abs_prec) {
-  if (not hasDensity()) return;
+    /*
+      void XCFunctional::refineGrid(double prec, bool abs_prec) {
+      if (not hasDensity()) return;
 
-  double scale = 1.0;
-  if (isSpinSeparated()) {
-  if (rho_a.size() == 0) MSG_ABORT("Uninitialized alpha density");
-  if (rho_b.size() == 0) MSG_ABORT("Uninitialized beta density");
-  if (abs_prec) scale = rho_a[0]->integrate() + rho_b[0]->integrate();
-  mrcpp::refine_grid(rho_a, prec / scale);
-  mrcpp::refine_grid(rho_b, prec / scale);
+      double scale = 1.0;
+      if (isSpinSeparated()) {
+      if (rho_a.size() == 0) MSG_ABORT("Uninitialized alpha density");
+      if (rho_b.size() == 0) MSG_ABORT("Uninitialized beta density");
+      if (abs_prec) scale = rho_a[0]->integrate() + rho_b[0]->integrate();
+      mrcpp::refine_grid(rho_a, prec / scale);
+      mrcpp::refine_grid(rho_b, prec / scale);
 
-  // Extend to union grid
-  int nNodes = 1;
-  while (nNodes > 0) {
-  int nAlpha = mrcpp::refine_grid(rho_a, rho_b);
-  int nBeta = mrcpp::refine_grid(rho_b, rho_a);
-  nNodes = nAlpha + nBeta;
-  }
-  } else {
-  if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
-  if (abs_prec) scale = rho_t->integrate();
-  mrcpp::refine_grid(*rho_t, prec / scale);
-  }
-  }
-*/
+      // Extend to union grid
+      int nNodes = 1;
+      while (nNodes > 0) {
+      int nAlpha = mrcpp::refine_grid(rho_a, rho_b);
+      int nBeta = mrcpp::refine_grid(rho_b, rho_a);
+      nNodes = nAlpha + nBeta;
+      }
+      } else {
+      if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
+      if (abs_prec) scale = rho_t->integrate();
+      mrcpp::refine_grid(*rho_t, prec / scale);
+      }
+      }
+    */
+
 
 /** @brief Remove all grid refinement for a given density vector
  *
@@ -512,23 +513,23 @@ void XCFunctional::setupXCDensityVariables() {
 /*
 void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, std::string prefix) {
 
-int nPts = 10000;                               // Number of points
-double a[3] = { 0.0,  0.0, 16.0};               // Start point of plot
-    double b[3] = { 0.0, 16.0,  0.0};               // End point of plot
-double o[3] = { 0.0, -8.0, -8.0};               // Origin of plot
-mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
-plot.setNPoints(nPts);                          // Set number of points
-    plot.setRange(a, b, o);                         // Set plot range
+    int nPts = 10000;                               // Number of points
+    double a[3] = { 0.0,  0.0, 16.0};               // Start point of plot
+	double b[3] = { 0.0, 16.0,  0.0};               // End point of plot
+    double o[3] = { 0.0, -8.0, -8.0};               // Origin of plot
+    mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
+    plot.setNPoints(nPts);                          // Set number of points
+	plot.setRange(a, b, o);                         // Set plot range
 
-for (int i = 0; i < functions.size(); i++) {
-    mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
-    std::string name= prefix + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
-    std::cout << name << std::endl;
-    std::cout << func << std::endl;
-    plot.surfPlot(func, name);
-}
+    for (int i = 0; i < functions.size(); i++) {
+        mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);
+        std::string name= prefix + std::to_string(i) + "_iter_" + std::to_string(xc_iteration);
+        std::cout << name << std::endl;
+        std::cout << func << std::endl;
+        plot.surfPlot(func, name);
+    }
 
-xc_iteration++;
+    xc_iteration++;
 
 }
 */
@@ -606,7 +607,7 @@ void XCFunctional::evaluate() {
     if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
 
     Timer timer;
-    println(2, "Evaluating");
+    println(5, "Evaluating");
 
     int nInp = getInputLength();      // Input parameters to XCFun
     int nOut = getOutputLength();     // Output parameters from XCFun
@@ -634,14 +635,12 @@ void XCFunctional::evaluate() {
         FunctionTree<3> &func = mrcpp::get_func(xcOutput, i);
         func.mwTransform(mrcpp::BottomUp);
         func.calcSquareNorm();
-        std::cout << "Potential norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes()
-                  << std::endl;
+        println(5, "Potential norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
     }
 
-    for (int i = 0; i < xcDensity.size(); i++) {
-        FunctionTree<3> &func = mrcpp::get_func(xcDensity, i);
-        std::cout << "Density norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes()
-                  << std::endl;
+    for (int i = 0; i < xcInput.size(); i++) {
+        FunctionTree<3> &func = mrcpp::get_func(xcInput, i);
+        println(5, "Density norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
     }
     auto n = mrcpp::get_n_nodes(xcOutput);
     auto m = mrcpp::get_size_nodes(xcOutput);
@@ -749,8 +748,14 @@ void XCFunctional::evaluateBlock(MatrixXd &inp, MatrixXd &out) const {
     double oDat[nOut];
 
     for (int i = 0; i < nPts; i++) {
-        if (inp(i, 0) > cutoff) {
-            for (int j = 0; j < nInp; j++) iDat[j] = inp(i, j);
+        bool calc = true;
+        for (int j = 0; j < nInp; j++) iDat[j] = inp(i, j);
+        if (this->isSpinSeparated()) {
+            if (iDat[0] < cutoff and iDat[1] < cutoff) calc = false;
+        } else {
+            if (iDat[0] < cutoff) calc = false;
+        }
+        if (calc) {
             xc_eval(functional, iDat, oDat);
             for (int j = 0; j < nOut; j++) out(i, j) = oDat[j];
         } else {
