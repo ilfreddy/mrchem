@@ -234,7 +234,6 @@ void XCFunctional::allocateDensities() {
             rho_t.push_back(std::make_tuple(1.0, temp_t));
         }
     }
-    
 }
 
 /** @brief Check whether the density vector has all required components
@@ -308,7 +307,7 @@ int XCFunctional::getNNodes() const {
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNNodes();
         std::cout << "nnodes " << rho_gs_a.getNNodes()    << std::endl;
-        std::cout << "nnodes " << rho_gs_b.getNNodes()    << std::endl;        
+        std::cout << "nnodes " << rho_gs_b.getNNodes()    << std::endl;
         if (nodes != rho_gs_b.getNNodes()) MSG_ERROR("Alpha and beta grids not equal");
     } else {
         const FunctionTree<3> &rho_gs_t = mrcpp::get_func(rho_t, 0);

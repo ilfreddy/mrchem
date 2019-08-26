@@ -59,7 +59,6 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     fun_p->setNDensities(1);
     fun_p->allocateDensities();
     XCOperator V(fun_p, Phi_p);
-    V.setup(prec);
 
     OrbitalVector &Phi = *Phi_p;
     for (int n = 1; n <= nShells; n++) {
@@ -74,7 +73,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
             }
         }
     }
-    
+
     mpi::distribute(Phi);
 
     for (int i = 0; i < Phi.size(); i++) {
@@ -93,6 +92,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     E_P(3, 3) = -0.2109971956;
     E_P(4, 4) = -0.2109971956;
 
+    V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
