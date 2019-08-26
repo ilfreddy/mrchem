@@ -413,9 +413,12 @@ def write_rsp_calculations(program_dict, user_dict):
       }
       rsp_dict["properties"] = prop_dict
 
+      method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
+
       if user_dict["Response"]["run"]:
         rsp_dict["rsp_solver"] = {
           "frequency": omega,
+          "method_name": method_name,
           "kain": user_dict["Response"]["kain"],
           "max_iter": user_dict["Response"]["max_iter"],
           "start_prec": rsp_start_prec,
@@ -425,8 +428,6 @@ def write_rsp_calculations(program_dict, user_dict):
           "property_thrs": rsp_property_thrs,
           "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
         }
-
-      method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
 
       fock_0_dict = {
         "kinetic_operator": {
@@ -509,9 +510,9 @@ def write_rsp_calculations(program_dict, user_dict):
           }
         }
 
-        rsp_dict["fock_operator_0"] = fock_0_dict
-        rsp_dict["fock_operator_1"] = fock_1_dict
-        program_dict["rsp_calculations"].append(rsp_dict)
+      rsp_dict["fock_operator_0"] = fock_0_dict
+      rsp_dict["fock_operator_1"] = fock_1_dict
+      program_dict["rsp_calculations"].append(rsp_dict)
 
 def parse_wf_method(user_dict):
   valid_funcs = [
