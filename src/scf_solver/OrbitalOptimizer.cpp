@@ -157,6 +157,7 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
 
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
+        mrcpp::print::separator(1, '-');
         printOrbitals(F_mat.real().diagonal(), errors, Phi_n, 0);
         printProperty();
         printMemory();

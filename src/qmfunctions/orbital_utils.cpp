@@ -365,6 +365,10 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
 
 /** @brief Orthogonalize the Phi orbital against all orbitals in Psi */
 void orbital::orthogonalize(OrbitalVector &Phi, OrbitalVector &Psi) {
+    Timer t_tot;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(2, "Orthogonalizing orbitals");
+
     // Get all output orbitals belonging to this MPI
     OrbitalChunk myPhi = mpi::get_my_chunk(Phi);
 
@@ -379,6 +383,8 @@ void orbital::orthogonalize(OrbitalVector &Phi, OrbitalVector &Psi) {
             }
         }
     }
+    mrcpp::print::footer(2, t_tot, 2);
+    if (plevel == 1) mrcpp::print::time(1, "Orthogonalizing orbitals", t_tot);
 }
 
 ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &BraKet) {
