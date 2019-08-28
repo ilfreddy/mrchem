@@ -691,7 +691,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         }
         xcfun_p->setUseGamma(xc_gamma);
         xcfun_p->setDensityCutoff(xc_cutoff);
-        xcfun_p->setNDensities(xc_order); //Nr of dens is the same as xc_order
+        xcfun_p->setNDensities(xc_order); // Nr of dens is the same as xc_order
         xcfun_p->evalSetup(xc_order);
         xcfun_p->allocateDensities();
         exx = xcfun_p->amountEXX();

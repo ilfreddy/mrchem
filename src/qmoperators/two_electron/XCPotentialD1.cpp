@@ -79,4 +79,4 @@ void XCPotentialD1::setupPotential(double prec) {
     this->functional->clear();
 }
 
-} //namespace mrchem
+} // namespace mrchem

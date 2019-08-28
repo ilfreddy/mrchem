@@ -92,11 +92,12 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     FunctionTree<3> &rho_pert = this->getDensity(density_spin, 1);
     Density pert_dens(false);
     pert_dens.setReal(&rho_pert);
-    density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
+    density::compute(
+        prec, pert_dens, Phi, X, Y, density_spin); // LUCA: precision and grid refinenemt problem to be discussed
     //    while (mrcpp::refine_grid(rho_pert, rho)) {}
     //    while (mrcpp::refine_grid(rho, rho_pert)) {}  //LUCA: this does not work with open shell
     print_utils::qmfunction(0, "XC perturbed density", pert_dens, time);
-    pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
+    pert_dens.setReal(nullptr); // Otherwise the FunctionTree object is deleted
 }
 
 /** @brief Compute XC potential(s)
@@ -146,7 +147,7 @@ void XCPotentialD2::syncGrids() {
         int n2b = rho2.getNNodes();
         int n3b = rho3.getNNodes();
         int n4b = rho4.getNNodes();
-        std::cout << "Before " << n1b << " "  << n2b << " "  << n3b << " "  << n4b << std::endl;
+        std::cout << "Before " << n1b << " " << n2b << " " << n3b << " " << n4b << std::endl;
         while (mrcpp::refine_grid(rho1, rho2)) {};
         while (mrcpp::refine_grid(rho1, rho3)) {};
         while (mrcpp::refine_grid(rho1, rho4)) {};
@@ -157,7 +158,7 @@ void XCPotentialD2::syncGrids() {
         int n2a = rho2.getNNodes();
         int n3a = rho3.getNNodes();
         int n4a = rho4.getNNodes();
-        std::cout << "After  " << n1a << " "  << n2a << " "  << n3a << " "  << n4a << std::endl;
+        std::cout << "After  " << n1a << " " << n2a << " " << n3a << " " << n4a << std::endl;
     } else {
         FunctionTree<3> &rho1 = this->getDensity(DENSITY::DensityType::Total, 0);
         FunctionTree<3> &rho2 = this->getDensity(DENSITY::DensityType::Total, 1);
