@@ -34,6 +34,7 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/two_electron/FockOperator.h"
+#include "utils/print_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -65,6 +66,11 @@ LinearResponseSolver::LinearResponseSolver(bool dyn, FockOperator &F_0, OrbitalV
  *
  */
 bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVector &X_n, OrbitalVector &Y_n) {
+    printParameters(omega, F_1.perturbation().name());
+
+    // Setup KAIN accelerators
+    KAIN kain_x(this->history);
+    KAIN kain_y(this->history);
     OrbitalVector &Phi_0 = *this->phi_0;
     ComplexMatrix &F_mat_0 = *this->f_mat_0;
     ComplexMatrix F_mat_x = F_mat_0 + omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
@@ -73,33 +79,35 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
     RankZeroTensorOperator V_0 = this->f_oper_0->potential();
     RankZeroTensorOperator V_1 = F_1.potential() + F_1.perturbation();
 
-    double orb_prec = this->orbPrec[0];
-    double max_prec = this->orbPrec[2];
     double err_o = 1.0;
     double err_t = 1.0;
-    double err_p = 1.0;
-
-    // Setup KAIN accelerators
-    KAIN kain_x(this->history);
-    KAIN kain_y(this->history);
-
-    // Setup Helmholtz operators (fixed, based on unperturbed system)
-    HelmholtzVector H(max_prec, F_mat_0.real().diagonal());
-
-    // Placeholders for orbital errors
     DoubleVector errors_x = DoubleVector::Zero(Phi_0.size());
     DoubleVector errors_y = DoubleVector::Zero(Phi_0.size());
+
+    this->error.push_back(err_t);
+    this->property.push_back(0.0);
+
+    // Setup Helmholtz operators (fixed, based on unperturbed system)
+    double helm_prec = getHelmholtzPrec();
+    HelmholtzVector H(helm_prec, F_mat_0.real().diagonal());
+
+    auto plevel = Printer::getPrintLevel();
+    if (plevel < 1) {
+        printConvergenceHeader();
+        printConvergenceRow(0);
+    }
 
     int nIter = 0;
     bool converged = false;
     while (nIter++ < this->maxIter or this->maxIter < 0) {
         std::stringstream o_header;
         o_header << "SCF cycle " << nIter;
-        mrcpp::print::header(1, o_header.str());
+        mrcpp::print::header(1, o_header.str(), 0, '#');
+        mrcpp::print::separator(2, ' ', 1);
 
         // Initialize SCF cycle
         Timer t_lap;
-        orb_prec = adjustPrecision(err_o);
+        double orb_prec = adjustPrecision(err_o);
 
         // Setup perturbed Fock operator (including V_1)
         F_1.setup(orb_prec);
@@ -170,15 +178,18 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         F_1.clear();
 
         // Compute errors
-        err_p = std::abs(getUpdate(this->property, nIter, false));
+        auto err_p = std::abs(getUpdate(this->property, nIter, false));
         err_o = std::max(errors_x.maxCoeff(), errors_y.maxCoeff());
         err_t = std::sqrt(errors_x.dot(errors_x) + errors_y.dot(errors_y));
         converged = checkConvergence(err_o, err_p);
         this->error.push_back(err_t);
 
         // Finalize SCF cycle
+        if (plevel < 1) printConvergenceRow(nIter);
         printProperty();
-        mrcpp::print::footer(1, t_lap, 2);
+        printMemory();
+        mrcpp::print::footer(1, t_lap, 2, '#');
+        mrcpp::print::separator(2, ' ', 2);
 
         if (converged) break;
     }
@@ -195,9 +206,80 @@ void LinearResponseSolver::printProperty() const {
     int iter = this->property.size();
     if (iter > 1) prop_0 = this->property[iter - 2];
     if (iter > 0) prop_1 = this->property[iter - 1];
-    mrcpp::print::header(0, "                    Value                  Update      Done ");
-    printUpdate(0, "Property", prop_1, prop_1 - prop_0, this->propThrs);
-    mrcpp::print::separator(0, '=');
+    mrcpp::print::header(2, "                    Value                  Update      Done ");
+    printUpdate(2, "Property", prop_1, prop_1 - prop_0, this->propThrs);
+    mrcpp::print::separator(2, '=');
+}
+
+void LinearResponseSolver::printParameters(double omega, const std::string &oper) const {
+    std::stringstream o_calc;
+    if (this->dynamic) {
+        o_calc << "Dynamic linear response";
+    } else {
+        o_calc << "Static linear response";
+    }
+    std::stringstream o_loc;
+    if (this->localize) {
+        o_loc << "On";
+    } else {
+        o_loc << "Off";
+    }
+
+    std::stringstream o_omega;
+    o_omega << std::setprecision(5) << std::fixed << omega << " (au)";
+
+    std::stringstream o_kain;
+    if (this->history > 0) {
+        o_kain << this->history;
+    } else {
+        o_kain << "Off";
+    }
+    std::stringstream o_iter;
+    if (this->maxIter > 0) {
+        o_iter << this->maxIter;
+    } else {
+        o_iter << "Off";
+    }
+
+    std::stringstream o_prec_0, o_prec_1;
+    o_prec_0 << std::setprecision(5) << std::scientific << this->orbPrec[0];
+    o_prec_1 << std::setprecision(5) << std::scientific << this->orbPrec[1];
+
+    std::stringstream o_thrs_p;
+    if (this->propThrs < 0.0) {
+        o_thrs_p << "Off";
+    } else {
+        o_thrs_p << std::setprecision(5) << std::scientific << this->propThrs;
+    }
+
+    std::stringstream o_thrs_o;
+    if (this->orbThrs < 0.0) {
+        o_thrs_o << "Off";
+    } else {
+        o_thrs_o << std::setprecision(5) << std::scientific << this->orbThrs;
+    }
+
+    std::stringstream o_helm;
+    if (this->helmPrec < 0.0) {
+        o_helm << "Dynamic";
+    } else {
+        o_helm << std::setprecision(5) << std::scientific << this->helmPrec;
+    }
+
+    mrcpp::print::separator(0, '~');
+    print_utils::text(0, "Calculation        ", o_calc.str());
+    if (dynamic) print_utils::text(0, "Frequency          ", o_omega.str());
+    print_utils::text(0, "Method             ", this->methodName);
+    print_utils::text(0, "Perturbation       ", oper);
+    print_utils::text(0, "Max iterations     ", o_iter.str());
+    print_utils::text(0, "KAIN solver        ", o_kain.str());
+    print_utils::text(0, "Localization       ", o_loc.str());
+    print_utils::text(0, "Start precision    ", o_prec_0.str());
+    print_utils::text(0, "Final precision    ", o_prec_1.str());
+    print_utils::text(0, "Helmholtz precision", o_helm.str());
+    print_utils::text(0, "Property threshold ", o_thrs_p.str());
+    print_utils::text(0, "Orbital threshold  ", o_thrs_o.str());
+    mrcpp::print::separator(0, '~', 2);
 }
 
 } // namespace mrchem
