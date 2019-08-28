@@ -50,6 +50,7 @@ protected:
     OrbitalVector *phi_0{nullptr};
 
     void printProperty() const;
+    void printParameters(double omega, const std::string &oper) const;
 };
 
 } // namespace mrchem
