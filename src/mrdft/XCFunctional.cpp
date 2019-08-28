@@ -646,7 +646,6 @@ void XCFunctional::evaluate() {
     auto m = mrcpp::get_size_nodes(xcOutput);
     auto t = timer.elapsed();
     mrcpp::print::tree(2, "XC evaluate xcfun", n, m, t);
-    printout(2, std::endl);
 }
 
 void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_data, MatrixXd &con_data) {

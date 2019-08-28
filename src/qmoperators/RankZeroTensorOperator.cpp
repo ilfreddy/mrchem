@@ -299,9 +299,13 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     OrbitalVector OPhi = O(Phi);
     ComplexVector eta = orbital::get_occupancies(Phi).cast<ComplexDouble>();
     ComplexVector phi_vec = orbital::dot(Phi, OPhi);
+
     std::stringstream o_name;
-    o_name << "Trace <i|" << O.name() << "|i>";
-    mrcpp::print::tree(2, o_name.str(), orbital::get_n_nodes(OPhi), orbital::get_size_nodes(OPhi), t1.elapsed());
+    o_name << "Trace " << O.name() << "(rho)";
+    auto n_nodes = orbital::get_n_nodes(OPhi);
+    auto n_size = orbital::get_size_nodes(OPhi);
+    mrcpp::print::tree(2, o_name.str(), n_nodes, n_size, t1.elapsed());
+
     return eta.dot(phi_vec);
 }
 
@@ -317,24 +321,27 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
  * Includes a MPI reduction operation in case of distributed orbitals.
  */
 ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y) {
+    Timer t1;
     RankZeroTensorOperator &O = *this;
 
-    ComplexDouble result(0.0, 0.0);
-    for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) {
-            if (not mpi::my_orb(X[i])) MSG_ERROR("MPI communication needed");
-            if (not mpi::my_orb(Y[i])) MSG_ERROR("MPI communication needed");
-            auto eta_i = static_cast<double>(Phi[i].occ());
-            ComplexDouble result_1 = O(Phi[i], X[i]);
-            ComplexDouble result_2 = O(Y[i], Phi[i]);
-            result += eta_i * (result_1 + result_2);
-        }
-    }
-#ifdef HAVE_MPI
-    MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_C_DOUBLE_COMPLEX, MPI_SUM, mpi::comm_orb);
-#endif
+    OrbitalVector OPhi = O(Phi);
+    auto y_nodes = orbital::get_n_nodes(OPhi);
+    auto y_size = orbital::get_size_nodes(OPhi);
+    auto y_vec = orbital::dot(Y, OPhi);
+    OPhi.clear();
 
-    return result;
+    OrbitalVector OX = O(X);
+    auto x_nodes = orbital::get_n_nodes(OX);
+    auto x_size = orbital::get_size_nodes(OX);
+    auto x_vec = orbital::dot(Phi, OX);
+    OX.clear();
+
+    std::stringstream o_name;
+    o_name << "Trace " << O.name() << "(rho_1)";
+    mrcpp::print::tree(2, o_name.str(), std::max(x_nodes, y_nodes), std::max(x_size, y_size), t1.elapsed());
+
+    ComplexVector eta = orbital::get_occupancies(Phi).cast<ComplexDouble>();
+    return eta.dot(x_vec + y_vec);
 }
 
 /** @brief apply a single term of the operator expansion
