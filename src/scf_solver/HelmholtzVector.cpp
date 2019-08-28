@@ -89,27 +89,6 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
     return out;
 }
 
-/** @brief Prepare the matrix term in the Helmholtz argument
- *
- * This will subtract the lambda parameters in the Helmholtz operators from the
- * diagonal of the Fock matrix and rotate the orbitals with the resulting matrix
- * psi_i = \sum_j(L_ij - F_ij)*phi_j
- *
- * MPI: Output vector gets the same MPI distribution as input vector. Only
- *      local orbitals are computed.
- */
-OrbitalVector HelmholtzVector::rotate(const ComplexMatrix &F_mat, OrbitalVector &Phi) const {
-    Timer t_tot;
-    mrcpp::print::header(2, "Rotating Helmholtz argument");
-    ComplexMatrix L_mat = getLambdaMatrix();
-
-    OrbitalVector Psi = orbital::rotate(L_mat - F_mat, Phi);
-    mrcpp::print::time(1, "Rotating Helmholtz argument", t_tot);
-
-    mrcpp::print::footer(2, t_tot, 2);
-    return Psi;
-}
-
 /** @brief Apply Helmholtz operator component wise on OrbitalVector
  *
  * This will construct a separate Helmholtz operator for each of the entries
