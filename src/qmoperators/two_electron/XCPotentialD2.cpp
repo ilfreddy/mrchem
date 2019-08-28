@@ -96,8 +96,8 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
         prec, pert_dens, Phi, X, Y, density_spin); // LUCA: precision and grid refinenemt problem to be discussed
     //    while (mrcpp::refine_grid(rho_pert, rho)) {}
     //    while (mrcpp::refine_grid(rho, rho_pert)) {}  //LUCA: this does not work with open shell
-    print_utils::qmfunction(0, "XC perturbed density", pert_dens, time);
-    pert_dens.setReal(nullptr); // Otherwise the FunctionTree object is deleted
+    //    print_utils::qmfunction(0, "XC perturbed density", pert_dens, time);
+    pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
 }
 
 /** @brief Compute XC potential(s)
@@ -122,19 +122,10 @@ void XCPotentialD2::setupPotential(double prec) {
     if (not this->functional->hasDensity()) MSG_ERROR("XC density not initialized");
     if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
 
-    int inpNodes = this->functional->getNNodes();
-    int inpPoints = this->functional->getNPoints();
-
     this->functional->setup();
     this->functional->evaluate();
     this->potentials = this->functional->calcPotential();
     this->functional->clear();
-
-    int newNodes = this->functional->getNNodes() - inpNodes;
-    int newPoints = this->functional->getNPoints() - inpPoints;
-
-    println(0, " XC grid size   " << std::setw(26) << inpNodes << std::setw(17) << inpPoints);
-    println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }
 
 void XCPotentialD2::syncGrids() {
