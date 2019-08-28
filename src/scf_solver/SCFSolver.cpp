@@ -251,7 +251,6 @@ void SCFSolver::printOrbitals(const DoubleVector &norms,
         println(2, o_row.str());
         if (not conv_i) conv_tot = false;
     }
-    mrcpp::print::separator(1, '-');
     printout(1, " Total residual" << std::string(w1 + w2 + w3 - 15, ' '));
     printout(1, std::setw(w4 + w6) << std::setprecision(pprec) << std::scientific << errors.norm());
     printout(1, std::setw(w5) << conv_tot << std::endl);
