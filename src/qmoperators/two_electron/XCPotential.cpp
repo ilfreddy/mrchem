@@ -48,11 +48,12 @@ void XCPotential::clear() {
 }
 
 void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec) {
-    Timer time;
+    Timer timer;
     FunctionTree<3> &func = this->getDensity(spin);
     Density rho(false);
     rho.setReal(&func);
     density::compute(prec, rho, Phi, spin);
+    print_utils::qmfunction(2, "XC density", rho, timer);
     rho.setReal(nullptr);
 }
 

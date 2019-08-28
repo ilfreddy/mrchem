@@ -82,7 +82,7 @@ bool EnergyOptimizer::optimize(Molecule &mol, FockOperator &F_n) {
 
     auto plevel = Printer::getPrintLevel();
     if (plevel < 1) {
-        printConvergenceHeader();
+        printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
 
@@ -99,9 +99,19 @@ bool EnergyOptimizer::optimize(Molecule &mol, FockOperator &F_n) {
         double orb_prec = adjustPrecision(err_o);
         if (nIter < 2) F_n.setup(orb_prec);
 
-        // Apply Helmholtz operator
+        // Init Helmholtz operator
         HelmholtzVector H(orb_prec, F_mat_n.real().diagonal());
-        OrbitalVector Psi = H.rotate(F_mat_n, Phi_n);
+
+        // Setup argument
+        Timer t_arg;
+        mrcpp::print::header(2, "Computing Helmholtz argument");
+        ComplexMatrix L_mat = H.getLambdaMatrix();
+        OrbitalVector Psi = orbital::rotate(L_mat - F_mat_n, Phi_n);
+        mrcpp::print::time(2, "Rotating orbitals", t_arg);
+        mrcpp::print::footer(2, t_arg, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+
+        // Apply Helmholtz operator
         OrbitalVector Phi_np1 = H.apply(F_n.potential(), Phi_n, Psi);
         Psi.clear();
 
@@ -165,7 +175,7 @@ bool EnergyOptimizer::optimize(Molecule &mol, FockOperator &F_n) {
     }
     F_n.clear();
 
-    printConvergence(converged);
+    printConvergence(converged, "Total energy");
     reset();
 
     return converged;

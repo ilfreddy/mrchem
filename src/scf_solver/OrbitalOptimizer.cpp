@@ -87,7 +87,7 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
 
     auto plevel = Printer::getPrintLevel();
     if (plevel < 1) {
-        printConvergenceHeader();
+        printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
 
@@ -100,14 +100,24 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
         mrcpp::print::separator(2, ' ', 1);
 
         // Initialize SCF cycle
-        Timer t_lap;
+        Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
         double helm_prec = getHelmholtzPrec();
         if (nIter < 2) F.setup(orb_prec);
 
-        // Apply Helmholtz operator
+        // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        OrbitalVector Psi = H.rotate(F_mat, Phi_n);
+
+        // Setup argument
+        Timer t_arg;
+        mrcpp::print::header(2, "Computing Helmholtz argument");
+        ComplexMatrix L_mat = H.getLambdaMatrix();
+        OrbitalVector Psi = orbital::rotate(L_mat - F_mat, Phi_n);
+        mrcpp::print::time(2, "Rotating orbitals", t_arg);
+        mrcpp::print::footer(2, t_arg, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+
+        // Apply Helmholtz operator
         OrbitalVector Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
         Psi.clear();
         F.clear();
@@ -157,11 +167,13 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
 
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
-        mrcpp::print::separator(1, '-');
         printOrbitals(F_mat.real().diagonal(), errors, Phi_n, 0);
+        mrcpp::print::separator(1, '-');
+        printResidual(err_t, converged);
+        mrcpp::print::separator(2, '=', 2);
         printProperty();
         printMemory();
-        mrcpp::print::footer(1, t_lap, 2, '#');
+        mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
         if (converged) break;
@@ -169,7 +181,7 @@ bool OrbitalOptimizer::optimize(Molecule &mol, FockOperator &F) {
 
     F.clear();
 
-    printConvergence(converged);
+    printConvergence(converged, "Total energy");
     reset();
 
     return converged;

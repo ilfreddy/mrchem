@@ -83,10 +83,11 @@ protected:
     double getUpdate(const std::vector<double> &vec, int i, bool absPrec) const;
     void printUpdate(int plevel, const std::string &txt, double P, double dP, double thrs) const;
 
-    void printConvergence(bool converged) const;
-    void printConvergenceHeader() const;
+    void printConvergence(bool converged, const std::string &txt) const;
+    void printConvergenceHeader(const std::string &txt) const;
     void printConvergenceRow(int i) const;
-    void printOrbitals(const DoubleVector &norms, const DoubleVector &errors, const OrbitalVector &Phi, int flag) const;
+    void printOrbitals(const DoubleVector &norms, const DoubleVector &errors, const OrbitalVector &Phi, int flag, bool print_head = true) const;
+    void printResidual(double residual, bool converged) const;
     void printMemory() const;
 };
 

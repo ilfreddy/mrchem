@@ -215,7 +215,8 @@ void SCFSolver::printUpdate(int plevel, const std::string &txt, double P, double
 void SCFSolver::printOrbitals(const DoubleVector &norms,
                               const DoubleVector &errors,
                               const OrbitalVector &Phi,
-                              int flag) const {
+                              int flag,
+                              bool print_head) const {
     int pprec = Printer::getPrecision();
     int w0 = (Printer::getWidth() - 1);
     int w1 = 5;
@@ -234,8 +235,8 @@ void SCFSolver::printOrbitals(const DoubleVector &norms,
     o_head << std::setw(w6) << "Residual";
     o_head << std::setw(w5) << "Done";
 
-    mrcpp::print::separator(2, '=');
-    println(2, o_head.str());
+    if (print_head) mrcpp::print::separator(2, '=');
+    if (print_head) println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
     bool conv_tot = true;
@@ -251,13 +252,25 @@ void SCFSolver::printOrbitals(const DoubleVector &norms,
         println(2, o_row.str());
         if (not conv_i) conv_tot = false;
     }
-    printout(1, " Total residual" << std::string(w1 + w2 + w3 - 15, ' '));
-    printout(1, std::setw(w4 + w6) << std::setprecision(pprec) << std::scientific << errors.norm());
-    printout(1, std::setw(w5) << conv_tot << std::endl);
-    mrcpp::print::separator(2, '=', 2);
 }
 
-void SCFSolver::printConvergenceHeader() const {
+void SCFSolver::printResidual(double residual, bool converged) const {
+    int pprec = Printer::getPrecision();
+    int w0 = (Printer::getWidth() - 1);
+    int w1 = 5;
+    int w2 = 7;
+    int w3 = 8;
+    int w4 = w0 / 3;
+    int w5 = 8;
+    int w6 = w0 - w1 - w2 - w3 - w4 - w5;
+
+    std::string txt = " Total residual";
+    printout(1, txt << std::string(w1 + w2 + w3 - txt.size(), ' '));
+    printout(1, std::setw(w4 + w6) << std::setprecision(pprec) << std::scientific << residual);
+    printout(1, std::setw(w5) << converged << std::endl);
+}
+
+void SCFSolver::printConvergenceHeader(const std::string &txt) const {
     int w0 = Printer::getWidth() - 1;
     int w1 = 5;
     int w2 = 3 * w0 / 10;
@@ -266,7 +279,7 @@ void SCFSolver::printConvergenceHeader() const {
     std::stringstream o_head;
     o_head << std::setw(w1) << "Iter";
     o_head << std::setw(w2) << "MO residual";
-    o_head << std::setw(w3) << "Property";
+    o_head << std::setw(w3) << txt;
     o_head << std::setw(w2) << "Update";
 
     mrcpp::print::separator(0, '=');
@@ -299,7 +312,7 @@ void SCFSolver::printConvergenceRow(int i) const {
  *
  * Prints convergence in both orbitals and property.
  */
-void SCFSolver::printConvergence(bool converged) const {
+void SCFSolver::printConvergence(bool converged, const std::string &txt) const {
     auto plevel = Printer::getPrintLevel();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = (w0 - 30) / 2;
@@ -307,7 +320,7 @@ void SCFSolver::printConvergence(bool converged) const {
 
     auto nIter = this->error.size();
     if (plevel > 0) {
-        printConvergenceHeader();
+        printConvergenceHeader(txt);
         for (int i = 0; i < nIter; i++) printConvergenceRow(i);
     }
     mrcpp::print::separator(0, '-');
