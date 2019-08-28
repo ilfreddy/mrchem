@@ -112,11 +112,16 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         // Setup perturbed Fock operator (including V_1)
         F_1.setup(orb_prec);
 
+        if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
+
         { // Iterate X orbitals
             // Compute argument: psi_i = sum_j [L-F]_ij*x_j + (1 - rho_0)V_1(phi_i)
-            OrbitalVector Psi_1 = H.rotate(F_mat_x, X_n);
-            OrbitalVector Psi_2 = V_1(Phi_0);
-            orbital::orthogonalize(Psi_2, Phi_0);
+            Timer t_pot;
+            OrbitalVector Psi_1 = V_1(Phi_0);
+            mrcpp::print::time(1, "Applying perturbed potential", t_pot);
+            orbital::orthogonalize(Psi_1, Phi_0);
+
+            OrbitalVector Psi_2 = H.rotate(F_mat_x, X_n);
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
             Psi_1.clear();
             Psi_2.clear();
@@ -138,14 +143,18 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
-            printOrbitals(orbital::get_norms(X_n), errors_x, X_n, 1);
         }
+
+        if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
 
         if (dynamic) { // Iterate Y orbitals
             // Compute argument: psi_i = sum_j [L-F]_ij*y_j + (1 - rho_0)V_1^dagger(phi_i)
-            OrbitalVector Psi_1 = H.rotate(F_mat_y, Y_n);
-            OrbitalVector Psi_2 = V_1.dagger(Phi_0);
-            orbital::orthogonalize(Psi_2, Phi_0);
+            Timer t_pot;
+            OrbitalVector Psi_1 = V_1(Phi_0);
+            mrcpp::print::time(1, "Applying perturbed potential", t_pot);
+            orbital::orthogonalize(Psi_1, Phi_0);
+
+            OrbitalVector Psi_2 = H.rotate(F_mat_y, Y_n);
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
             Psi_1.clear();
             Psi_2.clear();
@@ -167,7 +176,6 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             // Prepare for next iteration
             Y_n = orbital::add(1.0, Y_n, 1.0, dY_n);
-            printOrbitals(orbital::get_norms(Y_n), errors_y, Y_n, 1);
         }
 
         // Compute property
@@ -186,6 +194,9 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
+        mrcpp::print::separator(1, '-');
+        printOrbitals(orbital::get_norms(X_n), errors_x, X_n, 1);
+        if (dynamic) printOrbitals(orbital::get_norms(Y_n), errors_y, Y_n, 1);
         printProperty();
         printMemory();
         mrcpp::print::footer(1, t_lap, 2, '#');
@@ -207,7 +218,7 @@ void LinearResponseSolver::printProperty() const {
     if (iter > 1) prop_0 = this->property[iter - 2];
     if (iter > 0) prop_1 = this->property[iter - 1];
     mrcpp::print::header(2, "                    Value                  Update      Done ");
-    printUpdate(2, "Property", prop_1, prop_1 - prop_0, this->propThrs);
+    printUpdate(1, " Symmetric property", prop_1, prop_1 - prop_0, this->propThrs);
     mrcpp::print::separator(2, '=');
 }
 
