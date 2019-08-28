@@ -51,7 +51,12 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 namespace density {
 Density compute(double prec, Orbital phi, DENSITY::DensityType spin);
 void compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DENSITY::DensityType spin);
-void compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DENSITY::DensityType spin);
+void compute_local_XY(double prec,
+                      Density &rho,
+                      OrbitalVector &Phi,
+                      OrbitalVector &X,
+                      OrbitalVector &Y,
+                      DENSITY::DensityType spin);
 double compute_occupation(Orbital &phi, DENSITY::DensityType dens_spin);
 } // namespace density
 
@@ -115,12 +120,17 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, DENSITY::De
  *      and X/Y must be the same.
  *
  */
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DENSITY::DensityType spin) {
+void density::compute(double prec,
+                      Density &rho,
+                      OrbitalVector &Phi,
+                      OrbitalVector &X,
+                      OrbitalVector &Y,
+                      DENSITY::DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double abs_prec = prec / N_el; // prec for rho = sum_i rho_i
 
-    //LUCA: rho_loc should get the "general" grid in order to make sure all densities are available on the same grid.
+    // LUCA: rho_loc should get the "general" grid in order to make sure all densities are available on the same grid.
     Density rho_loc(false);
     if (&X == &Y) {
         density::compute_local_X(rel_prec, rho_loc, Phi, X, spin);
@@ -165,7 +175,11 @@ void density::compute_local(double prec,
     }
 }
 
-void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DENSITY::DensityType spin) {
+void density::compute_local_X(double prec,
+                              Density &rho,
+                              OrbitalVector &Phi,
+                              OrbitalVector &X,
+                              DENSITY::DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i

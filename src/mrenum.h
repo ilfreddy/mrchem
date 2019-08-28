@@ -9,4 +9,6 @@
 
 #pragma once
 
-namespace DENSITY { enum class DensityType { Total, Spin, Alpha, Beta }; }
+namespace DENSITY {
+enum class DensityType { Total, Spin, Alpha, Beta };
+}

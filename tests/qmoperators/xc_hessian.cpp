@@ -108,7 +108,6 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     E_P(1, 0) = -0.0226852770676;
     E_P(1, 1) = 0.00549970397828;
 
-
     V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);

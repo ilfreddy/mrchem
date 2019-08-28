@@ -59,7 +59,6 @@
  *
  */
 
-
 namespace mrdft {
 
 class XCFunctional final {
@@ -69,8 +68,7 @@ public:
     XCFunctional &operator=(const XCFunctional &func) = delete;
     ~XCFunctional();
 
-    bool hasDensity(int n_dens_a = 1
-                    ) const;
+    bool hasDensity(int n_dens_a = 1) const;
     bool checkDensity(mrcpp::FunctionTreeVector<3> density, int n_dens = 1) const;
     mrcpp::FunctionTreeVector<3> &getDensityVector(DENSITY::DensityType spin);
     mrcpp::FunctionTree<3> &getDensity(DENSITY::DensityType type, int index = 0);
@@ -115,8 +113,8 @@ public:
 private:
     int order;
     int nDensities;
-    const bool spin_separated;                  ///< Spin polarization
-    const mrcpp::MultiResolutionAnalysis<3> MRA;///< Computational domain
+    const bool spin_separated;                   ///< Spin polarization
+    const mrcpp::MultiResolutionAnalysis<3> MRA; ///< Computational domain
 
     bool use_gamma; ///< Whether gamma-type or explicit derivatives are used
     double cutoff;  ///< Below the cutoff value, the density will be considered zero
@@ -140,12 +138,12 @@ private:
     void clearGrid(mrcpp::FunctionTreeVector<3> densities);
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
-    int getContractedLength() const; 
+    int getContractedLength() const;
     int getDensityLength() const;
     int getNodeLength();
-    
+
     void setupGradient();
-        
+
     void setupXCInput();
     void setupXCOutput();
     int setupXCInputDensity();
@@ -164,7 +162,6 @@ private:
 
     //    void plot_function_tree_vector(mrcpp::FunctionTreeVector<3> &functions, std::string prefix);
     //    void refineGrid(double prec, bool abs_prec);
-
 };
 
 } // namespace mrdft

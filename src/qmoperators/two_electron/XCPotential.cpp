@@ -29,14 +29,14 @@ void XCPotential::setupDensity(double prec) {
         buildDensity(Phi, DENSITY::DensityType::Beta, prec);
         FunctionTree<3> &func_a = this->getDensity(DENSITY::DensityType::Alpha);
         FunctionTree<3> &func_b = this->getDensity(DENSITY::DensityType::Beta);
-        std::cout << "nnodes before  " << func_a.getNNodes()    << std::endl;
-        std::cout << "nnodes before  " << func_b.getNNodes()    << std::endl;
+        std::cout << "nnodes before  " << func_a.getNNodes() << std::endl;
+        std::cout << "nnodes before  " << func_b.getNNodes() << std::endl;
         std::cout << "enodes before  " << func_a.getNEndNodes() << std::endl;
         std::cout << "enodes before  " << func_b.getNEndNodes() << std::endl;
         while (mrcpp::refine_grid(func_a, func_b)) {}
         while (mrcpp::refine_grid(func_b, func_a)) {}
-        std::cout << "nnodes after   " << func_a.getNNodes()    << std::endl;
-        std::cout << "nnodes after   " << func_b.getNNodes()    << std::endl;
+        std::cout << "nnodes after   " << func_a.getNNodes() << std::endl;
+        std::cout << "nnodes after   " << func_b.getNNodes() << std::endl;
         std::cout << "enodes after   " << func_a.getNEndNodes() << std::endl;
         std::cout << "enodes after   " << func_b.getNEndNodes() << std::endl;
     } else {
@@ -102,20 +102,18 @@ Orbital XCPotential::apply(Orbital phi) {
     Orbital Vphi = QMPotential::apply(phi);
     V.setReal(nullptr);
 
-	std::cout << "nodes at operator application" << std::endl;
-	std::cout << static_cast<mrcpp::MWTree<3> &>(tree) << std::endl;
-	if(phi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(phi.real()) << std::endl;
-	if(Vphi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(Vphi.real()) << std::endl;
+    std::cout << "nodes at operator application" << std::endl;
+    std::cout << static_cast<mrcpp::MWTree<3> &>(tree) << std::endl;
+    if (phi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(phi.real()) << std::endl;
+    if (Vphi.hasReal()) std::cout << static_cast<mrcpp::MWTree<3> &>(Vphi.real()) << std::endl;
 
     return Vphi;
 }
 
-
-
-//NOTE AFTER DISCUSSION WITH STIG: Need to move stuff that is
-//iteration-independent out of the response loop, so that all required
-//functions, which only depend on the GS density are computed
-//once. Comment: still the grid for rho_1 is borrowed from rho_0 and
-//rho_0 should still be available.
+// NOTE AFTER DISCUSSION WITH STIG: Need to move stuff that is
+// iteration-independent out of the response loop, so that all required
+// functions, which only depend on the GS density are computed
+// once. Comment: still the grid for rho_1 is borrowed from rho_0 and
+// rho_0 should still be available.
 
 } // namespace mrchem
