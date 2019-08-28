@@ -333,8 +333,6 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
     driver::build_fock_operator(json_fock_0, mol, F_0, 0);
     driver::build_fock_operator(json_fock_1, mol, F_1, 1);
 
-    F_1.getXCOperator()->setupDensity(rsp_prec);
-
     auto &F_mat = mol.getFockMatrix();
     auto &Phi = mol.getOrbitals();
     auto &X = mol.getOrbitalsX();
@@ -370,10 +368,15 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, property_thrs);
 
-        mrcpp::print::header(1, "Unperturbed Fock operator");
-        Timer t_fock;
+        Timer t_lap;
+        mrcpp::print::header(2, "Computing unperturbed density");
+        F_1.getXCOperator()->setupDensity(rsp_prec);
+        mrcpp::print::footer(2, t_lap, 2);
+
+        auto plevel = mrcpp::Printer::getPrintLevel();
+        if (plevel == 1) mrcpp::Printer::setPrintLevel(0);
         F_0.setup(rsp_prec);
-        mrcpp::print::footer(1, t_fock, 2);
+        if (plevel == 1) mrcpp::Printer::setPrintLevel(1);
 
         for (int d = 0; d < 3; d++) {
             if (directions[d]) {
@@ -507,7 +510,7 @@ void driver::calc_scf_properties(const json &json_prop, Molecule &mol) {
     auto json_dipole = json_prop.find("dipole_moment");
     if (json_dipole != json_prop.end()) {
         t_lap.start();
-        mrcpp::print::header(2, "Dipole moment");
+        mrcpp::print::header(2, "Computing dipole moment");
         auto prec = (*json_dipole)["setup_prec"].get<double>();
         auto r_O = (*json_dipole)["origin"].get<Coord<3>>();
 
@@ -535,7 +538,7 @@ void driver::calc_scf_properties(const json &json_prop, Molecule &mol) {
     auto json_mag = json_prop.find("magnetizability");
     if (json_mag != json_prop.end()) {
         t_lap.start();
-        mrcpp::print::header(2, "Magnetizability (dia)");
+        mrcpp::print::header(2, "Computing magnetizability (dia)");
         auto prec = (*json_mag)["setup_prec"].get<double>();
         auto r_O = (*json_mag)["origin"].get<Coord<3>>();
 
@@ -553,7 +556,7 @@ void driver::calc_scf_properties(const json &json_prop, Molecule &mol) {
     auto json_nmr = json_prop.find("nmr_shielding");
     if (json_nmr != json_prop.end()) {
         t_lap.start();
-        mrcpp::print::header(2, "NMR shielding (dia)");
+        mrcpp::print::header(2, "Computing NMR shielding (dia)");
         auto prec = (*json_nmr)["setup_prec"].get<double>();
         auto r_O = (*json_nmr)["origin"].get<Coord<3>>();
         auto nucleus_k = (*json_nmr)["nucleus_k"].get<std::vector<int>>();
@@ -592,7 +595,7 @@ void driver::calc_rsp_properties(const json &json_prop, Molecule &mol, int dir, 
     auto json_pol = json_prop.find("polarizability");
     if (json_pol != json_prop.end()) {
         t_lap.start();
-        mrcpp::print::header(2, "Calculating polarizability");
+        mrcpp::print::header(2, "Computing polarizability");
         auto prec = (*json_pol)["setup_prec"].get<double>();
         auto r_O = (*json_pol)["origin"].get<Coord<3>>();
 
@@ -609,7 +612,7 @@ void driver::calc_rsp_properties(const json &json_prop, Molecule &mol, int dir, 
     auto json_mag = json_prop.find("magnetizability");
     if (json_mag != json_prop.end()) {
         t_lap.start();
-        mrcpp::print::header(2, "Calculating paramagnetic magnetizability");
+        mrcpp::print::header(2, "Computing magnetizability (para)");
         auto prec = (*json_mag)["setup_prec"].get<double>();
         auto r_O = (*json_mag)["origin"].get<Coord<3>>();
         auto pert_diff = (*json_mag)["derivative"].get<std::string>();
@@ -622,7 +625,7 @@ void driver::calc_rsp_properties(const json &json_prop, Molecule &mol, int dir, 
         khi.getParamagnetic().row(dir) = -h.trace(Phi, X, Y).real();
         h.clear();
         mrcpp::print::footer(2, t_lap, 2);
-        if (plevel == 1) mrcpp::print::time(1, "Paramagnetic magnetizability", t_lap);
+        if (plevel == 1) mrcpp::print::time(1, "Magnetizability (para)", t_lap);
     }
 
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);

@@ -90,10 +90,11 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
     // Setup Helmholtz operators (fixed, based on unperturbed system)
     double helm_prec = getHelmholtzPrec();
     HelmholtzVector H(helm_prec, F_mat_0.real().diagonal());
+    ComplexMatrix L_mat = H.getLambdaMatrix();
 
     auto plevel = Printer::getPrintLevel();
     if (plevel < 1) {
-        printConvergenceHeader();
+        printConvergenceHeader("Symmetric property");
         printConvergenceRow(0);
     }
 
@@ -106,7 +107,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         mrcpp::print::separator(2, ' ', 1);
 
         // Initialize SCF cycle
-        Timer t_lap;
+        Timer t_scf, t_lap;
         double orb_prec = adjustPrecision(err_o);
 
         // Setup perturbed Fock operator (including V_1)
@@ -116,27 +117,42 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
         { // Iterate X orbitals
             // Compute argument: psi_i = sum_j [L-F]_ij*x_j + (1 - rho_0)V_1(phi_i)
-            Timer t_pot;
+            Timer t_arg;
+            mrcpp::print::header(2, "Computing Helmholtz argument");
+            t_lap.start();
             OrbitalVector Psi_1 = V_1(Phi_0);
-            mrcpp::print::time(1, "Applying perturbed potential", t_pot);
-            orbital::orthogonalize(Psi_1, Phi_0);
+            mrcpp::print::time(2, "Applying V_1", t_lap);
 
-            OrbitalVector Psi_2 = H.rotate(F_mat_x, X_n);
+            t_lap.start();
+            orbital::orthogonalize(Psi_1, Phi_0);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+
+            t_lap.start();
+            OrbitalVector Psi_2 = orbital::rotate(L_mat - F_mat_x, Phi_0);
+            mrcpp::print::time(2, "Rotating orbitals", t_lap);
+
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
             Psi_1.clear();
             Psi_2.clear();
+            mrcpp::print::footer(2, t_arg, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
             // Apply Helmholtz operators
             OrbitalVector X_np1 = H.apply(V_0, X_n, Psi);
             Psi.clear();
 
-            // Orthogonalize: X_np1 = (1 - rho_0)X_np1
+            // Projecting (1 - rho_0)X
+            mrcpp::print::header(2, "Projecting occupied space");
+            t_lap.start();
             orbital::orthogonalize(X_np1, Phi_0);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+            mrcpp::print::footer(2, t_lap, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
 
             // Compute update and errors
             OrbitalVector dX_n = orbital::add(1.0, X_np1, -1.0, X_n);
-            X_np1.clear();
             errors_x = orbital::get_norms(dX_n);
+            X_np1.clear();
 
             // Compute KAIN update:
             kain_x.accelerate(orb_prec, X_n, dX_n);
@@ -148,28 +164,43 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
 
         if (dynamic) { // Iterate Y orbitals
-            // Compute argument: psi_i = sum_j [L-F]_ij*y_j + (1 - rho_0)V_1^dagger(phi_i)
-            Timer t_pot;
-            OrbitalVector Psi_1 = V_1(Phi_0);
-            mrcpp::print::time(1, "Applying perturbed potential", t_pot);
-            orbital::orthogonalize(Psi_1, Phi_0);
+            // Compute argument: psi_i = sum_j [L-F]_ij*y_j + (1 - rho_0)V_1.dagger(phi_i)
+            Timer t_arg;
+            mrcpp::print::header(2, "Computing Helmholtz argument");
+            t_lap.start();
+            OrbitalVector Psi_1 = V_1.dagger(Phi_0);
+            mrcpp::print::time(2, "Applying V_1.dagger()", t_lap);
 
-            OrbitalVector Psi_2 = H.rotate(F_mat_y, Y_n);
+            t_lap.start();
+            orbital::orthogonalize(Psi_1, Phi_0);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+
+            t_lap.start();
+            OrbitalVector Psi_2 = orbital::rotate(L_mat - F_mat_y, Phi_0);
+            mrcpp::print::time(2, "Rotating orbitals", t_lap);
+
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
             Psi_1.clear();
             Psi_2.clear();
+            mrcpp::print::footer(2, t_arg, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
             // Apply Helmholtz operators
             OrbitalVector Y_np1 = H.apply(V_0, Y_n, Psi);
             Psi.clear();
 
-            // Orthogonalize: Y_np1 = (1 - rho_0)Y_np1
+            // Projecting (1 - rho_0)X
+            mrcpp::print::header(2, "Projecting occupied space");
+            t_lap.start();
             orbital::orthogonalize(Y_np1, Phi_0);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+            mrcpp::print::footer(2, t_lap, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
 
             // Compute update and errors
             OrbitalVector dY_n = orbital::add(1.0, Y_np1, -1.0, Y_n);
-            Y_np1.clear();
             errors_y = orbital::get_norms(dY_n);
+            Y_np1.clear();
 
             // Compute KAIN update:
             kain_y.accelerate(orb_prec, Y_n, dY_n);
@@ -179,8 +210,12 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
         }
 
         // Compute property
+        mrcpp::print::header(2, "Computing symmetric property");
+        t_lap.start();
         double prop = F_1.perturbation().trace(Phi_0, X_n, Y_n).real();
         this->property.push_back(prop);
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Computing symmetric property", t_lap);
 
         // Clear perturbed Fock operator
         F_1.clear();
@@ -194,18 +229,20 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
-        mrcpp::print::separator(1, '-');
         printOrbitals(orbital::get_norms(X_n), errors_x, X_n, 1);
-        if (dynamic) printOrbitals(orbital::get_norms(Y_n), errors_y, Y_n, 1);
+        if (dynamic) printOrbitals(orbital::get_norms(Y_n), errors_y, Y_n, 1, false);
+        mrcpp::print::separator(1, '-');
+        printResidual(err_t, converged);
+        mrcpp::print::separator(2, '=', 2);
         printProperty();
         printMemory();
-        mrcpp::print::footer(1, t_lap, 2, '#');
+        mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
         if (converged) break;
     }
 
-    printConvergence(converged);
+    printConvergence(converged, "Symmetric property");
     reset();
 
     return converged;
@@ -217,9 +254,25 @@ void LinearResponseSolver::printProperty() const {
     int iter = this->property.size();
     if (iter > 1) prop_0 = this->property[iter - 2];
     if (iter > 0) prop_1 = this->property[iter - 1];
-    mrcpp::print::header(2, "                    Value                  Update      Done ");
-    printUpdate(1, " Symmetric property", prop_1, prop_1 - prop_0, this->propThrs);
+
+    int w0 = (Printer::getWidth() - 1);
+    int w1 = 20;
+    int w2 = w0 / 3;
+    int w3 = 8;
+    int w4 = w0 - w1 - w2 - w3;
+
+    std::stringstream o_head;
+    o_head << std::setw(w1) << " ";
+    o_head << std::setw(w2) << "Value";
+    o_head << std::setw(w4) << "Update";
+    o_head << std::setw(w3) << "Done";
+
     mrcpp::print::separator(2, '=');
+    println(2, o_head.str());
+    mrcpp::print::separator(2, '-');
+
+    printUpdate(1, " Symmetric property", prop_1, prop_1 - prop_0, this->propThrs);
+    mrcpp::print::separator(2, '=', 2);
 }
 
 void LinearResponseSolver::printParameters(double omega, const std::string &oper) const {
