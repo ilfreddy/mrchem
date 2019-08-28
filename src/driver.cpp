@@ -370,7 +370,11 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, property_thrs);
 
+        mrcpp::print::header(1, "Unperturbed Fock operator");
+        Timer t_fock;
         F_0.setup(rsp_prec);
+        mrcpp::print::footer(1, t_fock, 2);
+
         for (int d = 0; d < 3; d++) {
             if (directions[d]) {
                 F_1.perturbation() = h_1[d];
@@ -495,8 +499,7 @@ void driver::plot_scf_quantities(const json &json_plot, Molecule &mol) {
 void driver::calc_scf_properties(const json &json_prop, Molecule &mol) {
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
-    print_utils::headline(1, "Computing Ground State Properties");
-    if (plevel == 1) mrcpp::print::header(1, "Calculating Molecular Properties");
+    if (plevel == 1) mrcpp::print::header(1, "Computing Ground State Properties");
 
     auto &nuclei = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
@@ -578,30 +581,35 @@ void driver::calc_scf_properties(const json &json_prop, Molecule &mol) {
  * input section, and will compute all properties which are present in this input.
  */
 void driver::calc_rsp_properties(const json &json_prop, Molecule &mol, int dir, double omega) {
+    Timer t_tot, t_lap;
+    auto plevel = Printer::getPrintLevel();
+    if (plevel == 1) mrcpp::print::header(1, "Computing Linear Response Properties");
+
     auto &Phi = mol.getOrbitals();
     auto &X = mol.getOrbitalsX();
     auto &Y = mol.getOrbitalsY();
 
     auto json_pol = json_prop.find("polarizability");
     if (json_pol != json_prop.end()) {
-        mrcpp::print::header(1, "Calculating polarizability");
+        t_lap.start();
+        mrcpp::print::header(2, "Calculating polarizability");
         auto prec = (*json_pol)["setup_prec"].get<double>();
         auto r_O = (*json_pol)["origin"].get<Coord<3>>();
 
         Polarizability &alpha = mol.getPolarizability(omega);
 
-        Timer timer;
         H_E_dip h(r_O);
         h.setup(prec);
         alpha.getTensor().row(dir) = -h.trace(Phi, X, Y).real();
         h.clear();
-        timer.stop();
-        mrcpp::print::footer(1, timer, 2);
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Polarizability", t_lap);
     }
 
     auto json_mag = json_prop.find("magnetizability");
     if (json_mag != json_prop.end()) {
-        mrcpp::print::header(1, "Calculating paramagnetic magnetizability");
+        t_lap.start();
+        mrcpp::print::header(2, "Calculating paramagnetic magnetizability");
         auto prec = (*json_mag)["setup_prec"].get<double>();
         auto r_O = (*json_mag)["origin"].get<Coord<3>>();
         auto pert_diff = (*json_mag)["derivative"].get<std::string>();
@@ -609,14 +617,15 @@ void driver::calc_rsp_properties(const json &json_prop, Molecule &mol, int dir, 
 
         Magnetizability &khi = mol.getMagnetizability();
 
-        Timer timer;
         H_B_dip h(D, r_O);
         h.setup(prec);
         khi.getParamagnetic().row(dir) = -h.trace(Phi, X, Y).real();
         h.clear();
-        timer.stop();
-        mrcpp::print::footer(1, timer, 2);
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Paramagnetic magnetizability", t_lap);
     }
+
+    if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
 }
 
 /** @brief Build Fock operator based on input parameters
