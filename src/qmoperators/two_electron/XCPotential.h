@@ -4,7 +4,7 @@
 #include "parallel.h"
 #include "qmoperators/one_electron/QMPotential.h"
 
-/** 
+/**
  * @class XCPotential
  * @brief Exchange-Correlation potential defined by a particular (spin) density
  *
@@ -40,10 +40,10 @@ public:
     friend class XCOperator;
 
 protected:
-    double energy;                           ///< XC energy
-    std::shared_ptr<OrbitalVector> orbitals;                 ///< External set of orbitals used to build the density
-    std::shared_ptr<mrdft::XCFunctional> functional;         ///< External XC functional to be used
-    mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
+    double energy;                                   ///< XC energy
+    std::shared_ptr<OrbitalVector> orbitals;         ///< External set of orbitals used to build the density
+    std::shared_ptr<mrdft::XCFunctional> functional; ///< External XC functional to be used
+    mrcpp::FunctionTreeVector<3> potentials;         ///< XC Potential functions collected in a vector
 
     double getEnergy() const { return this->energy; }
     int getOrder() const { return this->functional->getOrder(); }
