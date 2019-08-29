@@ -426,6 +426,7 @@ def write_rsp_calculations(program_dict, user_dict):
           "directions": user_dict["Response"]["directions"],
           "orbital_thrs": rsp_orbital_thrs,
           "property_thrs": rsp_property_thrs,
+          "orth_prec": user_dict["Precisions"]["orth_prec"],
           "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
         }
 

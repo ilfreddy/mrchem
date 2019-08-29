@@ -124,7 +124,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Applying V_1", t_lap);
 
             t_lap.start();
-            orbital::orthogonalize(orb_prec, Psi_1, Phi_0);
+            orbital::orthogonalize(this->orth_prec, Psi_1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
@@ -144,7 +144,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
             t_lap.start();
-            orbital::orthogonalize(orb_prec, X_np1, Phi_0);
+            orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
             mrcpp::print::footer(2, t_lap, 2);
             if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
@@ -172,7 +172,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Applying V_1.dagger()", t_lap);
 
             t_lap.start();
-            orbital::orthogonalize(orb_prec, Psi_1, Phi_0);
+            orbital::orthogonalize(this->orth_prec, Psi_1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
@@ -192,7 +192,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
             t_lap.start();
-            orbital::orthogonalize(orb_prec, Y_np1, Phi_0);
+            orbital::orthogonalize(this->orth_prec, Y_np1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
             mrcpp::print::footer(2, t_lap, 2);
             if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
