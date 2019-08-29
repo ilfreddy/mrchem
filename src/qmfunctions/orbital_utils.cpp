@@ -335,14 +335,14 @@ void orbital::normalize(OrbitalVector &Phi) {
 }
 
 /** @brief In place orthogonalize against inp. Private function. */
-void orbital::orthogonalize(Orbital &phi, Orbital psi) {
+void orbital::orthogonalize(double prec, Orbital &phi, Orbital psi) {
     ComplexDouble overlap = orbital::dot(psi, phi);
     double sq_norm = psi.squaredNorm();
-    if (std::abs(overlap) > mrcpp::MachineZero) phi.add(-1.0 * overlap / sq_norm, psi);
+    if (std::abs(overlap) > prec) phi.add(-1.0 * overlap / sq_norm, psi);
 }
 
 /** @brief Gram-Schmidt orthogonalize orbitals within the set */
-void orbital::orthogonalize(OrbitalVector &Phi) {
+void orbital::orthogonalize(double prec, OrbitalVector &Phi) {
     mpi::free_foreign(Phi);
     for (int i = 0; i < Phi.size(); i++) {
         for (int j = 0; j < i; j++) {
@@ -350,11 +350,11 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
             int src = Phi[j].rankID();
             int dst = Phi[i].rankID();
             if (src == dst) {
-                if (mpi::my_orb(Phi[i])) orbital::orthogonalize(Phi[i], Phi[j]);
+                if (mpi::my_orb(Phi[i])) orbital::orthogonalize(prec / Phi.size(), Phi[i], Phi[j]);
             } else {
                 if (mpi::my_orb(Phi[i])) {
                     mpi::recv_function(Phi[j], src, tag, mpi::comm_orb);
-                    orbital::orthogonalize(Phi[i], Phi[j]);
+                    orbital::orthogonalize(prec / Phi.size(), Phi[i], Phi[j]);
                     Phi[j].free(NUMBER::Total);
                 }
                 if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j], dst, tag, mpi::comm_orb);
@@ -364,7 +364,7 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
 }
 
 /** @brief Orthogonalize the Phi orbital against all orbitals in Psi */
-void orbital::orthogonalize(OrbitalVector &Phi, OrbitalVector &Psi) {
+void orbital::orthogonalize(double prec, OrbitalVector &Phi, OrbitalVector &Psi) {
     // Get all output orbitals belonging to this MPI
     OrbitalChunk myPhi = mpi::get_my_chunk(Phi);
 
@@ -375,7 +375,7 @@ void orbital::orthogonalize(OrbitalVector &Phi, OrbitalVector &Psi) {
             Orbital &psi_i = iter.orbital(i);
             for (auto &j : myPhi) {
                 Orbital &phi_j = std::get<1>(j);
-                orbital::orthogonalize(phi_j, psi_i);
+                orbital::orthogonalize(prec / Psi.size(), phi_j, psi_i);
             }
         }
     }

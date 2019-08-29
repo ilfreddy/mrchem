@@ -230,7 +230,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         if (mpi::my_orb(Phi[2])) qmfunction::project(Phi[2], f3, NUMBER::Real, prec);
         if (mpi::my_orb(Phi[3])) qmfunction::project(Phi[3], f4, NUMBER::Real, prec);
 
-        orthogonalize(Phi);
+        orthogonalize(prec, Phi);
 
         SECTION("in place orthonormalize") {
             normalize(Phi);
@@ -252,7 +252,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             if (mpi::my_orb(Psi[0])) qmfunction::project(Psi[0], f5, NUMBER::Real, prec);
             if (mpi::my_orb(Psi[1])) qmfunction::project(Psi[1], f6, NUMBER::Real, prec);
 
-            orthogonalize(Psi, Phi);
+            orthogonalize(prec, Psi, Phi);
 
             ComplexMatrix S = orbital::calc_overlap_matrix(Psi, Phi);
             for (int i = 0; i < S.rows(); i++) {
@@ -277,7 +277,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             qmfunction::project(Phi[1], f4, NUMBER::Imag, prec);
         }
 
-        orthogonalize(Phi);
+        orthogonalize(prec, Phi);
         normalize(Phi);
 
         double theta = 0.5;

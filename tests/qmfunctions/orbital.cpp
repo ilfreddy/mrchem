@@ -144,7 +144,7 @@ TEST_CASE("Orbital", "[orbital]") {
             }
 
             AND_THEN("they are orthogonalized") {
-                orbital::orthogonalize(phi_2, phi_1);
+                orbital::orthogonalize(prec, phi_2, phi_1);
 
                 THEN("their overlap is zero") {
                     ComplexDouble S3 = orbital::dot(phi_1, phi_2);
