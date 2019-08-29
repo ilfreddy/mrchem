@@ -358,12 +358,14 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
         auto orbital_thrs = (*rsp_solver)["orbital_thrs"].get<double>();
         auto property_thrs = (*rsp_solver)["property_thrs"].get<double>();
         auto helmholtz_prec = (*rsp_solver)["helmholtz_prec"].get<double>();
+        auto orth_prec = (*rsp_solver)["orth_prec"].get<double>();
 
         LinearResponseSolver solver(dynamic, F_0, Phi, F_mat);
         solver.setMethodName(method);
         solver.setHistory(kain);
         solver.setMaxIterations(max_iter);
         solver.setLocalize(localize);
+        solver.setOrthPrec(orth_prec);
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, property_thrs);

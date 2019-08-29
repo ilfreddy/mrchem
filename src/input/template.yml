@@ -79,6 +79,11 @@ sections:
         docstring: |
           Precision parameter used in construction of Helmholtz operators.
           Negative value means it will follow the dynamic precision in SCF.
+      - name: orth_prec
+        type: float
+        default: 1.0e-14
+        docstring: |
+          Precision parameter used in the response density projection operator (1 - rho_0).
   - name: Printer
     docstring: |
       Define variables for printed output.
@@ -208,12 +213,12 @@ sections:
         type: int
         default: 0
         docstring: |
-          Total charge of molecule. 
+          Total charge of molecule.
       - name: multiplicity
         type: int
         default: 1
         docstring: |
-          Spin multiplicity of molecule. 
+          Spin multiplicity of molecule.
       - name: angstrom
         type: bool
         default: false
