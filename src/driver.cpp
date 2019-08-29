@@ -370,11 +370,6 @@ bool driver::run_rsp(const json &json_rsp, Molecule &mol) {
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, property_thrs);
 
-        Timer t_lap;
-        mrcpp::print::header(2, "Computing unperturbed density");
-        F_1.getXCOperator()->setupDensity(rsp_prec);
-        mrcpp::print::footer(2, t_lap, 2);
-
         auto plevel = mrcpp::Printer::getPrintLevel();
         if (plevel == 1) mrcpp::Printer::setPrintLevel(0);
         F_0.setup(rsp_prec);
