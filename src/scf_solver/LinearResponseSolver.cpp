@@ -89,8 +89,10 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
     // Setup Helmholtz operators (fixed, based on unperturbed system)
     double helm_prec = getHelmholtzPrec();
-    HelmholtzVector H(helm_prec, F_mat_0.real().diagonal());
-    ComplexMatrix L_mat = H.getLambdaMatrix();
+    HelmholtzVector H_x(helm_prec, F_mat_x.real().diagonal());
+    HelmholtzVector H_y(helm_prec, F_mat_y.real().diagonal());
+    ComplexMatrix L_mat_x = H_x.getLambdaMatrix();
+    ComplexMatrix L_mat_y = H_y.getLambdaMatrix();
 
     auto plevel = Printer::getPrintLevel();
     if (plevel < 1) {
@@ -128,7 +130,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
-            OrbitalVector Psi_2 = orbital::rotate(L_mat - F_mat_x, Phi_0);
+            OrbitalVector Psi_2 = orbital::rotate(L_mat_x - F_mat_x, Phi_0);
             mrcpp::print::time(2, "Rotating orbitals", t_lap);
 
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
@@ -138,7 +140,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
             // Apply Helmholtz operators
-            OrbitalVector X_np1 = H.apply(V_0, X_n, Psi);
+            OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
             Psi.clear();
 
             // Projecting (1 - rho_0)X
@@ -176,7 +178,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
-            OrbitalVector Psi_2 = orbital::rotate(L_mat - F_mat_y, Phi_0);
+            OrbitalVector Psi_2 = orbital::rotate(L_mat_y - F_mat_y, Phi_0);
             mrcpp::print::time(2, "Rotating orbitals", t_lap);
 
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
@@ -186,7 +188,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
             // Apply Helmholtz operators
-            OrbitalVector Y_np1 = H.apply(V_0, Y_n, Psi);
+            OrbitalVector Y_np1 = H_y.apply(V_0, Y_n, Psi);
             Psi.clear();
 
             // Projecting (1 - rho_0)X

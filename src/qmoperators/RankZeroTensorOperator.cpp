@@ -305,7 +305,14 @@ ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVect
  * NOT IMPLEMENTED
  */
 ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
-    NOT_IMPLEMENTED_ABORT;
+    Timer t1;
+    RankZeroTensorOperator &O = *this;
+    OrbitalVector Oket = O.dagger(ket);
+    ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
+    std::stringstream o_name;
+    o_name << "<i|" << O.name() << "^dagger|j>";
+    mrcpp::print::tree(2, o_name.str(), orbital::get_n_nodes(Oket), orbital::get_size_nodes(Oket), t1.elapsed());
+    return out;
 }
 
 /** @brief compute trace of operator expansion

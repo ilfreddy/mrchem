@@ -52,7 +52,8 @@ protected:
     mrcpp::FunctionTree<3> &getPotential(int spin);
     std::shared_ptr<mrdft::XCFunctional> getFunctional() const { return this->functional; }
 
-    Orbital apply(Orbital phi);
+    Orbital apply(Orbital phi) override;
+    Orbital dagger(Orbital phi) override;
     void clear();
 
     void buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, double prec = -1.0);
