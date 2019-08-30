@@ -191,7 +191,18 @@ Orbital RankZeroTensorOperator::operator()(Orbital inp) {
  * NOT IMPLEMENTED
  */
 Orbital RankZeroTensorOperator::dagger(Orbital inp) {
-    NOT_IMPLEMENTED_ABORT;
+    if (not mpi::my_orb(inp)) return inp.paramCopy();
+
+    RankZeroTensorOperator &O = *this;
+    QMFunctionVector func_vec;
+    ComplexVector coef_vec = getCoefVector();
+    for (int n = 0; n < O.size(); n++) {
+        Orbital out_n = O.daggerOperTerm(n, inp);
+        func_vec.push_back(out_n);
+    }
+    Orbital out = inp.paramCopy();
+    qmfunction::linear_combination(out, coef_vec, func_vec, -1.0);
+    return out;
 }
 
 /** @brief apply operator expansion to orbital vector
@@ -222,7 +233,17 @@ OrbitalVector RankZeroTensorOperator::operator()(OrbitalVector &inp) {
  * NOT IMPLEMENTED
  */
 OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
-    NOT_IMPLEMENTED_ABORT;
+    RankZeroTensorOperator &O = *this;
+    OrbitalVector out;
+    for (auto i = 0; i < inp.size(); i++) {
+        Timer t1;
+        Orbital out_i = O.dagger(inp[i]);
+        out.push_back(out_i);
+        std::stringstream o_name;
+        o_name << O.name() << "^dagger|" << i << ">";
+        print_utils::qmfunction(3, o_name.str(), out_i, t1);
+    }
+    return out;
 }
 
 /** @brief compute expectation value
@@ -249,7 +270,10 @@ ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
  * NOT IMPLEMENTED
  */
 ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
-    NOT_IMPLEMENTED_ABORT;
+    RankZeroTensorOperator &O = *this;
+    Orbital Oket = O.dagger(ket);
+    ComplexDouble out = orbital::dot(bra, Oket);
+    return out;
 }
 
 /** @brief compute expectation matrix
@@ -360,6 +384,19 @@ Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
     for (auto O_nm : this->oper_exp[n]) {
         if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
         out = O_nm->apply(out);
+    }
+    return out;
+}
+
+Orbital RankZeroTensorOperator::daggerOperTerm(int n, Orbital inp) {
+    if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
+    if (not mpi::my_orb(inp)) return inp.paramCopy();
+
+    Orbital out = inp;
+    for (int i = this->oper_exp[n].size() - 1; i >= 0; i--) {
+        auto O_nm = this->oper_exp[n][i];
+        if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
+        out = O_nm->dagger(out);
     }
     return out;
 }
