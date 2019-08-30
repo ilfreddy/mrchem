@@ -381,7 +381,7 @@ sections:
           Use velocity gauge in calculation of polarizability tensor.
       - name: frequency
         type: List[float]
-        default: []
+        default: [0.0]
         docstring: |
           List of external field frequencies.
       - name: wavelength
