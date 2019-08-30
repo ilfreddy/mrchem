@@ -53,7 +53,7 @@ void XCPotential::buildDensity(OrbitalVector &Phi, DENSITY::DensityType spin, do
     Density rho(false);
     rho.setReal(&func);
     density::compute(prec, rho, Phi, spin);
-    print_utils::qmfunction(2, "XC density", rho, timer);
+    print_utils::qmfunction(2, "XC rho", rho, timer);
     rho.setReal(nullptr);
 }
 
@@ -95,6 +95,24 @@ Orbital XCPotential::apply(Orbital phi) {
     FunctionTree<3> &pot = getPotential(phi.spin());
     V.setReal(&pot);
     Orbital Vphi = QMPotential::apply(phi);
+    V.setReal(nullptr);
+
+    if (phi.spin() == SPIN::Alpha) pot.setName("v_xc alpha");
+    if (phi.spin() == SPIN::Beta) pot.setName("v_xc beta");
+    println(5, static_cast<mrcpp::MWTree<3> &>(pot));
+    if (phi.hasReal()) println(5, static_cast<mrcpp::MWTree<3> &>(phi.real()));
+    if (Vphi.hasReal()) println(5, static_cast<mrcpp::MWTree<3> &>(Vphi.real()));
+
+    return Vphi;
+}
+
+Orbital XCPotential::dagger(Orbital phi) {
+    QMPotential &V = *this;
+    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+
+    FunctionTree<3> &pot = getPotential(phi.spin());
+    V.setReal(&pot);
+    Orbital Vphi = QMPotential::dagger(phi);
     V.setReal(nullptr);
 
     if (phi.spin() == SPIN::Alpha) pot.setName("v_xc alpha");
