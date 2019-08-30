@@ -112,6 +112,7 @@ protected:
     std::vector<QMOperatorVector> oper_exp;
 
     Orbital applyOperTerm(int n, Orbital inp);
+    Orbital daggerOperTerm(int n, Orbital inp);
     ComplexVector getCoefVector() const;
 };
 
