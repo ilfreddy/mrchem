@@ -323,7 +323,7 @@ int XCFunctional::getNPoints() const {
         const FunctionTree<3> &rho_gs_a = mrcpp::get_func(rho_a, 0);
         const FunctionTree<3> &rho_gs_b = mrcpp::get_func(rho_b, 0);
         nodes = rho_gs_a.getNEndNodes();
-        points = rho_gs_a.getTDim()*rho_gs_a.getKp1_d();
+        points = rho_gs_a.getTDim() * rho_gs_a.getKp1_d();
         println(5, "enodes  " << rho_gs_a.getNEndNodes());
         println(5, "enodes  " << rho_gs_b.getNEndNodes());
         if (nodes != rho_gs_b.getNEndNodes()) MSG_ERROR("Alpha and beta grids not equal");
@@ -377,33 +377,32 @@ void XCFunctional::copyGrid(FunctionTreeVector<3> densities) {
     }
 }
 
-    /*
-      void XCFunctional::refineGrid(double prec, bool abs_prec) {
-      if (not hasDensity()) return;
+/*
+  void XCFunctional::refineGrid(double prec, bool abs_prec) {
+  if (not hasDensity()) return;
 
-      double scale = 1.0;
-      if (isSpinSeparated()) {
-      if (rho_a.size() == 0) MSG_ABORT("Uninitialized alpha density");
-      if (rho_b.size() == 0) MSG_ABORT("Uninitialized beta density");
-      if (abs_prec) scale = rho_a[0]->integrate() + rho_b[0]->integrate();
-      mrcpp::refine_grid(rho_a, prec / scale);
-      mrcpp::refine_grid(rho_b, prec / scale);
+  double scale = 1.0;
+  if (isSpinSeparated()) {
+  if (rho_a.size() == 0) MSG_ABORT("Uninitialized alpha density");
+  if (rho_b.size() == 0) MSG_ABORT("Uninitialized beta density");
+  if (abs_prec) scale = rho_a[0]->integrate() + rho_b[0]->integrate();
+  mrcpp::refine_grid(rho_a, prec / scale);
+  mrcpp::refine_grid(rho_b, prec / scale);
 
-      // Extend to union grid
-      int nNodes = 1;
-      while (nNodes > 0) {
-      int nAlpha = mrcpp::refine_grid(rho_a, rho_b);
-      int nBeta = mrcpp::refine_grid(rho_b, rho_a);
-      nNodes = nAlpha + nBeta;
-      }
-      } else {
-      if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
-      if (abs_prec) scale = rho_t->integrate();
-      mrcpp::refine_grid(*rho_t, prec / scale);
-      }
-      }
-    */
-
+  // Extend to union grid
+  int nNodes = 1;
+  while (nNodes > 0) {
+  int nAlpha = mrcpp::refine_grid(rho_a, rho_b);
+  int nBeta = mrcpp::refine_grid(rho_b, rho_a);
+  nNodes = nAlpha + nBeta;
+  }
+  } else {
+  if (rho_t == nullptr) MSG_ABORT("Uninitialized total density");
+  if (abs_prec) scale = rho_t->integrate();
+  mrcpp::refine_grid(*rho_t, prec / scale);
+  }
+  }
+*/
 
 /** @brief Remove all grid refinement for a given density vector
  *
@@ -515,11 +514,11 @@ void XCFunctional::plot_function_tree_vector(FunctionTreeVector<3> &functions, s
 
     int nPts = 10000;                               // Number of points
     double a[3] = { 0.0,  0.0, 16.0};               // Start point of plot
-	double b[3] = { 0.0, 16.0,  0.0};               // End point of plot
+        double b[3] = { 0.0, 16.0,  0.0};               // End point of plot
     double o[3] = { 0.0, -8.0, -8.0};               // Origin of plot
     mrcpp::Plotter<3> plot;                         // Plotter of 3D functions
     plot.setNPoints(nPts);                          // Set number of points
-	plot.setRange(a, b, o);                         // Set plot range
+        plot.setRange(a, b, o);                         // Set plot range
 
     for (int i = 0; i < functions.size(); i++) {
         mrcpp::FunctionTree<3> &func = mrcpp::get_func(functions, i);

@@ -92,9 +92,10 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     FunctionTree<3> &rho_pert = this->getDensity(density_spin, 1);
     Density pert_dens(false);
     pert_dens.setReal(&rho_pert);
-    density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
+    density::compute(
+        prec, pert_dens, Phi, X, Y, density_spin); // LUCA: precision and grid refinenemt problem to be discussed
     print_utils::qmfunction(2, "XC rho_1", pert_dens, timer);
-    pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
+    pert_dens.setReal(nullptr); // Otherwise the FunctionTree object is deleted
 }
 
 /** @brief Compute XC potential(s)
@@ -135,7 +136,7 @@ void XCPotentialD2::syncGrids() {
         int n2b = rho2.getNNodes();
         int n3b = rho3.getNNodes();
         int n4b = rho4.getNNodes();
-        println(5, "Before " << n1b << " "  << n2b << " "  << n3b << " "  << n4b);
+        println(5, "Before " << n1b << " " << n2b << " " << n3b << " " << n4b);
         while (mrcpp::refine_grid(rho1, rho2)) {};
         while (mrcpp::refine_grid(rho1, rho3)) {};
         while (mrcpp::refine_grid(rho1, rho4)) {};
@@ -146,7 +147,7 @@ void XCPotentialD2::syncGrids() {
         int n2a = rho2.getNNodes();
         int n3a = rho3.getNNodes();
         int n4a = rho4.getNNodes();
-        println(5, "After  " << n1a << " "  << n2a << " "  << n3a << " "  << n4a);
+        println(5, "After  " << n1a << " " << n2a << " " << n3a << " " << n4a);
     } else {
         FunctionTree<3> &rho1 = this->getDensity(DENSITY::DensityType::Total, 0);
         FunctionTree<3> &rho2 = this->getDensity(DENSITY::DensityType::Total, 1);
