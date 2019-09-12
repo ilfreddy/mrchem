@@ -92,10 +92,16 @@ void XCPotentialD2::buildPerturbedDensity(double prec,
     FunctionTree<3> &rho_pert = this->getDensity(density_spin, 1);
     Density pert_dens(false);
     pert_dens.setReal(&rho_pert);
+<<<<<<< HEAD
     density::compute(
         prec, pert_dens, Phi, X, Y, density_spin); // LUCA: precision and grid refinenemt problem to be discussed
     print_utils::qmfunction(2, "XC rho_1", pert_dens, timer);
     pert_dens.setReal(nullptr); // Otherwise the FunctionTree object is deleted
+=======
+    density::compute(prec, pert_dens, Phi, X, Y, density_spin); //LUCA: precision and grid refinenemt problem to be discussed
+    print_utils::qmfunction(2, "XC rho_1", pert_dens, timer);
+    pert_dens.setReal(nullptr); //Otherwise the FunctionTree object is deleted
+>>>>>>> ad6693b50ffb2272d916a8e5dd0e07e7c9f5170e
 }
 
 /** @brief Compute XC potential(s)
