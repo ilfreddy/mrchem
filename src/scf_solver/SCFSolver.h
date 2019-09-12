@@ -88,7 +88,7 @@ protected:
     void printConvergenceRow(int i) const;
     void printOrbitals(const DoubleVector &norms,
                        const DoubleVector &errors,
-                       const OrbitalVector &Phi,
+                       OrbitalVector &Phi,
                        int flag,
                        bool print_head = true) const;
     void printResidual(double residual, bool converged) const;

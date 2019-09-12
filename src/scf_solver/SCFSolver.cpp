@@ -214,7 +214,7 @@ void SCFSolver::printUpdate(int plevel, const std::string &txt, double P, double
  */
 void SCFSolver::printOrbitals(const DoubleVector &norms,
                               const DoubleVector &errors,
-                              const OrbitalVector &Phi,
+                              OrbitalVector &Phi,
                               int flag,
                               bool print_head) const {
     int pprec = Printer::getPrecision();
@@ -250,6 +250,7 @@ void SCFSolver::printOrbitals(const DoubleVector &norms,
         o_row << std::setw(w6) << std::setprecision(pprec) << std::scientific << errors(i);
         o_row << std::setw(w5) << conv_i;
         println(2, o_row.str());
+        std::cout << Phi[i].real() << std::endl;
         if (not conv_i) conv_tot = false;
     }
 }
