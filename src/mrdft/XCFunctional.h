@@ -113,6 +113,7 @@ public:
 private:
     int order;
     int nDensities;
+    bool keep_deriv; 
     const bool spin_separated;                   ///< Spin polarization
     const mrcpp::MultiResolutionAnalysis<3> MRA; ///< Computational domain
 
@@ -131,7 +132,8 @@ private:
     mrcpp::FunctionTreeVector<3> gamma;  ///< Gamma function(s)
 
     mrcpp::FunctionTreeVector<3> xcInput;   ///< Bookkeeping array to feed XCFun
-    mrcpp::FunctionTreeVector<3> xcOutput;  ///< Bookkeeping array returned by XCFun
+    mrcpp::FunctionTreeVector<3> xcOutput;  ///< Bookkeeping array after contraction
+    mrcpp::FunctionTreeVector<3> xcDeriv;   ///< Bookkeeping array returned by XCFun
     mrcpp::FunctionTreeVector<3> xcDensity; ///< Bookkeeping array with density variables
 
     void clearGrid();
@@ -146,6 +148,7 @@ private:
 
     void setupXCInput();
     void setupXCOutput();
+    void setupXCDeriv();
     int setupXCInputDensity();
     int setupXCInputGradient();
     void setupXCDensityVariables();

@@ -44,6 +44,7 @@ public:
     HelmholtzVector(double pr, const DoubleVector &l);
 
     DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
+    DoubleVector getLambdaVector() const { return this->lambda; }
 
     OrbitalVector apply(RankZeroTensorOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
     OrbitalVector operator()(OrbitalVector &Phi) const;

@@ -250,7 +250,7 @@ void SCFSolver::printOrbitals(const DoubleVector &norms,
         o_row << std::setw(w6) << std::setprecision(pprec) << std::scientific << errors(i);
         o_row << std::setw(w5) << conv_i;
         println(2, o_row.str());
-        std::cout << Phi[i].real() << std::endl;
+		//        std::cout << Phi[i].real() << std::endl;
         if (not conv_i) conv_tot = false;
     }
 }

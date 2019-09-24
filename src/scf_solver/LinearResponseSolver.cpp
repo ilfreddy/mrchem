@@ -124,18 +124,26 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             t_lap.start();
             OrbitalVector Psi_1 = V_1(Phi_0);
             mrcpp::print::time(2, "Applying V_1", t_lap);
+			printOrbitals(orbital::get_norms(Psi_1), H_x.getLambdaVector(), Psi_1, 0);
 
             t_lap.start();
             orbital::orthogonalize(this->orth_prec, Psi_1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+			printOrbitals(orbital::get_norms(Psi_1), H_x.getLambdaVector(), Psi_1, 0);
 
             t_lap.start();
             OrbitalVector Psi_2 = orbital::rotate(L_mat_x - F_mat_x, Phi_0);
-            mrcpp::print::time(2, "Rotating orbitals", t_lap);
+			//            mrcpp::print::time(2, "Rotating orbitals", t_lap);
+			//			printOrbitals(orbital::get_norms(Psi_2), H_x.getLambdaVector(), Psi_2, 0);
 
+            t_lap.start();
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
+            mrcpp::print::time(2, "Adding Psi_1 and Psi_2", t_lap);
+			printOrbitals(orbital::get_norms(Psi), H_x.getLambdaVector(), Psi, 0);
+
             Psi_1.clear();
             Psi_2.clear();
+			
             mrcpp::print::footer(2, t_arg, 2);
             if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
@@ -145,15 +153,18 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
 
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
+			printOrbitals(orbital::get_norms(X_np1), H_x.getLambdaVector(), X_np1, 0);
             t_lap.start();
             orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+			printOrbitals(orbital::get_norms(X_np1), H_x.getLambdaVector(), X_np1, 0);
             mrcpp::print::footer(2, t_lap, 2);
             if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
 
             // Compute update and errors
             OrbitalVector dX_n = orbital::add(1.0, X_np1, -1.0, X_n);
             errors_x = orbital::get_norms(dX_n);
+			printOrbitals(errors_x, errors_x, dX_n, 1);
             X_np1.clear();
 
             // Compute KAIN update:
