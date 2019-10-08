@@ -605,14 +605,14 @@ void XCFunctional::evaluate() {
             conData.col(0) = outData.col(0); // we always keep the energy functional
             contractNodeData(n_idx, nPts, outData, conData);
             expandNodeData(n_idx, nFcs, xcOutput, conData);
-            if(keep_deriv) expandNodeData(n_idx, nDer, xcDeriv, conData);
+            if(keep_deriv) expandNodeData(n_idx, nDer, xcDeriv, outData);
         }
     }
     for (int i = 0; i < nFcs; i++) {
         FunctionTree<3> &func = mrcpp::get_func(xcOutput, i);
         func.mwTransform(mrcpp::BottomUp);
         func.calcSquareNorm();
-        println(5, "Potential norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
+        println(0, "Potential norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
     }
 
 	if(keep_deriv) {
@@ -620,7 +620,7 @@ void XCFunctional::evaluate() {
 			FunctionTree<3> &func = mrcpp::get_func(xcDeriv, i);
 			func.mwTransform(mrcpp::BottomUp);
 			func.calcSquareNorm();
-			println(5, "Derivative norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
+			println(0, "Derivative norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
 		}
 	}
 	
