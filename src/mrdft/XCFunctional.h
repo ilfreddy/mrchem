@@ -126,6 +126,9 @@ private:
     mrcpp::FunctionTreeVector<3> rho_a;  ///< Alpha densities
     mrcpp::FunctionTreeVector<3> rho_b;  ///< Beta densities
     mrcpp::FunctionTreeVector<3> rho_t;  ///< Total densities
+    mrcpp::FunctionTreeVector<3> zeta_a; ///< Alpha densities (log)
+    mrcpp::FunctionTreeVector<3> zeta_b; ///< Beta densities (log)
+    mrcpp::FunctionTreeVector<3> zeta_t; ///< Total densities (log)
     mrcpp::FunctionTreeVector<3> grad_a; ///< Gradient of the alpha densities
     mrcpp::FunctionTreeVector<3> grad_b; ///< Gradient of the beta  densities
     mrcpp::FunctionTreeVector<3> grad_t; ///< Gradient of the total densities

@@ -164,6 +164,9 @@ XCFunctional::~XCFunctional() {
     if (rho_a.size() > 0) mrcpp::clear(rho_a, true);
     if (rho_b.size() > 0) mrcpp::clear(rho_b, true);
     if (rho_t.size() > 0) mrcpp::clear(rho_t, true);
+    if (zeta_a.size() > 0) mrcpp::clear(zeta_a, true);
+    if (zeta_b.size() > 0) mrcpp::clear(zeta_b, true);
+    if (zeta_t.size() > 0) mrcpp::clear(zeta_t, true);
     if (derivative != nullptr) delete derivative;
 }
 
@@ -234,6 +237,26 @@ void XCFunctional::allocateDensities() {
         } else {
             FunctionTree<3> *temp_t = new FunctionTree<3>(MRA);
             rho_t.push_back(std::make_tuple(1.0, temp_t));
+        }
+    }
+}
+
+/** @brief Allocate the elements of the density vector arrays
+ *
+ * The density arrays which will contain the GS and the perturbed
+ * densities are allocated as empty FunctinTree objects. The pointers
+ * ae then stored in the corresponding FunctionTreeVector
+ */
+void XCFunctional::allocateZeta() {
+    for (int i = 0; i < nDensities; i++) {
+        if (isSpinSeparated()) {
+            FunctionTree<3> *temp_a = new FunctionTree<3>(MRA);
+            FunctionTree<3> *temp_b = new FunctionTree<3>(MRA);
+            zeta_a.push_back(std::make_tuple(1.0, temp_a));
+            zeta_b.push_back(std::make_tuple(1.0, temp_b));
+        } else {
+            FunctionTree<3> *temp_t = new FunctionTree<3>(MRA);
+            zeta_t.push_back(std::make_tuple(1.0, temp_t));
         }
     }
 }
@@ -392,10 +415,17 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) { MSG_ABORT("Not enough density functions initialized"); }
+	setupZeta();
     setupGradient();
     setupXCInput();
     setupXCOutput();
+    if(keep_deriv) {
+		std::cout << "setting up der array" << std::endl;
+		setupXCDeriv();
+	}
+	std::cout << "setting up dens var" << std::endl;
     setupXCDensityVariables();
+	std::cout << "done" << std::endl;
 }
 
 void XCFunctional::setupGradient() {
@@ -403,6 +433,31 @@ void XCFunctional::setupGradient() {
     for (int i = 0; i < nDensities; i++) {
         if (isSpinSeparated()) {
             FunctionTreeVector<3> temp_a = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Alpha, i));
+            FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
+            grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
+            grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
+			if(order == 2) {
+				std::cout << "and the gradients are... " << std::endl;
+				std::cout << mrcpp::get_func(temp_a, 0) << std::endl;				
+				std::cout << mrcpp::get_func(temp_a, 1) << std::endl;				
+				std::cout << mrcpp::get_func(temp_a, 2) << std::endl;				
+				std::cout << mrcpp::get_func(temp_b, 0) << std::endl;				
+				std::cout << mrcpp::get_func(temp_b, 1) << std::endl;				
+				std::cout << mrcpp::get_func(temp_b, 2) << std::endl;				
+			}
+        } else {
+            FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Total, i));
+            grad_t.insert(grad_t.end(), temp_t.begin(), temp_t.end());
+        }
+    }
+}
+
+void XCFunctional::setupZeta() {
+    if (isLDA()) return;
+    for (int i = 0; i < nDensities; i++) {
+        if (isSpinSeparated()) {
+            FunctionTree<3> &temp_a = getDensity(DENSITY::DensityType::Alpha, i);
+            FunctionTree<3> &temp_b = getDensity(DENSITY::DensityType::Alpha, i);
             FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
             grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
             grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
@@ -580,10 +635,10 @@ void XCFunctional::setupXCDeriv() {
 void XCFunctional::evaluate() {
     if (xcInput.size() == 0) MSG_ERROR("XC input not initialized");
     if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
-    if (keep_deriv && xcDeriv.size() == 0) MSG_ERROR("XC output not initialized");
+    if (keep_deriv && xcDeriv.size() == 0) MSG_ERROR("XC deriv not initialized");
 
     Timer timer;
-    println(5, "Evaluating");
+    println(0, "Evaluating");
 
     int nInp = getInputLength();      // Input parameters to XCFun
     int nDer = getOutputLength();     // Output parameters from XCFun
@@ -649,10 +704,10 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
             cont_ij = VectorXd::Zero(n_points);
             int out_index = output_mask(i, j);
             int den_index = density_mask(j);
-			if(den_index >= 2) {  //WARNING: This HACK works for Open shell only
-				continue;
-            } else if(den_index >= 0) {
-				//if (den_index >= 0) {
+			//if(den_index >= 2) {  //WARNING: This HACK works for Open shell only//
+			//			continue;
+            //} else if(den_index >= 0) {
+			if (den_index >= 0) {
                 FunctionTree<3> &dens_func = mrcpp::get_func(xcDensity, den_index);
                 FunctionNode<3> &dens_node = dens_func.getEndFuncNode(node_index);
                 VectorXd dens_i;
