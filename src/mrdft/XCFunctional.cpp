@@ -395,7 +395,7 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) { MSG_ABORT("Not enough density functions initialized"); }
-	setupZeta();
+    setupZeta();
     setupGradient();
     setupXCInput();
     setupXCOutput();
@@ -564,8 +564,10 @@ int XCFunctional::setupXCInputGradient() {
         NOT_IMPLEMENTED_ABORT;
     } else {
         if (isSpinSeparated()) {
-            xcInput.insert(xcInput.end(), grad_a.begin(), grad_a.begin() + nFetch);
-            xcInput.insert(xcInput.end(), grad_b.begin(), grad_b.begin() + nFetch);
+            xcInput.insert(xcInput.end(), zeta_a.begin() + 1, zeta_a.begin() + nFetch + 1);
+            xcInput.insert(xcInput.end(), zeta_b.begin() + 1, zeta_b.begin() + nFetch + 1);
+            // xcInput.insert(xcInput.end(), grad_a.begin(), grad_a.begin() + nFetch);
+            // xcInput.insert(xcInput.end(), grad_b.begin(), grad_b.begin() + nFetch);
             nUsed += 2 * nFetch;
         } else {
             xcInput.insert(xcInput.end(), grad_t.begin(), grad_t.begin() + nFetch);
@@ -1007,7 +1009,7 @@ FunctionTreeVector<3> XCFunctional::setupLogGradient(FunctionTree<3> &rho, Funct
         mrcpp::multiply(-1.0, *grad_comp, 1.0, rho, mrcpp::get_func(grad_zeta, i));
         grad_rho.push_back(std::make_tuple(1.0, grad_comp));
     }
-	return grad_rho;
+    return grad_rho;
 }
 
 } // namespace mrdft
