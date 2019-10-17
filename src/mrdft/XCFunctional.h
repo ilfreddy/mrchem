@@ -113,7 +113,7 @@ public:
 private:
     int order;
     int nDensities;
-    bool keep_deriv; 
+    bool keep_deriv;
     const bool spin_separated;                   ///< Spin polarization
     const mrcpp::MultiResolutionAnalysis<3> MRA; ///< Computational domain
 
@@ -155,6 +155,9 @@ private:
     int setupXCInputDensity();
     int setupXCInputGradient();
     void setupXCDensityVariables();
+    void setupZeta();
+    void setupLogRho(mrcpp::FunctionTree<3> &rho, mrcpp::FunctionTree<3> &logrho);
+    mrcpp::FunctionTreeVector<3> setupLogGradient(mrcpp::FunctionTree<3> &rho, mrcpp::FunctionTree<3> &zeta);
 
     void evaluateBlock(Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
     void compressNodeData(int n, int nFuncs, mrcpp::FunctionTreeVector<3> trees, Eigen::MatrixXd &data);

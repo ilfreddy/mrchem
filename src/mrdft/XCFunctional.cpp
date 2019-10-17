@@ -155,7 +155,7 @@ XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
         , functional(xc_new_functional())
         , derivative(nullptr) {
     derivative = new mrcpp::ABGVOperator<3>(MRA, 0.0, 0.0);
-	keep_deriv = true;
+    keep_deriv = true;
 }
 
 /** @brief Destructor */
@@ -237,26 +237,6 @@ void XCFunctional::allocateDensities() {
         } else {
             FunctionTree<3> *temp_t = new FunctionTree<3>(MRA);
             rho_t.push_back(std::make_tuple(1.0, temp_t));
-        }
-    }
-}
-
-/** @brief Allocate the elements of the density vector arrays
- *
- * The density arrays which will contain the GS and the perturbed
- * densities are allocated as empty FunctinTree objects. The pointers
- * ae then stored in the corresponding FunctionTreeVector
- */
-void XCFunctional::allocateZeta() {
-    for (int i = 0; i < nDensities; i++) {
-        if (isSpinSeparated()) {
-            FunctionTree<3> *temp_a = new FunctionTree<3>(MRA);
-            FunctionTree<3> *temp_b = new FunctionTree<3>(MRA);
-            zeta_a.push_back(std::make_tuple(1.0, temp_a));
-            zeta_b.push_back(std::make_tuple(1.0, temp_b));
-        } else {
-            FunctionTree<3> *temp_t = new FunctionTree<3>(MRA);
-            zeta_t.push_back(std::make_tuple(1.0, temp_t));
         }
     }
 }
@@ -415,17 +395,17 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) { MSG_ABORT("Not enough density functions initialized"); }
-	setupZeta();
+    setupZeta();
     setupGradient();
     setupXCInput();
     setupXCOutput();
-    if(keep_deriv) {
-		std::cout << "setting up der array" << std::endl;
-		setupXCDeriv();
-	}
-	std::cout << "setting up dens var" << std::endl;
+    if (keep_deriv) {
+        std::cout << "setting up der array" << std::endl;
+        setupXCDeriv();
+    }
+    std::cout << "setting up dens var" << std::endl;
     setupXCDensityVariables();
-	std::cout << "done" << std::endl;
+    std::cout << "done" << std::endl;
 }
 
 void XCFunctional::setupGradient() {
@@ -436,15 +416,15 @@ void XCFunctional::setupGradient() {
             FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
             grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
             grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
-			if(order == 2) {
-				std::cout << "and the gradients are... " << std::endl;
-				std::cout << mrcpp::get_func(temp_a, 0) << std::endl;				
-				std::cout << mrcpp::get_func(temp_a, 1) << std::endl;				
-				std::cout << mrcpp::get_func(temp_a, 2) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 0) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 1) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 2) << std::endl;				
-			}
+            if (order == 2) {
+                std::cout << "and the gradients are... " << std::endl;
+                std::cout << mrcpp::get_func(temp_a, 0) << std::endl;
+                std::cout << mrcpp::get_func(temp_a, 1) << std::endl;
+                std::cout << mrcpp::get_func(temp_a, 2) << std::endl;
+                std::cout << mrcpp::get_func(temp_b, 0) << std::endl;
+                std::cout << mrcpp::get_func(temp_b, 1) << std::endl;
+                std::cout << mrcpp::get_func(temp_b, 2) << std::endl;
+            }
         } else {
             FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Total, i));
             grad_t.insert(grad_t.end(), temp_t.begin(), temp_t.end());
@@ -454,26 +434,37 @@ void XCFunctional::setupGradient() {
 
 void XCFunctional::setupZeta() {
     if (isLDA()) return;
-    for (int i = 0; i < nDensities; i++) {
-        if (isSpinSeparated()) {
-            FunctionTree<3> &temp_a = getDensity(DENSITY::DensityType::Alpha, i);
-            FunctionTree<3> &temp_b = getDensity(DENSITY::DensityType::Alpha, i);
-            FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
-            grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
-            grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
-			if(order == 2) {
-				std::cout << "and the gradients are... " << std::endl;
-				std::cout << mrcpp::get_func(temp_a, 0) << std::endl;				
-				std::cout << mrcpp::get_func(temp_a, 1) << std::endl;				
-				std::cout << mrcpp::get_func(temp_a, 2) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 0) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 1) << std::endl;				
-				std::cout << mrcpp::get_func(temp_b, 2) << std::endl;				
-			}
-        } else {
-            FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Total, i));
-            grad_t.insert(grad_t.end(), temp_t.begin(), temp_t.end());
+    if (isSpinSeparated()) {
+        FunctionTree<3> &temp_a = getDensity(DENSITY::DensityType::Alpha, 0);
+        FunctionTree<3> &temp_b = getDensity(DENSITY::DensityType::Beta, 0);
+        auto *z_a = new FunctionTree<3>(temp_a.getMRA());
+        auto *z_b = new FunctionTree<3>(temp_b.getMRA());
+        setupLogRho(temp_a, *z_a);
+        setupLogRho(temp_b, *z_b);
+        zeta_a.push_back(std::make_tuple(1.0, z_a));
+        zeta_b.push_back(std::make_tuple(1.0, z_b));
+        FunctionTreeVector<3> temp_grad_a = setupLogGradient(temp_a, *z_a);
+        FunctionTreeVector<3> temp_grad_b = setupLogGradient(temp_b, *z_b);
+        zeta_a.insert(zeta_a.end(), temp_grad_a.begin(), temp_grad_a.end());
+        zeta_b.insert(zeta_b.end(), temp_grad_a.begin(), temp_grad_a.end());
+        if (order == 2) {
+            std::cout << "and the zeta norms are... " << std::endl;
+            std::cout << mrcpp::get_func(zeta_a, 0) << std::endl;
+            std::cout << mrcpp::get_func(zeta_a, 1) << std::endl;
+            std::cout << mrcpp::get_func(zeta_a, 2) << std::endl;
+            std::cout << mrcpp::get_func(zeta_a, 3) << std::endl;
+            std::cout << mrcpp::get_func(zeta_b, 0) << std::endl;
+            std::cout << mrcpp::get_func(zeta_b, 1) << std::endl;
+            std::cout << mrcpp::get_func(zeta_b, 2) << std::endl;
+            std::cout << mrcpp::get_func(zeta_b, 3) << std::endl;
         }
+    } else {
+        FunctionTree<3> &temp_t = getDensity(DENSITY::DensityType::Total, 0);
+        auto *z_t = new FunctionTree<3>(temp_t.getMRA());
+        setupLogRho(temp_t, *z_t);
+        zeta_t.push_back(std::make_tuple(1.0, z_t));
+        FunctionTreeVector<3> temp_grad_t = setupLogGradient(temp_t, *z_t);
+        zeta_t.insert(zeta_t.end(), temp_grad_t.begin(), temp_grad_t.end());
     }
 }
 
@@ -488,7 +479,7 @@ void XCFunctional::clear() {
     mrcpp::clear(xcInput, false);
     mrcpp::clear(xcDensity, false);
     mrcpp::clear(xcOutput, true);
-    if(keep_deriv) mrcpp::clear(xcDeriv, true);
+    if (keep_deriv) mrcpp::clear(xcDeriv, true);
     mrcpp::clear(grad_a, true);
     mrcpp::clear(grad_b, true);
     mrcpp::clear(grad_t, true);
@@ -660,7 +651,7 @@ void XCFunctional::evaluate() {
             conData.col(0) = outData.col(0); // we always keep the energy functional
             contractNodeData(n_idx, nPts, outData, conData);
             expandNodeData(n_idx, nFcs, xcOutput, conData);
-            if(keep_deriv) expandNodeData(n_idx, nDer, xcDeriv, outData);
+            if (keep_deriv) expandNodeData(n_idx, nDer, xcDeriv, outData);
         }
     }
     for (int i = 0; i < nFcs; i++) {
@@ -670,15 +661,14 @@ void XCFunctional::evaluate() {
         println(0, "Potential norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
     }
 
-	if(keep_deriv) {
-		for (int i = 0; i < nDer; i++) {
-			FunctionTree<3> &func = mrcpp::get_func(xcDeriv, i);
-			func.mwTransform(mrcpp::BottomUp);
-			func.calcSquareNorm();
-			println(0, "Derivative norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
-		}
-	}
-	
+    if (keep_deriv) {
+        for (int i = 0; i < nDer; i++) {
+            FunctionTree<3> &func = mrcpp::get_func(xcDeriv, i);
+            func.mwTransform(mrcpp::BottomUp);
+            func.calcSquareNorm();
+            println(0, "Derivative norm " << i << " " << func.getSquareNorm() << " nEndNodes " << func.getNEndNodes());
+        }
+    }
 
     for (int i = 0; i < xcInput.size(); i++) {
         FunctionTree<3> &func = mrcpp::get_func(xcInput, i);
@@ -704,10 +694,10 @@ void XCFunctional::contractNodeData(int node_index, int n_points, MatrixXd &out_
             cont_ij = VectorXd::Zero(n_points);
             int out_index = output_mask(i, j);
             int den_index = density_mask(j);
-			//if(den_index >= 2) {  //WARNING: This HACK works for Open shell only//
-			//			continue;
+            // if(den_index >= 2) {  //WARNING: This HACK works for Open shell only//
+            //			continue;
             //} else if(den_index >= 0) {
-			if (den_index >= 0) {
+            if (den_index >= 0) {
                 FunctionTree<3> &dens_func = mrcpp::get_func(xcDensity, den_index);
                 FunctionNode<3> &dens_node = dens_func.getEndFuncNode(node_index);
                 VectorXd dens_i;
@@ -919,26 +909,26 @@ void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
         FunctionTree<3> &df_db = mrcpp::get_func(xcOutput, 2);
         FunctionTreeVector<3> df_dga(xcOutput.begin() + 3, xcOutput.begin() + 6);
         FunctionTreeVector<3> df_dgb(xcOutput.begin() + 6, xcOutput.begin() + 9);
-		if(order == 2) {
-			std::cout << "df_da..." << std::endl;
-			std::cout << df_da << std::endl;
-			std::cout << "df_db..." << std::endl;
-			std::cout << df_db << std::endl;
-			std::cout << "df_dga..." << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,3) << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,4) << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,5) << std::endl;
-			std::cout << "df_dgb..." << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,6) << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,7) << std::endl;
-			std::cout << mrcpp::get_func(xcOutput,8) << std::endl;
-		}
-		std::cout << "And the potentials are..." << std::endl;
-		pot = calcPotentialGGA(df_da, df_dga);
-		std::cout << *pot << std::endl;
+        if (order == 2) {
+            std::cout << "df_da..." << std::endl;
+            std::cout << df_da << std::endl;
+            std::cout << "df_db..." << std::endl;
+            std::cout << df_db << std::endl;
+            std::cout << "df_dga..." << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 3) << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 4) << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 5) << std::endl;
+            std::cout << "df_dgb..." << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 6) << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 7) << std::endl;
+            std::cout << mrcpp::get_func(xcOutput, 8) << std::endl;
+        }
+        std::cout << "And the potentials are..." << std::endl;
+        pot = calcPotentialGGA(df_da, df_dga);
+        std::cout << *pot << std::endl;
         potentials.push_back(std::make_tuple(1.0, pot));
         pot = calcPotentialGGA(df_db, df_dgb);
-		std::cout << *pot << std::endl;
+        std::cout << *pot << std::endl;
         potentials.push_back(std::make_tuple(1.0, pot));
     } else {
         FunctionTree<3> &df_dt = mrcpp::get_func(xcOutput, 1);
@@ -992,6 +982,31 @@ int XCFunctional::getDensityLength() const {
         length = getContractedLength(); // same length as contracted fcns for order = 2
     }
     return length;
+}
+
+void XCFunctional::setupLogRho(FunctionTree<3> &rho, FunctionTree<3> &logrho) {
+    mrcpp::copy_grid(logrho, rho);
+    mrcpp::copy_func(logrho, rho);
+    int nNodes = logrho.getNEndNodes();
+    for (int i = 0; i < nNodes; i++) {
+        FunctionNode<3> &node = logrho.getEndFuncNode(i);
+        VectorXd values;
+        node.getValues(values);
+        for (int j = 0; j < node.getNCoefs(); j++) { values[j] = std::log(values[j]); }
+        node.setValues(values);
+    }
+    logrho.mwTransform(mrcpp::BottomUp);
+}
+
+FunctionTreeVector<3> XCFunctional::setupLogGradient(FunctionTree<3> &rho, FunctionTree<3> &zeta) {
+    FunctionTreeVector<3> grad_zeta = mrcpp::gradient(*derivative, zeta);
+    FunctionTreeVector<3> grad_rho;
+    for (int i = 0; i < 3; i++) {
+        FunctionTree<3> *grad_comp = new FunctionTree<3>(MRA);
+        mrcpp::copy_grid(*grad_comp, rho);
+        mrcpp::multiply(-1.0, *grad_comp, 1.0, rho, mrcpp::get_func(grad_zeta, i));
+        grad_rho.push_back(std::make_tuple(1.0, grad_comp));
+    }
 }
 
 } // namespace mrdft
