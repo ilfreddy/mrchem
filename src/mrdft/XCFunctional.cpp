@@ -395,7 +395,7 @@ void XCFunctional::clearGrid(FunctionTreeVector<3> densities) {
 
 void XCFunctional::setup() {
     if (not hasDensity(order)) { MSG_ABORT("Not enough density functions initialized"); }
-    setupZeta();
+	setupZeta();
     setupGradient();
     setupXCInput();
     setupXCOutput();
@@ -446,7 +446,7 @@ void XCFunctional::setupZeta() {
         FunctionTreeVector<3> temp_grad_a = setupLogGradient(temp_a, *z_a);
         FunctionTreeVector<3> temp_grad_b = setupLogGradient(temp_b, *z_b);
         zeta_a.insert(zeta_a.end(), temp_grad_a.begin(), temp_grad_a.end());
-        zeta_b.insert(zeta_b.end(), temp_grad_a.begin(), temp_grad_a.end());
+        zeta_b.insert(zeta_b.end(), temp_grad_b.begin(), temp_grad_b.end());
         if (order == 2) {
             std::cout << "and the zeta norms are... " << std::endl;
             std::cout << mrcpp::get_func(zeta_a, 0) << std::endl;
@@ -1007,6 +1007,7 @@ FunctionTreeVector<3> XCFunctional::setupLogGradient(FunctionTree<3> &rho, Funct
         mrcpp::multiply(-1.0, *grad_comp, 1.0, rho, mrcpp::get_func(grad_zeta, i));
         grad_rho.push_back(std::make_tuple(1.0, grad_comp));
     }
+	return grad_rho;
 }
 
 } // namespace mrdft
