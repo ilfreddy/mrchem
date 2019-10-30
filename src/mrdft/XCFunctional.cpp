@@ -1,3 +1,4 @@
+
 /*
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
@@ -155,7 +156,7 @@ XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
         , functional(xc_new_functional())
         , derivative(nullptr) {
     derivative = new mrcpp::ABGVOperator<3>(MRA, 0.0, 0.0);
-    keep_deriv = true;
+    keep_deriv = false;
 }
 
 /** @brief Destructor */
@@ -416,15 +417,6 @@ void XCFunctional::setupGradient() {
             FunctionTreeVector<3> temp_b = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Beta, i));
             grad_a.insert(grad_a.end(), temp_a.begin(), temp_a.end());
             grad_b.insert(grad_b.end(), temp_b.begin(), temp_b.end());
-            if (order == 2) {
-                std::cout << "and the gradients are... " << std::endl;
-                std::cout << mrcpp::get_func(temp_a, 0) << std::endl;
-                std::cout << mrcpp::get_func(temp_a, 1) << std::endl;
-                std::cout << mrcpp::get_func(temp_a, 2) << std::endl;
-                std::cout << mrcpp::get_func(temp_b, 0) << std::endl;
-                std::cout << mrcpp::get_func(temp_b, 1) << std::endl;
-                std::cout << mrcpp::get_func(temp_b, 2) << std::endl;
-            }
         } else {
             FunctionTreeVector<3> temp_t = mrcpp::gradient(*derivative, getDensity(DENSITY::DensityType::Total, i));
             grad_t.insert(grad_t.end(), temp_t.begin(), temp_t.end());
@@ -447,17 +439,6 @@ void XCFunctional::setupZeta() {
         FunctionTreeVector<3> temp_grad_b = setupLogGradient(temp_b, *z_b);
         zeta_a.insert(zeta_a.end(), temp_grad_a.begin(), temp_grad_a.end());
         zeta_b.insert(zeta_b.end(), temp_grad_b.begin(), temp_grad_b.end());
-        if (order == 2) {
-            std::cout << "and the zeta norms are... " << std::endl;
-            std::cout << mrcpp::get_func(zeta_a, 0) << std::endl;
-            std::cout << mrcpp::get_func(zeta_a, 1) << std::endl;
-            std::cout << mrcpp::get_func(zeta_a, 2) << std::endl;
-            std::cout << mrcpp::get_func(zeta_a, 3) << std::endl;
-            std::cout << mrcpp::get_func(zeta_b, 0) << std::endl;
-            std::cout << mrcpp::get_func(zeta_b, 1) << std::endl;
-            std::cout << mrcpp::get_func(zeta_b, 2) << std::endl;
-            std::cout << mrcpp::get_func(zeta_b, 3) << std::endl;
-        }
     } else {
         FunctionTree<3> &temp_t = getDensity(DENSITY::DensityType::Total, 0);
         auto *z_t = new FunctionTree<3>(temp_t.getMRA());
@@ -483,6 +464,9 @@ void XCFunctional::clear() {
     mrcpp::clear(grad_a, true);
     mrcpp::clear(grad_b, true);
     mrcpp::clear(grad_t, true);
+    mrcpp::clear(zeta_a, true);
+    mrcpp::clear(zeta_b, true);
+    mrcpp::clear(zeta_t, true);
     mrcpp::clear(gamma, true);
     clearGrid(rho_a); // We want to keep empty the density trees
     clearGrid(rho_b); // We want to keep empty the density trees
@@ -638,6 +622,10 @@ void XCFunctional::evaluate() {
     int nCon = getContractedLength(); // Contracted parameters to XCPotential
     int nFcs = nCon + 1;              // One extra function for the energy density
     int nPts = getNodeLength();       // Number of gridpoints in a node
+
+    for (int i = 0; i < nInp; i++) {
+		std::cout << "Function " << i << "End nodes " << mrcpp::get_func(xcInput, 0).getNEndNodes() << std::endl;
+    }
 
 #pragma omp parallel firstprivate(nInp, nDer)
     {
