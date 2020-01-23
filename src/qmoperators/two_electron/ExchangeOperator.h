@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ExchangePotential.h"
+#include "ExchangePotentialD1.h"
 #include "qmoperators/RankZeroTensorOperator.h"
 
-/** @class ExchangeOperator
+/**
+ * @class ExchangeOperator
  *
  * @brief Operator containing a single ExchangePotential
  *
@@ -21,7 +22,7 @@ public:
     ExchangeOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
                      std::shared_ptr<OrbitalVector> Phi,
                      bool screen = false) {
-        exchange = std::make_shared<ExchangePotential>(P, Phi, screen);
+        exchange = std::make_shared<ExchangePotentialD1>(P, Phi, screen);
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &K = (*this);

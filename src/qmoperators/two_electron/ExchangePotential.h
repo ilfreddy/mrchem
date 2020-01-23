@@ -21,14 +21,14 @@ namespace mrchem {
  * operator was set up, e.g. through an orbital rotation).
  */
 
-class ExchangePotential final : public QMOperator {
+class ExchangePotential : public QMOperator {
 public:
     ExchangePotential(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, bool s = false);
     ~ExchangePotential() override = default;
 
     friend class ExchangeOperator;
 
-private:
+protected:
     bool screen;             ///< Apply screening in exchange evaluation
     DoubleVector tot_norms;  ///< Total norms for use in screening
     DoubleMatrix part_norms; ///< Partial norms for use in screening
@@ -38,9 +38,11 @@ private:
     std::shared_ptr<mrcpp::PoissonOperator> poisson; ///< Poisson operator to compute orbital contributions
 
     auto &getPoisson() { return this->poisson; }
+    double getSpinFactor(Orbital phi_i, Orbital phi_j) const;
 
     void rotate(const ComplexMatrix &U);
-
+    void setupInternal(double prec);
+    int testPreComputed(Orbital phi_p) const;
     void setup(double prec) override;
     void clear() override;
 
@@ -50,15 +52,11 @@ private:
     using QMOperator::apply;
     using QMOperator::dagger;
 
-    int testPreComputed(Orbital phi_p) const;
     double getScaledPrecision(int i, int j) const;
-    double getSpinFactor(Orbital phi_i, Orbital phi_j) const;
 
-    Orbital calcExchange(Orbital phi_p);
-
-    void setupInternal(double prec);
-    void calcInternal(int i);
-    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
+    virtual Orbital calcExchange(Orbital phi_p) = 0;
+    virtual void calcInternal(int i) = 0;
+    virtual void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) = 0;
 };
 
 } // namespace mrchem
