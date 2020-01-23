@@ -56,7 +56,7 @@ protected:
 
     virtual Orbital calcExchange(Orbital phi_p) = 0;
     virtual void calcInternal(int i) = 0;
-    virtual void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) = 0;
+    virtual void calcInternal(int i, int j) = 0;
 };
 
 } // namespace mrchem

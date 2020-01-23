@@ -84,7 +84,7 @@ void ExchangePotential::setupInternal(double prec) {
             for (int j = 0; j < Phi.size(); j++) {
                 if (mpi::my_orb(phi_i) and j <= idx) continue; // compute only i<j for own block
                 Orbital &phi_j = (*this->orbitals)[j];
-                if (mpi::my_orb(phi_j)) calcInternal(idx, j, phi_i, phi_j);
+                if (mpi::my_orb(phi_j)) calcInternal(idx, j);
             }
             // must send exchange_i to owner and receive exchange computed by other
             if (iter.get_step(0) and not mpi::my_orb(phi_i))

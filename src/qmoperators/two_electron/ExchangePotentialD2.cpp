@@ -139,8 +139,10 @@ void ExchangePotentialD2::calcInternal(int i) {
  *
  * The off-diagonal terms K_ij and K_ji are computed.
  */
-void ExchangePotentialD2::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) {
+void ExchangePotentialD2::calcInternal(int i, int j) {
     mrcpp::PoissonOperator &P = *this->poisson;
+    Orbital &phi_i = (*this->orbitals)[i];
+    Orbital &phi_j = (*this->orbitals)[j];
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &Ex = this->exchange;
 

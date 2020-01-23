@@ -34,7 +34,7 @@ public:
 private:
     Orbital calcExchange(Orbital phi_p);
     void calcInternal(int i);
-    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
+    void calcInternal(int i, int j);
 };
 
 } // namespace mrchem
