@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ExchangePotentialD1.h"
+#include "ExchangePotentialD2.h"
 #include "qmoperators/RankZeroTensorOperator.h"
 
 /**
@@ -29,6 +30,20 @@ public:
         K = exchange;
         K.name() = "K";
     }
+
+    ExchangeOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
+                     std::shared_ptr<OrbitalVector> Phi,
+                     std::shared_ptr<OrbitalVector> X,
+                     std::shared_ptr<OrbitalVector> Y,
+                     bool screen = false) {
+        exchange = std::make_shared<ExchangePotentialD2>(P, Phi, X, Y, screen);
+
+        // Invoke operator= to assign *this operator
+        RankZeroTensorOperator &K = (*this);
+        K = exchange;
+        K.name() = "K";
+    }
+
     ~ExchangeOperator() override = default;
 
     auto &getPoisson() { return exchange->getPoisson(); }
