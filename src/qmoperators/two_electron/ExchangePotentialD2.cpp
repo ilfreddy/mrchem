@@ -96,10 +96,60 @@ void ExchangePotentialD2::calcInternal_XY(int i, int j) {
     NOT_IMPLEMENTED_ABORT;
 }
 Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
-    NOT_IMPLEMENTED_ABORT;
+    Timer timer;
+
+    OrbitalVector &Phi = *this->orbitals;
+    OrbitalVector &X = *this->orbitals_x;
+
+    ComplexVector coef_vec(Phi.size());
+    QMFunctionVector func_vec;
+
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital &phi_i = Phi[i];
+        Orbital &x_i = X[i];
+        double spin_fac = getSpinFactor(phi_i, phi_p);
+        if (std::abs(spin_fac) >= mrcpp::MachineZero) {
+            coef_vec(i) = spin_fac / phi_i.squaredNorm();
+            Orbital phi_iip = calcExchangeComponent(phi_p, phi_i, x_i);
+            func_vec.push_back(phi_iip);
+        }
+    }
+
+    // compute ex_p = sum_i c_i*phi_iip
+    Orbital ex_p = phi_p.paramCopy();
+    qmfunction::linear_combination(ex_p, coef_vec, func_vec, -1.0);
+    print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
+
+    return ex_p;
 }
+
 Orbital ExchangePotentialD2::calcExchange_XY(Orbital phi_p) {
     NOT_IMPLEMENTED_ABORT;
+}
+
+Orbital ExchangePotentialD2::calcExchangeComponent(Orbital phi_p, Orbital phi_i, Orbital x_i) {
+    double prec = this->apply_prec;
+    mrcpp::PoissonOperator &P = *this->poisson;
+    // compute phi_ip = phi_i^dag * phi_p
+    Orbital phi_ip = phi_p.paramCopy();
+    qmfunction::multiply(phi_ip, phi_i.dagger(), phi_p, -1.0);
+
+    // compute V_ip = P[phi_ip]
+    Orbital V_ip = phi_p.paramCopy();
+    if (phi_ip.hasReal()) {
+        V_ip.alloc(NUMBER::Real);
+        mrcpp::apply(prec, V_ip.real(), P, phi_ip.real());
+    }
+    if (phi_ip.hasImag()) {
+        V_ip.alloc(NUMBER::Imag);
+        mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
+    }
+    phi_ip.release();
+
+    // compute phi_iip = x_i * V_ip
+    Orbital phi_iip = phi_p.paramCopy();
+    qmfunction::multiply(phi_iip, x_i, V_ip, -1.0);
+    return phi_iip;
 }
 
 } // namespace mrchem
