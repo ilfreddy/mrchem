@@ -38,10 +38,19 @@ public:
 private:
     std::shared_ptr<OrbitalVector> orbitals_x; ///< first set of perturbed orbitals defining the exchange operator
     std::shared_ptr<OrbitalVector> orbitals_y; ///< second set of perturbed orbitals defining the exchange operator
+    bool useOnlyX;                             ///< true if X and Y are the same set of orbitals
 
     Orbital calcExchange(Orbital phi_p);
     void calcInternal(int i);
     void calcInternal(int i, int j);
+
+    Orbital calcExchange_X(Orbital phi_p);
+    void calcInternal_X(int i);
+    void calcInternal_X(int i, int j);
+
+    Orbital calcExchange_XY(Orbital phi_p);
+    void calcInternal_XY(int i);
+    void calcInternal_XY(int i, int j);
 };
 
 } // namespace mrchem
