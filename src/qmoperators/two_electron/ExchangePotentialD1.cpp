@@ -181,20 +181,9 @@ void ExchangePotentialD1::calcInternal(int i, int j) {
     phi_jij.rescale(1.0 / phi_j.squaredNorm());
     this->part_norms(j, i) = phi_jij.norm();
 
-    // compute phi_iij = phi_i * V_ij
-    Orbital phi_iij = phi_i.paramCopy();
-    qmfunction::multiply(phi_iij, phi_i, V_ij, prec);
-    phi_iij.rescale(1.0 / phi_i.squaredNorm());
-    this->part_norms(i, j) = phi_iij.norm();
-    V_ij.release();
-
     // compute x_i += phi_jij
     Ex[i].add(i_fac, phi_jij);
     phi_jij.release();
-
-    // compute x_j += phi_iij
-    Ex[j].add(j_fac, phi_iij);
-    phi_iij.release();
 }
 
 } // namespace mrchem
