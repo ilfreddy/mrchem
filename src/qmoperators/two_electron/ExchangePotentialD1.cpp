@@ -144,11 +144,10 @@ void ExchangePotentialD1::calcInternal(int i, int j) {
     if (Ex.size() != Phi.size()) MSG_ABORT("Size mismatch");
     if (phi_i.hasImag() or phi_j.hasImag()) MSG_ABORT("Orbitals must be real");
 
-    double i_fac = getSpinFactor(phi_i, phi_j);
-    double j_fac = getSpinFactor(phi_j, phi_i);
+    double spinFactor = getSpinFactor(phi_j, phi_i);
 
     double thrs = mrcpp::MachineZero;
-    if (std::abs(i_fac) < thrs or std::abs(j_fac) < thrs) {
+    if (std::abs(spinFactor) < thrs) {
         this->part_norms(i, j) = 0.0;
         return;
     }
@@ -182,7 +181,7 @@ void ExchangePotentialD1::calcInternal(int i, int j) {
     this->part_norms(j, i) = phi_jij.norm();
 
     // compute x_i += phi_jij
-    Ex[i].add(i_fac, phi_jij);
+    Ex[i].add(spinFactor, phi_jij);
     phi_jij.release();
 }
 
