@@ -40,7 +40,7 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
     OrbitalVector &Phi = *this->orbitals;
     mrcpp::PoissonOperator &P = *this->poisson;
 
-    ComplexVector coef_vec(Phi.size());
+    std::vector<std::complex<double>> coef_vec;
     QMFunctionVector func_vec;
 
     OrbitalIterator iter(Phi);
@@ -53,7 +53,7 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
 
             // compute phi_ip = phi_i^dag * phi_p
             Orbital phi_ip = phi_p.paramCopy();
-            qmfunction::multiply(phi_ip, phi_i.dagger(), phi_p, -1.0);
+            qmfunction::multiply(phi_ip, phi_i, phi_p, -1.0);
 
             // compute V_ip = P[phi_ip]
             Orbital V_ip = phi_p.paramCopy();
@@ -71,16 +71,16 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
             Orbital phi_iip = phi_p.paramCopy();
             qmfunction::multiply(phi_iip, phi_i, V_ip, -1.0);
 
-            coef_vec(i) = spin_fac / phi_i.squaredNorm();
+            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
             func_vec.push_back(phi_iip);
         }
     }
 
     // compute ex_p = sum_i c_i*phi_iip
     Orbital ex_p = phi_p.paramCopy();
-    qmfunction::linear_combination(ex_p, coef_vec, func_vec, -1.0);
-    print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
-
+    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    qmfunction::linear_combination(ex_p, coefs, func_vec, -1.0);
+    print_utils::qmfunction(0, "Applied exchange", ex_p, timer);
     return ex_p;
 }
 

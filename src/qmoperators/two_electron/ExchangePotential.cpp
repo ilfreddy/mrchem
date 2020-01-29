@@ -145,7 +145,8 @@ void ExchangePotential::rotate(const ComplexMatrix &U) {
 
 /** @brief determines the exchange factor to be used in the calculation of the exact exchange
  *
- * @param [in] orb input orbital to which K is applied
+ * @param [in] phi_i orbital defining the K operator
+ * @param [in] phi_j orbital to which K is applied
  *
  * The factor is computed in terms of the occupancy of the two orbitals and in terms of the spin
  * 0.5 factors are used in order to preserve occupancy of the set of doubly occupied orbitals
@@ -171,9 +172,9 @@ void ExchangePotential::rotate(const ComplexMatrix &U) {
  */
 double ExchangePotential::getSpinFactor(Orbital phi_i, Orbital phi_j) const {
     double out = 0.0;
-    if (phi_j.spin() == SPIN::Paired)
+    if (phi_i.spin() == SPIN::Paired)
         out = 1.0;
-    else if (phi_i.spin() == SPIN::Paired)
+    else if (phi_j.spin() == SPIN::Paired)
         out = 0.5;
     else if (phi_i.spin() == phi_j.spin())
         out = 1.0;
@@ -218,7 +219,8 @@ Orbital ExchangePotential::apply(Orbital inp) {
         return inp.paramCopy();
     }
     int i = testPreComputed(inp);
-    if (i < 0) {
+    // if (i < 0) {
+    if (true) {
         println(4, "On-the-fly exchange");
         return calcExchange(inp);
     } else {
