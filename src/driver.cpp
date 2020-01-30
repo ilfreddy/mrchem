@@ -747,7 +747,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, screen_prec);
             F.getExchangeOperator() = K_p;
         } else {
-            MSG_ABORT("Invalid perturbation order");
+            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, screen_prec);
+            F.getExchangeOperator() = K_p;
         }
     }
     ///////////////////////////////////////////////////////////

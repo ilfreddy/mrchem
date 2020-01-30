@@ -41,8 +41,6 @@ protected:
     double getSpinFactor(Orbital phi_i, Orbital phi_j) const;
 
     void rotate(const ComplexMatrix &U);
-    void setupInternal(double prec);
-    int testPreComputed(Orbital phi_p) const;
     void setup(double prec) override;
     void clear() override;
 
@@ -57,6 +55,8 @@ protected:
     virtual Orbital calcExchange(Orbital phi_p) = 0;
     virtual void calcInternal(int i) = 0;
     virtual void calcInternal(int i, int j) = 0;
+    virtual int testPreComputed(Orbital phi_p) const = 0;
+    virtual void setupInternal(double prec) = 0;
 };
 
 } // namespace mrchem

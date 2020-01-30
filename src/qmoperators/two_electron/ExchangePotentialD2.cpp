@@ -32,7 +32,19 @@ ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P,
         : ExchangePotential(P, Phi, s)
         , orbitals_x(X)
         , orbitals_y(Y) {
-    if (&X == &Y) useOnlyX = true;
+    if (X == Y) useOnlyX = true;
+}
+
+/** @brief Test if a given contribution has been precomputed
+ *
+ * @param[in] phi_p orbital for which the check is performed
+ *
+ * We always return -1 for response calculations
+ *
+ */
+int ExchangePotentialD2::testPreComputed(Orbital phi_p) const {
+    int out = -1;
+    return out;
 }
 
 /** @brief Computes the exchange potential on the fly
@@ -81,6 +93,10 @@ void ExchangePotentialD2::calcInternal(int i, int j) {
     }
 }
 
+void ExchangePotentialD2::setupInternal(double prec) {
+    setApplyPrec(prec);
+    if (this->exchange.size() != 0) MSG_ERROR("Exchange not properly cleared");
+}
 void ExchangePotentialD2::calcInternal_X(int i) {
     NOT_IMPLEMENTED_ABORT;
 }
@@ -98,10 +114,9 @@ Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
 
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &X = *this->orbitals_x;
-    ComplexVector coef_vec(Phi.size());
+    std::vector<std::complex<double>> coef_vec;
     QMFunctionVector func_vec;
 
-    int coef_vec_index = 0;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
         Orbital &x_i = X[i];
@@ -111,14 +126,15 @@ Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
             Orbital phi_bpa = calcExchangeComponent(phi_p, phi_i, x_i);
             func_vec.push_back(phi_apb);
             func_vec.push_back(phi_bpa);
-            coef_vec(coef_vec_index) = spin_fac / phi_i.squaredNorm();
-            coef_vec_index += 2;
+            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
         }
     }
 
     // compute ex_p = sum_i c_i* (phi_apb + phi_bpa)
     Orbital ex_p = phi_p.paramCopy();
-    qmfunction::linear_combination(ex_p, coef_vec, func_vec, -1.0);
+    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    qmfunction::linear_combination(ex_p, coefs, func_vec, -1.0);
     print_utils::qmfunction(3, "Applied exchange", ex_p, timer);
 
     return ex_p;

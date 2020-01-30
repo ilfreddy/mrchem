@@ -53,6 +53,8 @@ private:
     void calcInternal_XY(int i, int j);
 
     Orbital calcExchangeComponent(Orbital phi_p, Orbital phi_i, Orbital x_i);
+    int testPreComputed(Orbital phi_p) const;
+    void setupInternal(double prec);
 };
 
 } // namespace mrchem
