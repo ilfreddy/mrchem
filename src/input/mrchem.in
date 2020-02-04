@@ -682,6 +682,11 @@ def write_rsp_calculations(program_dict, user_dict):
                 }
             }
         fock_1_dict = {}
+        if wf_method in ['hf', 'dft']:
+            fock_1_dict["exchange_operator"] = {
+                "screen": False,
+                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+            }
 
         rsp_dict["fock_operator_0"] = fock_0_dict
         rsp_dict["fock_operator_1"] = fock_1_dict
