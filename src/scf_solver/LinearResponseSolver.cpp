@@ -130,7 +130,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
-            OrbitalVector Psi_2 = orbital::rotate(Phi_0, L_mat_x - F_mat_x);
+            OrbitalVector Psi_2 = orbital::rotate(X_n, L_mat_x - F_mat_x);
             mrcpp::print::time(2, "Rotating orbitals", t_lap);
 
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
@@ -178,7 +178,7 @@ bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVect
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
-            OrbitalVector Psi_2 = orbital::rotate(Phi_0, L_mat_y - F_mat_y);
+            OrbitalVector Psi_2 = orbital::rotate(Y_n, L_mat_y - F_mat_y);
             mrcpp::print::time(2, "Rotating orbitals", t_lap);
 
             OrbitalVector Psi = orbital::add(1.0, Psi_1, 1.0, Psi_2, -1.0);
