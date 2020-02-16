@@ -39,34 +39,52 @@
 using namespace mrchem;
 using namespace orbital;
 
-namespace exchange_potential {
+namespace exchnage_hessian {
 
-TEST_CASE("ExchangeOperator", "[exchange_operator]") {
+TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
-    const int nShells = 2;
     std::vector<int> ns;
     std::vector<int> ls;
     std::vector<int> ms;
 
     auto Phi_p = std::make_shared<OrbitalVector>();
+    auto X_p = std::make_shared<OrbitalVector>();
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
-    ExchangeOperator V(P_p, Phi_p);
+    ExchangeOperator V(P_p, Phi_p, X_p, X_p);
 
     OrbitalVector &Phi = *Phi_p;
-    for (int n = 1; n <= nShells; n++) {
-        int L = n;
-        for (int l = 0; l < L; l++) {
-            int M = 2 * l + 1;
-            for (int m = 0; m < M; m++) {
-                ns.push_back(n);
-                ls.push_back(l);
-                ms.push_back(m);
-                Phi.push_back(Orbital(SPIN::Paired));
-            }
-        }
-    }
+    ns.push_back(1);
+    ls.push_back(0);
+    ms.push_back(0);
+    Phi.push_back(Orbital(SPIN::Alpha));
+
+    ns.push_back(2);
+    ls.push_back(0);
+    ms.push_back(0);
+    Phi.push_back(Orbital(SPIN::Alpha));
+
+    ns.push_back(2);
+    ls.push_back(0);
+    ms.push_back(0);
+    Phi.push_back(Orbital(SPIN::Beta));
+
+    ns.push_back(2);
+    ls.push_back(1);
+    ms.push_back(1);
+    Phi.push_back(Orbital(SPIN::Beta));
+
+    ns.push_back(2);
+    ls.push_back(1);
+    ms.push_back(2);
+    Phi.push_back(Orbital(SPIN::Beta));
+
+    ns.push_back(2);
+    ls.push_back(1);
+    ms.push_back(0);
+    Phi.push_back(Orbital(SPIN::Beta));
+
     mpi::distribute(Phi);
 
     for (int i = 0; i < Phi.size(); i++) {
@@ -74,23 +92,76 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
         if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
+    std::vector<int> ns_x;
+    std::vector<int> ls_x;
+    std::vector<int> ms_x;
+
+    OrbitalVector &Phi_x = *X_p;
+    ns_x.push_back(2);
+    ls_x.push_back(0);
+    ms_x.push_back(0);
+    Phi_x.push_back(Orbital(SPIN::Alpha));
+
+    ns_x.push_back(3);
+    ls_x.push_back(0);
+    ms_x.push_back(0);
+    Phi_x.push_back(Orbital(SPIN::Alpha));
+
+    ns_x.push_back(2);
+    ls_x.push_back(0);
+    ms_x.push_back(0);
+    Phi_x.push_back(Orbital(SPIN::Beta));
+
+    ns_x.push_back(3);
+    ls_x.push_back(1);
+    ms_x.push_back(0);
+    Phi_x.push_back(Orbital(SPIN::Beta));
+
+    ns_x.push_back(3);
+    ls_x.push_back(1);
+    ms_x.push_back(1);
+    Phi_x.push_back(Orbital(SPIN::Beta));
+
+    ns_x.push_back(3);
+    ls_x.push_back(1);
+    ms_x.push_back(2);
+    Phi_x.push_back(Orbital(SPIN::Beta));
+
+    mpi::distribute(Phi_x);
+
+    for (int i = 0; i < Phi_x.size(); i++) {
+        HydrogenFunction f(ns_x[i], ls_x[i], ms_x[i]);
+        if (mpi::my_orb(Phi_x[i])) qmfunction::project(Phi_x[i], f, NUMBER::Real, prec);
+    }
+
     int i = 0;
-    DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
+    DoubleMatrix E = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E_P(0, 0) = 0.6980508089;
-    E_P(1, 0) = 0.0592777404;
-    E_P(0, 1) = 0.0592777404;
-    E_P(1, 1) = 0.2601678498;
-    E_P(2, 2) = 0.2631487488;
-    E_P(3, 3) = 0.2631487488;
-    E_P(4, 4) = 0.2631487488;
-
+    //S-type alpha orbitals
+    E(0,0) = 0.2011155951; 
+    E(1,0) = 0.2402873221; 
+    E(0,1) = 0.2402873221; 
+    E(1,1) = 0.060776316 ; 
+    //S-type beta orbital
+    E(2,2) = 0.3006602696; 
+    //P-type beta orbitals
+    E(3,3) = 0.0585931074;
+    E(4,3) = 0.0293705356; 
+    E(3,4) = 0.0293705356; 
+    E(4,4) = 0.0585931074; 
+    E(5,3) = 0.029371641 ; 
+    E(3,5) = 0.029371641 ; 
+    E(5,4) = 0.0293705356; 
+    E(4,5) = 0.0293705356; 
+    E(5,5) = 0.0585931074; 
+    
     V.setup(prec);
+    
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
         if (mpi::my_orb(Phi[0])) {
-            REQUIRE(V_00.real() == Approx(E_P(0, 0)).epsilon(thrs));
+            REQUIRE(V_00.real() == Approx(E(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
             REQUIRE(V_00.real() < thrs);
@@ -102,7 +173,7 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
             if (mpi::my_orb(Phi[i])) {
-                REQUIRE(V_ii.real() == Approx(E_P(i, i)).epsilon(thrs));
+                REQUIRE(V_ii.real() == Approx(E(i, i)).epsilon(thrs));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
                 REQUIRE(V_ii.real() < thrs);
@@ -113,7 +184,7 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
         if (mpi::my_orb(Phi[0])) {
-            REQUIRE(V_00.real() == Approx(E_P(0, 0)).epsilon(thrs));
+            REQUIRE(V_00.real() == Approx(E(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
             REQUIRE(V_00.real() < thrs);
@@ -124,7 +195,8 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
         ComplexMatrix v = V(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
-	      if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E_P(i, j)).epsilon(thrs));
+	      //      	      REQUIRE(v(i, j).real() == Approx(v(i, j).real()).epsilon(thrs));
+	      if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E(i, j)).epsilon(thrs));
 	      REQUIRE(v(i, j).imag() < thrs);
             }
         }
@@ -132,4 +204,4 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
     V.clear();
 }
 
-} // namespace exchange_potential
+} // namespace exchange_hessian
