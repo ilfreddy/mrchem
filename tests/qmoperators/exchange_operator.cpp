@@ -124,8 +124,8 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
         ComplexMatrix v = V(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
-	      if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E_P(i, j)).epsilon(thrs));
-	      REQUIRE(v(i, j).imag() < thrs);
+                if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E_P(i, j)).epsilon(thrs));
+                REQUIRE(v(i, j).imag() < thrs);
             }
         }
     }

@@ -211,7 +211,7 @@ void ExchangePotentialD1::calcInternal(int i) {
         Orbital phi_iii = phi_i.paramCopy();
         qmfunction::multiply(phi_iii, phi_i, V_ii, prec);
         phi_iii.rescale(1.0 / phi_i.squaredNorm());
-        this->part_norms(i, i) = phi_iii.norm();  //LUCA: This is also a potential bug!!
+        this->part_norms(i, i) = phi_iii.norm(); // LUCA: This is also a potential bug!!
         this->exchange.push_back(phi_iii);
     } else {
         // put empty orbital to fill the exchange vector
