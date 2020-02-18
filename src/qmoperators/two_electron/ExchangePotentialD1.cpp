@@ -46,7 +46,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     for (int i = 0; i < Phi.size(); i++) calcInternal(i);
 
     // Off-diagonal must come last because it IS in-place
-    OrbitalIterator iter(Phi, true); // symmetric iterator
+    OrbitalIterator iter(Phi); // symmetric iterator
     Orbital ex_rcv;
     while (iter.next(1)) { // one orbital at the time
         if (iter.get_size() > 0) {
@@ -55,7 +55,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             for (int j = 0; j < Phi.size(); j++) {
                 Orbital &phi_j = (*this->orbitals)[j];
                 if (idx == j) continue; // skip diagonal terms
-                if (mpi::my_orb(phi_i) and mpi::my_orb(phi_j)) calcInternal(idx, j);
+                if (mpi::my_orb(phi_j)) calcInternal(idx, j);
             }
             // must send exchange_i to owner and receive exchange computed by other
             if (iter.get_step(0) and not mpi::my_orb(phi_i))
@@ -211,7 +211,7 @@ void ExchangePotentialD1::calcInternal(int i) {
         Orbital phi_iii = phi_i.paramCopy();
         qmfunction::multiply(phi_iii, phi_i, V_ii, prec);
         phi_iii.rescale(1.0 / phi_i.squaredNorm());
-        this->part_norms(i, i) = phi_iii.norm();
+        this->part_norms(i, i) = phi_iii.norm();  //LUCA: This is also a potential bug!!
         this->exchange.push_back(phi_iii);
     } else {
         // put empty orbital to fill the exchange vector
