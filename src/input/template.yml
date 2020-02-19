@@ -166,7 +166,7 @@ sections:
           This will use MPI shared memory for the exchange-correlation potential.
       - name: bank_size
         type: int
-        default: 0
+        default: -1
         docstring: |
           Number of MPI processes exclusively dedicated to manage orbital bank.
   - name: Basis

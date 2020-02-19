@@ -54,8 +54,9 @@ int ExchangePotentialD2::testPreComputed(Orbital phi_p) const {
  * The exchange potential is computed and applied on the fly to the given orbital.
  */
 Orbital ExchangePotentialD2::calcExchange(Orbital phi_p) {
-    Timer timer;
+
     Orbital ex_p;
+
     if (useOnlyX) {
         ex_p = calcExchange_X(phi_p);
     } else {
@@ -96,6 +97,17 @@ void ExchangePotentialD2::calcInternal(int i, int j) {
 void ExchangePotentialD2::setupInternal(double prec) {
     setApplyPrec(prec);
     if (this->exchange.size() != 0) MSG_ERROR("Exchange not properly cleared");
+    OrbitalVector &Phi = *this->orbitals;
+    OrbitalVector &X = *this->orbitals_x;
+    if (mpi::bank_size > 0) {
+        // store orbitals and orbitals_x in Bank
+        mpi::barrier(mpi::comm_orb); // to be sure nobody still use data
+        for (int i = 0; i < Phi.size(); i++)
+            if (mpi::my_orb(Phi[i])) mpi::orb_bank.put_orb(i, Phi[i]);
+        for (int i = 0; i < X.size(); i++)
+            if (mpi::my_orb(X[i])) mpi::orb_bank.put_orb(i + Phi.size(), X[i]);
+        mpi::barrier(mpi::comm_orb);
+    }
 }
 void ExchangePotentialD2::calcInternal_X(int i) {
     NOT_IMPLEMENTED_ABORT;
@@ -120,6 +132,10 @@ Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
         Orbital &x_i = X[i];
+
+        if (!mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i, phi_i);
+        if (!mpi::my_orb(x_i)) mpi::orb_bank.get_orb(i + Phi.size(), x_i);
+
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital phi_apb = calcExchangeComponent(phi_p, x_i, phi_i);
@@ -129,6 +145,8 @@ Orbital ExchangePotentialD2::calcExchange_X(Orbital phi_p) {
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
         }
+        if (!mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (!mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
     }
 
     // compute ex_p = sum_i c_i* (phi_apb + phi_bpa)

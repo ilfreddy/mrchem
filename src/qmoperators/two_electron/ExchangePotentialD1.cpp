@@ -53,9 +53,9 @@ void ExchangePotentialD1::setupInternal(double prec) {
             Orbital &phi_i = iter.orbital(0);
             int idx = iter.idx(0);
             for (int j = 0; j < Phi.size(); j++) {
+                if (mpi::my_orb(phi_i) and j <= idx) continue; // compute only i<j for own block
                 Orbital &phi_j = (*this->orbitals)[j];
-                if (idx == j) continue; // skip diagonal terms
-                if (mpi::my_orb(phi_i) and mpi::my_orb(phi_j)) calcInternal(idx, j);
+                if (mpi::my_orb(phi_j)) calcInternal(idx, j, phi_i, phi_j);
             }
             // must send exchange_i to owner and receive exchange computed by other
             if (iter.get_step(0) and not mpi::my_orb(phi_i))
@@ -129,45 +129,42 @@ int ExchangePotentialD1::testPreComputed(Orbital phi_p) const {
  */
 Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
     Timer timer;
-
     double prec = this->apply_prec;
     OrbitalVector &Phi = *this->orbitals;
     mrcpp::PoissonOperator &P = *this->poisson;
-
     std::vector<std::complex<double>> coef_vec;
     QMFunctionVector func_vec;
 
-    OrbitalIterator iter(Phi);
-    while (iter.next()) {
-        for (int i = 0; i < iter.get_size(); i++) {
-            Orbital &phi_i = iter.orbital(i);
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital &phi_i = Phi[i];
+        if (!mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i, phi_i);
+        double spin_fac = getSpinFactor(phi_i, phi_p);
+        if (std::abs(spin_fac) < mrcpp::MachineZero) continue;
 
-            double spin_fac = getSpinFactor(phi_i, phi_p);
-            if (std::abs(spin_fac) < mrcpp::MachineZero) continue;
+        // compute phi_ip = phi_i^dag * phi_p
+        Orbital phi_ip = phi_p.paramCopy();
+        qmfunction::multiply(phi_ip, phi_i, phi_p, -1.0);
 
-            // compute phi_ip = phi_i^dag * phi_p
-            Orbital phi_ip = phi_p.paramCopy();
-            qmfunction::multiply(phi_ip, phi_i, phi_p, -1.0);
-
-            // compute V_ip = P[phi_ip]
-            Orbital V_ip = phi_p.paramCopy();
-            if (phi_ip.hasReal()) {
-                V_ip.alloc(NUMBER::Real);
-                mrcpp::apply(prec, V_ip.real(), P, phi_ip.real());
-            }
-            if (phi_ip.hasImag()) {
-                V_ip.alloc(NUMBER::Imag);
-                mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
-            }
-            phi_ip.release();
-
-            // compute phi_iip = phi_i * V_ip
-            Orbital phi_iip = phi_p.paramCopy();
-            qmfunction::multiply(phi_iip, phi_i, V_ip, -1.0);
-
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            func_vec.push_back(phi_iip);
+        // compute V_ip = P[phi_ip]
+        Orbital V_ip = phi_p.paramCopy();
+        if (phi_ip.hasReal()) {
+            V_ip.alloc(NUMBER::Real);
+            mrcpp::apply(prec, V_ip.real(), P, phi_ip.real());
         }
+        if (phi_ip.hasImag()) {
+            V_ip.alloc(NUMBER::Imag);
+            mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
+        }
+        phi_ip.release();
+
+        // compute phi_iip = phi_i * V_ip
+        Orbital phi_iip = phi_p.paramCopy();
+        qmfunction::multiply(phi_iip, phi_i, V_ip, -1.0);
+
+        coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+        func_vec.push_back(phi_iip);
+
+        if (!mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
     }
 
     // compute ex_p = sum_i c_i*phi_iip
@@ -277,6 +274,75 @@ void ExchangePotentialD1::calcInternal(int i, int j) {
     // compute x_i += phi_jij
     Ex[i].add(spinFactor, phi_jij);
     phi_jij.release();
+}
+
+/** @brief computes the off-diagonal part of the exchange potential
+ *
+ *  \param[in] i first orbital index
+ *  \param[in] j second orbital index
+ *
+ * The off-diagonal terms K_ij and K_ji are computed.
+ */
+void ExchangePotentialD1::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) {
+    mrcpp::PoissonOperator &P = *this->poisson;
+    OrbitalVector &Phi = *this->orbitals;
+    OrbitalVector &Ex = this->exchange;
+
+    if (i == j) MSG_ABORT("Cannot handle diagonal term");
+    if (Ex.size() != Phi.size()) MSG_ABORT("Size mismatch");
+    if (phi_i.hasImag() or phi_j.hasImag()) MSG_ABORT("Orbitals must be real");
+
+    double i_fac = getSpinFactor(phi_i, phi_j);
+    double j_fac = getSpinFactor(phi_j, phi_i);
+
+    double thrs = mrcpp::MachineZero;
+    if (std::abs(i_fac) < thrs or std::abs(j_fac) < thrs) {
+        this->part_norms(i, j) = 0.0;
+        return;
+    }
+
+    // set correctly scaled precision for components ij and ji
+    double prec = std::min(getScaledPrecision(i, j), getScaledPrecision(j, i));
+    if (prec > 1.0e00) return;     // orbital does not contribute within the threshold
+    prec = std::min(prec, 1.0e-1); // very low precision does not work properly
+
+    // compute phi_ij = phi_i^dag * phi_j (dagger NOT used, orbitals must be real!)
+    Orbital phi_ij = phi_i.paramCopy();
+    qmfunction::multiply(phi_ij, phi_i, phi_j, prec);
+
+    // compute V_ij = P[phi_ij]
+    Orbital V_ij = phi_i.paramCopy();
+    if (phi_ij.hasReal()) {
+        V_ij.alloc(NUMBER::Real);
+        mrcpp::apply(prec, V_ij.real(), P, phi_ij.real());
+    }
+    if (phi_ij.hasImag()) {
+        MSG_ABORT("Orbitals must be real");
+        V_ij.alloc(NUMBER::Imag);
+        mrcpp::apply(prec, V_ij.imag(), P, phi_ij.imag());
+    }
+    phi_ij.release();
+
+    // compute phi_jij = phi_j * V_ij
+    Orbital phi_jij = phi_j.paramCopy();
+    qmfunction::multiply(phi_jij, phi_j, V_ij, prec);
+    phi_jij.rescale(1.0 / phi_j.squaredNorm());
+    this->part_norms(j, i) = phi_jij.norm();
+
+    // compute phi_iij = phi_i * V_ij
+    Orbital phi_iij = phi_i.paramCopy();
+    qmfunction::multiply(phi_iij, phi_i, V_ij, prec);
+    phi_iij.rescale(1.0 / phi_i.squaredNorm());
+    this->part_norms(i, j) = phi_iij.norm();
+    V_ij.release();
+
+    // compute x_i += phi_jij
+    Ex[i].add(i_fac, phi_jij);
+    phi_jij.release();
+
+    // compute x_j += phi_iij
+    Ex[j].add(j_fac, phi_iij);
+    phi_iij.release();
 }
 
 } // namespace mrchem

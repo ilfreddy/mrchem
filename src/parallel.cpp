@@ -30,7 +30,7 @@ int sh_group_rank = 0;
 int is_bank = 0;
 int is_bankclient = 1;
 int is_bankmaster = 0; // only one bankmaster is_bankmaster
-int bank_size = 0;
+int bank_size = -1;
 std::vector<int> bankmaster;
 
 MPI_Comm comm_orb;
@@ -59,7 +59,8 @@ void mpi::initialize() {
     // for now the new group does not include comm_share
     mpi::comm_bank = MPI_COMM_WORLD; // clients and master
     MPI_Comm comm_remainder;         // clients only
-
+    if (mpi::world_size > 1 and mpi::bank_size < 0) mpi::bank_size = mpi::world_size / 6 + 1;
+    mpi::bank_size = std::max(0, mpi::bank_size);
     if (mpi::world_size - mpi::bank_size < 1) MSG_ABORT("No MPI ranks left for working!");
     mpi::bankmaster.resize(mpi::bank_size);
     for (int i = 0; i < mpi::bank_size; i++) {
@@ -105,6 +106,8 @@ void mpi::initialize() {
         MPI_Finalize();
         exit(EXIT_SUCCESS);
     }
+#else
+    mpi_bank_size = 0;
 #endif
 }
 
@@ -659,7 +662,7 @@ void Bank::clear_bank() {
 
 void Bank::clear(int ix) {
 #ifdef HAVE_MPI
-    delete deposits[ix].orb;
+    deposits[ix].orb->free(NUMBER::Total);
     delete deposits[ix].data;
     deposits[ix].hasdata = false;
 #endif

@@ -126,6 +126,10 @@ Orbital ExchangePotential::apply(Orbital inp) {
     }
     int i = testPreComputed(inp);
     if (i < 0) {
+        if (!mpi::my_orb(inp)) {
+            MSG_WARN("Not computing exchange contributions that are not mine");
+            return inp.paramCopy();
+        }
         println(4, "On-the-fly exchange");
         return calcExchange(inp);
     } else {
