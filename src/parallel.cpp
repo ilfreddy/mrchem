@@ -107,7 +107,7 @@ void mpi::initialize() {
         exit(EXIT_SUCCESS);
     }
 #else
-    mpi_bank_size = 0;
+    mpi::bank_size = 0;
 #endif
 }
 
