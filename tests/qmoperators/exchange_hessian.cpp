@@ -137,26 +137,26 @@ TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
     int i = 0;
     DoubleMatrix E = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    //S-type alpha orbitals
-    E(0,0) = 0.2011155951; 
-    E(1,0) = 0.2402873221; 
-    E(0,1) = 0.2402873221; 
-    E(1,1) = 0.060776316 ; 
-    //S-type beta orbital
-    E(2,2) = 0.3006602696; 
-    //P-type beta orbitals
-    E(3,3) = 0.0585931074;
-    E(4,3) = 0.0293705356; 
-    E(3,4) = 0.0293705356; 
-    E(4,4) = 0.0585931074; 
-    E(5,3) = 0.029371641 ; 
-    E(3,5) = 0.029371641 ; 
-    E(5,4) = 0.0293705356; 
-    E(4,5) = 0.0293705356; 
-    E(5,5) = 0.0585931074; 
-    
+    // S-type alpha orbitals
+    E(0, 0) = 0.2011155951;
+    E(1, 0) = 0.2402873221;
+    E(0, 1) = 0.2402873221;
+    E(1, 1) = 0.060776316;
+    // S-type beta orbital
+    E(2, 2) = 0.3006602696;
+    // P-type beta orbitals
+    E(3, 3) = 0.0585931074;
+    E(4, 3) = 0.0293705356;
+    E(3, 4) = 0.0293705356;
+    E(4, 4) = 0.0585931074;
+    E(5, 3) = 0.029371641;
+    E(3, 5) = 0.029371641;
+    E(5, 4) = 0.0293705356;
+    E(4, 5) = 0.0293705356;
+    E(5, 5) = 0.0585931074;
+
     V.setup(prec);
-    
+
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
@@ -195,13 +195,13 @@ TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
         ComplexMatrix v = V(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
-	      //      	      REQUIRE(v(i, j).real() == Approx(v(i, j).real()).epsilon(thrs));
-	      if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E(i, j)).epsilon(thrs));
-	      REQUIRE(v(i, j).imag() < thrs);
+                //      	      REQUIRE(v(i, j).real() == Approx(v(i, j).real()).epsilon(thrs));
+                if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E(i, j)).epsilon(thrs));
+                REQUIRE(v(i, j).imag() < thrs);
             }
         }
     }
     V.clear();
 }
 
-} // namespace exchange_hessian
+} // namespace exchnage_hessian
