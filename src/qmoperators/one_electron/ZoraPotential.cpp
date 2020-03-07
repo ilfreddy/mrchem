@@ -132,6 +132,5 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
 void ZoraPotential::computeZora(double prec) {
     QMFunction &Zora = *this;
     mrcpp::FunctionTree<3> zora_real = Zora.real();
-    
-    
+
 } // namespace mrchem
