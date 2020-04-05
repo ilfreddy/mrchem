@@ -13,10 +13,11 @@ public:
 
     void setup(double prec) override { setApplyPrec(prec); }
     void clear() override { clearApplyPrec(); }
+    void computeZora(double prec = -1.0);
+    void computeKappa(double prec = -1.0);
 
 private:
     NuclearFunction func;
-
     void allreducePotential(double prec, QMFunction &V_loc);
 };
 

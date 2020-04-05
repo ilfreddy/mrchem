@@ -129,13 +129,21 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
     }
 }
 
-void ZoraPotential::computeZora(double prec) {
+void ZoraPotential::computeKappa(double prec) {
+    mrcpp::FMap kappamap = [](double val) {
+        double temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+        return 1.0 / temp;
+    };
     QMFunction &ZoraFunction = *this;
     mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
-    mrcpp::FunctionTree<3> scaled_pot(zora_real.getMRA());
-    mrcpp::FunctionTree<3> one_m_scaled_pot(zora_real.getMRA());
-    factor = 1.0 / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
-    mrcpp::FunctionTree::multiply(factor, FunctionTree<D> & inp);
-    mrcpp::
+    zora_real.map(kappamap);
+}
+
+void ZoraPotential::computeZora(double prec) {
+    mrcpp::FMap zoramap = [](double val) { return 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv); };
+    QMFunction &ZoraFunction = *this;
+    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
+    zora_real.map(zoramap);
+}
 
 } // namespace mrchem
