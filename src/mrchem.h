@@ -47,7 +47,7 @@ const double alpha     =    7.2973525664;    // Fine structure constant
 const double g_e       =    2.0023193043618; // Free-electron g-value
 const double beta_e    =    0.5000000;       // Bohr magneton
 const double beta_N    =    0.0002723;       // Nuclear magneton
-const double alpha_inv =  137.035999084      // Inverse of the fine structure constant alpha
+const double alpha_inv =  137.035999084;      // Inverse of the fine structure constant alpha
 } // namespace PHYSCONST
 
 namespace MATHCONST {
