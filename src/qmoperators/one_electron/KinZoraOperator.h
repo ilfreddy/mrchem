@@ -20,12 +20,12 @@ namespace mrchem {
 class KinZoraOperator final : public RankZeroTensorOperator {
 public:
     KinZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-		    const Nuclei &nucs,
-		    double proj_prec,
-		    double smooth_prec = -1.0,
-		    bool mpi_share = false)
+                    const Nuclei &nucs,
+                    double proj_prec,
+                    double smooth_prec = -1.0,
+                    bool mpi_share = false)
             : p(D)
-	    , vz(nucs, proj_prec, smooth_prec, mpi_share, true) {
+            , vz(nucs, proj_prec, smooth_prec, mpi_share, true) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
         t = 0.5 * (p[0] * vz * p[0] + p[1] * vz * p[1] + p[2] * vz * p[2]);
