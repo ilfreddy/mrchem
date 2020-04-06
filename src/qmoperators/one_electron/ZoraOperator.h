@@ -10,10 +10,10 @@ namespace mrchem {
 class ZoraOperator final : public RankZeroTensorOperator {
 public:
     ZoraOperator(const Nuclei &nucs,
-		 double proj_prec,
-		 double smooth_prec = -1.0,
-		 bool mpi_share = false,
-		 bool inverse = false) {
+                 double proj_prec,
+                 double smooth_prec = -1.0,
+                 bool mpi_share = false,
+                 bool inverse = false) {
         r_m1 = std::make_shared<ZoraPotential>(nucs, proj_prec, smooth_prec, mpi_share, inverse);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &v = (*this);
