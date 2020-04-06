@@ -26,7 +26,7 @@ namespace mrchem {
  *              nuclei, which are distributed among the available
  *              MPIs. This is used only for the projection below.
  */
-ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share)
+ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, bool inverse)
         : QMPotential(1, mpi_share) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
@@ -89,6 +89,11 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth
 
     Timer t_com;
     allreducePotential(abs_prec, V_loc);
+    if (inverse) {
+        computeKappa();
+    } else {
+        computeZora();
+    }
     t_com.stop();
 
     t_tot.stop();
