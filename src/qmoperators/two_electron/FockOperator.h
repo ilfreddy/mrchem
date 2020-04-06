@@ -16,6 +16,7 @@ namespace mrchem {
 
 class SCFEnergy;
 class KineticOperator;
+class KinZoraOperator;
 class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -26,6 +27,7 @@ class ReactionOperator;
 class FockOperator final : public RankZeroTensorOperator {
 public:
     FockOperator(std::shared_ptr<KineticOperator> t = nullptr,
+                 std::shared_ptr<KinZoraOperator> z = nullptr,
                  std::shared_ptr<NuclearOperator> v = nullptr,
                  std::shared_ptr<CoulombOperator> j = nullptr,
                  std::shared_ptr<ExchangeOperator> k = nullptr,
@@ -38,6 +40,7 @@ public:
     RankZeroTensorOperator &perturbation() { return this->H_1; }
 
     std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
+    std::shared_ptr<KinZoraOperator> &getKinZoraOperator() { return this->zora; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
@@ -66,6 +69,7 @@ private:
     RankZeroTensorOperator H_1; ///< Perturbation operators
 
     std::shared_ptr<KineticOperator> kin;
+    std::shared_ptr<KinZoraOperator> zora;
     std::shared_ptr<NuclearOperator> nuc;
     std::shared_ptr<CoulombOperator> coul;
     std::shared_ptr<ExchangeOperator> ex;

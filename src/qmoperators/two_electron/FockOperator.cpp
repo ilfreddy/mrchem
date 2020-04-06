@@ -11,6 +11,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
+#include "qmoperators/one_electron/KinZoraOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "utils/math_utils.h"
@@ -19,6 +20,7 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 using KineticOperator_p = std::shared_ptr<mrchem::KineticOperator>;
+using KinZoraOperator_p = std::shared_ptr<mrchem::KinZoraOperator>;
 using NuclearOperator_p = std::shared_ptr<mrchem::NuclearOperator>;
 using CoulombOperator_p = std::shared_ptr<mrchem::CoulombOperator>;
 using ExchangeOperator_p = std::shared_ptr<mrchem::ExchangeOperator>;
@@ -42,6 +44,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * the Hartree(-Fock) method and (pure/hybrid) Density Functional Theory.
  */
 FockOperator::FockOperator(KineticOperator_p t,
+                           KinZoraOperator_p z,
                            NuclearOperator_p v,
                            CoulombOperator_p j,
                            ExchangeOperator_p k,
