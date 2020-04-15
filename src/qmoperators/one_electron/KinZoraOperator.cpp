@@ -53,6 +53,7 @@ ComplexMatrix KinZoraOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(vzdKet);
         T_y = orbital::calc_overlap_matrix(dBra, vzdKet);
+        mrcpp::print::tree(2, "<i|p[y]*kappa*p[y]|j>", nNodes, sNodes, timer.elapsed());
     }
     {
         Timer timer;
@@ -65,7 +66,7 @@ ComplexMatrix KinZoraOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(vzdKet);
         T_z = orbital::calc_overlap_matrix(dBra, vzdKet);
-        mrcpp::print::tree(2, "<i|p[z]p[z]|j>", nNodes, sNodes, timer.elapsed());
+        mrcpp::print::tree(2, "<i|p[z]*kappa[z]|j>", nNodes, sNodes, timer.elapsed());
     }
     return 0.5 * (T_x + T_y + T_z);
 }
