@@ -52,6 +52,7 @@ FockOperator::FockOperator(KineticOperator_p t,
                            ElectricFieldOperator_p ext,
                            ReactionOperator_p reo)
         : kin(t)
+        , zora(z)
         , nuc(v)
         , coul(j)
         , ex(k)
@@ -92,6 +93,7 @@ void FockOperator::setup(double prec) {
     mrcpp::print::header(2, "Building Fock operator");
     mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
     mrcpp::print::separator(2, '-');
+    this->zora.get()->setup(prec);
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
@@ -109,6 +111,7 @@ void FockOperator::clear() {
     this->kinetic().clear();
     this->potential().clear();
     this->perturbation().clear();
+    this->zora.get()->clear();
 }
 
 /** @brief rotate orbitals of two-electron operators
