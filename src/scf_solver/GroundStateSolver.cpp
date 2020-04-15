@@ -33,6 +33,8 @@
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmoperators/one_electron/KinZoraOperator.h"
+#include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 
 using mrcpp::Printer;
@@ -254,7 +256,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-
         // Setup argument
         Timer t_arg;
         mrcpp::print::header(2, "Computing Helmholtz argument");
@@ -267,6 +268,17 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // Apply Helmholtz operator
         OrbitalVector Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
         Psi.clear();
+
+        // Test Zora Kinetic Energy
+        auto zora_oper = F.getKinZoraOperator().get();
+        auto zora_mat = (*zora_oper)(Phi_n, Phi_n);
+        std::cout << " ZORA Kin energy" << std::endl;
+        std::cout << zora_mat << std::endl;
+        auto kin_oper = F.kinetic();
+        auto kin_mat = kin_oper(Phi_n, Phi_n);
+        std::cout << " Normal Kin energy" << std::endl;
+        std::cout << kin_mat << std::endl;
+
         F.clear();
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
