@@ -66,7 +66,7 @@ FockOperator::FockOperator(KineticOperator_p t,
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
     this->T = RankZeroTensorOperator();
-    if (this->kin != nullptr) this->T += (*this->kin);
+    if (this->zora != nullptr) this->T += (*this->zora);
 
     this->V = RankZeroTensorOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -163,7 +163,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
         Er_el = 0.5 * this->Ro->getElectronicEnergy();
     }
     // Electronic part
-    if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
+    if (this->zora != nullptr) E_kin = this->zora->trace(Phi).real();
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
@@ -180,7 +180,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    auto t = this->getKineticOperator();
+    auto t = this->getKinZoraOperator();
     auto v = this->potential();
 
     ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
