@@ -26,7 +26,7 @@ namespace mrchem {
  *              nuclei, which are distributed among the available
  *              MPIs. This is used only for the projection below.
  */
-ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, bool inverse)
+ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, int func_flag)
         : QMPotential(1, mpi_share) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
@@ -89,17 +89,32 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth
 
     Timer t_com;
     allreducePotential(abs_prec, V_loc);
-    if (inverse) {
-        computeKappa();
-    } else {
-        computeZora();
-    }
     t_com.stop();
+
+    Timer t_map;
+    switch (func_flag) {
+        case 0:
+            computeKappa(proj_prec);
+            break;
+        case 1:
+            computeLnKappa(proj_prec);
+            break;
+        case 2:
+            computeZora(proj_prec);
+            break;
+        case 3:
+            computeVZora(proj_prec);
+            break;
+        default:
+            MSG_ABORT("Invalid func_flag");
+    }
+    t_map.stop();
 
     t_tot.stop();
     mrcpp::print::separator(2, '-');
     print_utils::qmfunction(2, "Local potential", V_loc, t_loc);
     print_utils::qmfunction(2, "Allreduce potential", V_loc, t_com);
+    print_utils::qmfunction(2, "Map potential", V_loc, t_map);
     mrcpp::print::footer(2, t_tot, 2);
 }
 
@@ -134,6 +149,12 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
     }
 }
 
+/** @brief maps the potential function into the kappa function
+ *
+ * @param[in] prec precision
+ *
+ *  \f \kappa = \frac{1}{1-V/2c^2} \f
+ */
 void ZoraPotential::computeKappa(double prec) {
     mrcpp::FMap kappamap = [](double val) {
         double temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
@@ -144,8 +165,48 @@ void ZoraPotential::computeKappa(double prec) {
     zora_real.map(kappamap);
 }
 
+/** @brief maps the potential function into the logarithm of kappa
+ *
+ * @param[in] prec precision
+ *
+ *  \f \ln(k) = -\ln({1-V/2c^2}) \f
+ */
+void ZoraPotential::computeLnKappa(double prec) {
+    mrcpp::FMap kappamap = [](double val) {
+        double temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+        return -std::log(temp);
+    };
+    QMFunction &ZoraFunction = *this;
+    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
+    zora_real.map(kappamap);
+}
+
+/** @brief maps the potential function into a scaled potential
+ *
+ * @param[in] prec precision
+ *
+ *  \f z = 1-V/2c^2 = 1/\kappa\f
+ *
+ */
 void ZoraPotential::computeZora(double prec) {
     mrcpp::FMap zoramap = [](double val) { return 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv); };
+    QMFunction &ZoraFunction = *this;
+    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
+    zora_real.map(zoramap);
+}
+
+/** @brief maps the potential function into a scaled potential times the potential
+ *
+ * @param[in] prec precision
+ *
+ *  \f z = V(1-V/2c^2) = V/\kappa \f
+ *
+ */
+void ZoraPotential::computeVZora(double prec) {
+    mrcpp::FMap zoramap = [](double val) {
+        auto temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+        return val * temp;
+    };
     QMFunction &ZoraFunction = *this;
     mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
     zora_real.map(zoramap);

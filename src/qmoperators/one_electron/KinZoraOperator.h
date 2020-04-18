@@ -25,7 +25,7 @@ public:
                     double smooth_prec = -1.0,
                     bool mpi_share = false)
             : p(D)
-            , vz(nucs, proj_prec, smooth_prec, mpi_share, true) {
+            , vz(nucs, proj_prec, smooth_prec, mpi_share, 0) {
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
         t = 0.5 * (p[0] * vz * p[0] + p[1] * vz * p[1] + p[2] * vz * p[2]);
