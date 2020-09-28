@@ -93,16 +93,16 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth
 
     Timer t_map;
     switch (func_flag) {
-        case 0:
+        case 0: // required for kinetic energy and SCF
             computeKappa(proj_prec);
             break;
-        case 1:
+        case 1: // maybe required for SCF
             computeLnKappa(proj_prec);
             break;
-        case 2:
+        case 2: // required for SCF
             computeZora(proj_prec);
             break;
-        case 3:
+        case 3: // maybe required for SCF
             computeVZora(proj_prec);
             break;
         default:
