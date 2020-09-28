@@ -13,12 +13,12 @@ public:
                  double proj_prec,
                  double smooth_prec = -1.0,
                  bool mpi_share = false,
-                 bool inverse = false) {
-        r_m1 = std::make_shared<ZoraPotential>(nucs, proj_prec, smooth_prec, mpi_share, inverse);
+                 int func_flag = 0) {
+        r_m1 = std::make_shared<ZoraPotential>(nucs, proj_prec, smooth_prec, mpi_share, func_flag);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &v = (*this);
         v = r_m1;
-        v.name() = "V_nuc";
+        v.name() = "ZORA";
     }
 
 private:
