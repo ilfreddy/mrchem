@@ -81,8 +81,8 @@ protected:
         return (dPrec < thrs) ? true : false;
     }
 
-    virtual void setup(double prec) = 0;
-    virtual void clear() = 0;
+    virtual void setup(double prec) { setApplyPrec(prec); }
+    virtual void clear() { clearApplyPrec(); }
 
     virtual ComplexDouble evalf(const mrcpp::Coord<3> &r) const { NOT_REACHED_ABORT; }
     virtual Orbital apply(Orbital inp) = 0;

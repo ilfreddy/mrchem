@@ -13,9 +13,6 @@ private:
     const int apply_dir;
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 
-    void setup(double prec) override { setApplyPrec(prec); }
-    void clear() override { clearApplyPrec(); }
-
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
 };

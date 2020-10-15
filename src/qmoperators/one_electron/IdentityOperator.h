@@ -11,9 +11,6 @@ public:
             : QMOperator() {}
 
 private:
-    void setup(double prec) override { setApplyPrec(prec); }
-    void clear() override { clearApplyPrec(); }
-
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
 };
