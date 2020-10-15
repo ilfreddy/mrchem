@@ -11,7 +11,6 @@ public:
     NuclearPotential(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false);
     ~NuclearPotential() override { free(NUMBER::Total); }
 
-    void setup(double prec) override { setApplyPrec(prec); }
     void clear() override { clearApplyPrec(); }
 
 private:
