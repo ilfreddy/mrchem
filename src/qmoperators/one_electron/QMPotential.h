@@ -38,7 +38,7 @@ protected:
     Orbital dagger(Orbital inp) override;
 
     virtual void setup(double prec) override { setApplyPrec(prec); }
-    virtual void clear() override { free(NUMBER::Total); }
+    virtual void clear() override { clearApplyPrec(); }
 
     void calcRealPart(Orbital &out, Orbital &inp, bool dagger);
     void calcImagPart(Orbital &out, Orbital &inp, bool dagger);
