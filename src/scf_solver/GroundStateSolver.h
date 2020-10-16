@@ -58,9 +58,9 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
-    void set_a(std::shared_ptr<RankZeroTensorOperator> a); // implement here!
-    void set_b(std::shared_ptr<RankZeroTensorOperator> b);
-    void set_c(std::shared_ptr<RankZeroTensorOperator> c);
+    //    void set_a(std::shared_ptr<RankZeroTensorOperator> a); // implement here!
+    //    void set_b(std::shared_ptr<RankZeroTensorOperator> b);
+    //    void set_c(std::shared_ptr<RankZeroTensorOperator> c);
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
@@ -75,9 +75,9 @@ protected:
     void printProperty() const;
     void printParameters(const std::string &method) const;
 
-    std::shared_ptr<RankZeroTensorOperator> en_over_k;
-    std::shared_ptr<RankZeroTensorOperator> grad_k_grad;
-    std::shared_ptr<RankZeroTensorOperator> en_plus_k_e;
+    //    std::shared_ptr<RankZeroTensorOperator> en_over_k;
+    //    std::shared_ptr<RankZeroTensorOperator> grad_k_grad;
+    //    std::shared_ptr<RankZeroTensorOperator> en_plus_k_e;
 
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
