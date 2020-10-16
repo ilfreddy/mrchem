@@ -2,12 +2,17 @@
 
 #include "qmoperators/QMOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
+#include "qmoperators/one_electron/ZoraPotential.h"
 
 namespace mrchem {
 
 class GradZoraOperator final : public RankOneTensorOperator<3> {
 public:
-    GradZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, std::shared_ptr<ZoraPotential> Z) {
+    GradZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, ZoraPotential &Z) {
+
+        dkdx = std::make_shared<QMPotential>(-1, false);
+        dkdy = std::make_shared<QMPotential>(-1, false);
+        dkdz = std::make_shared<QMPotential>(-1, false);
 
         computeGradComponent(dkdx, 0, D, Z);
         computeGradComponent(dkdy, 1, D, Z);
@@ -18,9 +23,9 @@ public:
         //        p_x = std::make_shared<QMMomentum>(0, D);
         //        p_y = std::make_shared<QMMomentum>(1, D);
         //        p_z = std::make_shared<QMMomentum>(2, D);
-        d[0] = std::make_shared<QMFunction>(&dkdx);
-        d[0] = std::make_shared<QMFunction>(&dkdy);
-        d[0] = std::make_shared<QMFunction>(&dkdz);
+        d[0] = dkdx;
+        d[0] = dkdy;
+        d[0] = dkdz;
         d[0].name() = "grad_x_kappa";
         d[1].name() = "grad_y_kappa";
         d[2].name() = "grad_z_kappa";
@@ -28,14 +33,14 @@ public:
 
 private:
     std::shared_ptr<ZoraPotential> zora;
-    QMFunction dkdx;
-    QMFunction dkdy;
-    QMFunction dkdz;
+    std::shared_ptr<QMPotential> dkdx{nullptr};
+    std::shared_ptr<QMPotential> dkdy{nullptr};
+    std::shared_ptr<QMPotential> dkdz{nullptr};
 
-    void computeGradComponent(QMFunction component,
+    void computeGradComponent(std::shared_ptr<QMPotential> component,
                               int dir,
                               std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                              std::shared_ptr<ZoraPotential> Z);
+                              ZoraPotential &Z);
 };
 
 } // namespace mrchem
