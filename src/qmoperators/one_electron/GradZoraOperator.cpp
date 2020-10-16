@@ -14,23 +14,22 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-void GradZoraOperator::computeGradComponent(QMFunction component,
+void GradZoraOperator::computeGradComponent(std::shared_ptr<QMPotential> component,
                                             int dir,
                                             std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                                            ZoraPotential Z) {
+                                            ZoraPotential &Z) {
 
-    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-    if (this->derivative == nullptr) MSG_ERROR("No derivative operator");
-    if (zora.hasReal()) {}
+    if (D == nullptr) MSG_ERROR("No derivative operator");
     // Calc real part
-    if (zora.hasReal()) {
-        component.alloc(NUMBER::Real);
-        mrcpp::apply(component.real(), D, Z.real(), dir);
+    if (Z.hasReal()) {
+        component->alloc(NUMBER::Real);
+        mrcpp::apply(component->real(), *D, Z.real(), dir);
     }
     // Calc imag part
-    if (zora.hasImag()) {
-        component.alloc(NUMBER::Imag);
-        mrcpp::apply(component.imag(), D, Z.imag(), dir);
-        if (zora.conjugate()) component.imag().rescale(-1.0);
+    if (Z.hasImag()) {
+        component->alloc(NUMBER::Imag);
+        mrcpp::apply(component->imag(), *D, Z.imag(), dir);
+        if (Z.conjugate()) component->imag().rescale(-1.0);
     }
+}
 } // namespace mrchem
