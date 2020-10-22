@@ -56,6 +56,7 @@
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
+#include "qmoperators/one_electron/GradZoraOperator.h"
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
 #include "qmoperators/one_electron/H_B_dip.h"
@@ -941,6 +942,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto D_p = driver::get_derivative(zora_diff);
         auto Z_p = std::make_shared<KinZoraOperator>(D_p, nuclei, proj_prec, smooth_prec, shared_memory);
         F.getKinZoraOperator() = Z_p;
+        auto ln_kappa = std::make_shared<ZoraPotential>(nuclei, proj_prec, smooth_prec, shared_memory, 1);
+        auto zora = std::make_shared<ZoraOperator>(nuclei, proj_prec, smooth_prec, shared_memory, 2);
+        auto grad_ln_kappa = std::make_shared<GradZoraOperator>(D_p, ln_kappa);
+        F.getZoraOperator() = zora;
+        F.getGradZoraOperator() = grad_ln_kappa;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
