@@ -8,7 +8,7 @@ namespace mrchem {
 
 class GradZoraOperator final : public RankOneTensorOperator<3> {
 public:
-    GradZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, ZoraPotential &Z) {
+    GradZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, std::shared_ptr<ZoraPotential> Z) {
 
         dkdx = std::make_shared<QMPotential>(-1, false);
         dkdy = std::make_shared<QMPotential>(-1, false);
@@ -24,8 +24,8 @@ public:
         //        p_y = std::make_shared<QMMomentum>(1, D);
         //        p_z = std::make_shared<QMMomentum>(2, D);
         d[0] = dkdx;
-        d[0] = dkdy;
-        d[0] = dkdz;
+        d[1] = dkdy;
+        d[2] = dkdz;
         d[0].name() = "grad_x_kappa";
         d[1].name() = "grad_y_kappa";
         d[2].name() = "grad_z_kappa";
@@ -40,7 +40,7 @@ private:
     void computeGradComponent(std::shared_ptr<QMPotential> component,
                               int dir,
                               std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                              ZoraPotential &Z);
+                              std::shared_ptr<ZoraPotential> Z);
 };
 
 } // namespace mrchem

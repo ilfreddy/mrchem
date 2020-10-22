@@ -17,19 +17,19 @@ namespace mrchem {
 void GradZoraOperator::computeGradComponent(std::shared_ptr<QMPotential> component,
                                             int dir,
                                             std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                                            ZoraPotential &Z) {
+                                            std::shared_ptr<ZoraPotential> Z) {
 
     if (D == nullptr) MSG_ERROR("No derivative operator");
     // Calc real part
-    if (Z.hasReal()) {
+    if (Z->hasReal()) {
         component->alloc(NUMBER::Real);
-        mrcpp::apply(component->real(), *D, Z.real(), dir);
+        mrcpp::apply(component->real(), *D, Z->real(), dir);
     }
     // Calc imag part
-    if (Z.hasImag()) {
+    if (Z->hasImag()) {
         component->alloc(NUMBER::Imag);
-        mrcpp::apply(component->imag(), *D, Z.imag(), dir);
-        if (Z.conjugate()) component->imag().rescale(-1.0);
+        mrcpp::apply(component->imag(), *D, Z->imag(), dir);
+        if (Z->conjugate()) component->imag().rescale(-1.0);
     }
 }
 } // namespace mrchem
