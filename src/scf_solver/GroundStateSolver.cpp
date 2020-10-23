@@ -236,11 +236,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     double err_o = errors.maxCoeff();
     double err_t = errors.norm();
 
-    auto D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
-    NablaOperator nab(D);
-    auto grad_lnk = F.getGradZoraOperator();
-    auto zora = F.getZoraOperator();
-    RankZeroTensorOperator grad_lnK_grad = (*grad_lnk)[0] * nab[0] + (*grad_lnk)[1] * nab[1] + (*grad_lnk)[2] * nab[2];
+    //    auto D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
+    //    NablaOperator nab(D);
+    //    auto grad_lnk = F.getGradZoraOperator();
+    //    auto zora = F.getZoraOperator();
+    //    RankZeroTensorOperator grad_lnK_grad = (*grad_lnk)[0] * nab[0] + (*grad_lnk)[1] * nab[1] + (*grad_lnk)[2] *
+    //    nab[2];
 
     this->error.push_back(err_t);
     this->energy.push_back(E_n);
@@ -280,7 +281,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
         // Apply Helmholtz operator
-        OrbitalVector Phi_np1 = H.apply_zora(F.potential(), grad_lnK_grad, *zora, Phi_n, Psi);
+        //        OrbitalVector Phi_np1 = H.apply_zora(F.potential(), grad_lnK_grad, *zora, Phi_n, Psi);
+        OrbitalVector Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
         Psi.clear();
 
         F.clear();

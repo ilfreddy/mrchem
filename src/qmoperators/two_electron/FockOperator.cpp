@@ -62,7 +62,8 @@ FockOperator::FockOperator(KineticOperator_p t,
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
     this->T = RankZeroTensorOperator();
-    if (this->zora != nullptr) this->T += (*this->zora);
+    //      if (this->zora != nullptr) this->T += (*this->zora);
+    if (this->kin != nullptr) this->T += (*this->kin);
 
     this->V = RankZeroTensorOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -88,7 +89,7 @@ void FockOperator::setup(double prec) {
     mrcpp::print::header(2, "Building Fock operator");
     mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
     mrcpp::print::separator(2, '-');
-    this->zora->setup(prec);
+    //    this->zora->setup(prec);
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
@@ -106,7 +107,7 @@ void FockOperator::clear() {
     this->kinetic().clear();
     this->potential().clear();
     this->perturbation().clear();
-    this->zora->clear();
+    //    this->zora->clear();
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -149,7 +150,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
 
     // Electronic part
-    if (this->zora != nullptr) E_kin = this->zora->trace(Phi).real();
+    //    if (this->zora != nullptr) E_kin = this->zora->trace(Phi).real();
+    if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
@@ -166,7 +168,8 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    auto t = this->getKinZoraOperator();
+    //    auto t = this->getKinZoraOperator();
+    auto t = this->getKineticOperator();
     auto v = this->potential();
 
     ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
