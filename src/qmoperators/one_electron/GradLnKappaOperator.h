@@ -2,45 +2,45 @@
 
 #include "qmoperators/QMOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
+#include "qmoperators/one_electron/ZoraPotential.h"
 
 namespace mrchem {
 
-class QMMomentum final : public QMOperator {
+class GradLnKappaOperator final : public RankOneTensorOperator<3> {
 public:
-    QMMomentum(int d, std::shared_ptr<mrcpp::DerivativeOperator<3>> D);
+    GradLnKappaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, std::shared_ptr<ZoraPotential> Z) {
 
-private:
-    const int apply_dir;
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
+        dkdx = std::make_shared<QMPotential>(-1, false);
+        dkdy = std::make_shared<QMPotential>(-1, false);
+        dkdz = std::make_shared<QMPotential>(-1, false);
 
-    void setup(double prec) override { setApplyPrec(prec); }
-    void clear() override { clearApplyPrec(); }
-
-    Orbital apply(Orbital inp) override;
-    Orbital dagger(Orbital inp) override;
-};
-
-class MomentumOperator final : public RankOneTensorOperator<3> {
-public:
-    MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        p_x = std::make_shared<QMMomentum>(0, D);
-        p_y = std::make_shared<QMMomentum>(1, D);
-        p_z = std::make_shared<QMMomentum>(2, D);
+        computeGradComponent(dkdx, 0, D, Z);
+        computeGradComponent(dkdy, 1, D, Z);
+        computeGradComponent(dkdz, 2, D, Z);
 
         // Invoke operator= to assign *this operator
-        RankOneTensorOperator<3> &p = (*this);
-        p[0] = p_x;
-        p[1] = p_y;
-        p[2] = p_z;
-        p[0].name() = "p[x]";
-        p[1].name() = "p[y]";
-        p[2].name() = "p[z]";
+        RankOneTensorOperator<3> &d = (*this);
+        //        p_x = std::make_shared<QMMomentum>(0, D);
+        //        p_y = std::make_shared<QMMomentum>(1, D);
+        //        p_z = std::make_shared<QMMomentum>(2, D);
+        d[0] = dkdx;
+        d[1] = dkdy;
+        d[2] = dkdz;
+        d[0].name() = "grad_x_kappa";
+        d[1].name() = "grad_y_kappa";
+        d[2].name() = "grad_z_kappa";
     }
 
 private:
-    std::shared_ptr<QMMomentum> p_x{nullptr};
-    std::shared_ptr<QMMomentum> p_y{nullptr};
-    std::shared_ptr<QMMomentum> p_z{nullptr};
+    std::shared_ptr<ZoraPotential> zora;
+    std::shared_ptr<QMPotential> dkdx{nullptr};
+    std::shared_ptr<QMPotential> dkdy{nullptr};
+    std::shared_ptr<QMPotential> dkdz{nullptr};
+
+    void computeGradComponent(std::shared_ptr<QMPotential> component,
+                              int dir,
+                              std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+                              std::shared_ptr<ZoraPotential> Z);
 };
 
 } // namespace mrchem
