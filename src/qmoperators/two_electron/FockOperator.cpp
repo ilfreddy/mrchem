@@ -52,7 +52,7 @@ FockOperator::FockOperator(KineticOperator_p t,
                            ElectricFieldOperator_p ext,
                            ReactionOperator_p reo)
         : kin(t)
-        , zora(z)
+        , kinzora(z)
         , nuc(v)
         , coul(j)
         , ex(k)

@@ -19,8 +19,8 @@ public:
     void clear() override { clearApplyPrec(); }
 
 private:
-    void computeVZora(double prec = -1.0);
-    void computeZora(double prec = -1.0);
+    void computeVKappaInv(double prec = -1.0);
+    void computeKappaInv(double prec = -1.0);
     void computeKappa(double prec = -1.0);
     void computeLnKappa(double prec = -1.0);
     NuclearFunction func;
