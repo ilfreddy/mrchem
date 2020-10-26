@@ -100,10 +100,10 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth
             computeLnKappa(proj_prec);
             break;
         case 2: // required for SCF
-            computeZora(proj_prec);
+            computeKappaInv(proj_prec);
             break;
         case 3: // maybe required for SCF
-            computeVZora(proj_prec);
+            computeVKappaInv(proj_prec);
             break;
         default:
             MSG_ABORT("Invalid func_flag");
@@ -188,7 +188,7 @@ void ZoraPotential::computeLnKappa(double prec) {
  *  \f z = 1-V/2c^2 = 1/\kappa\f
  *
  */
-void ZoraPotential::computeZora(double prec) {
+void ZoraPotential::computeKappaInv(double prec) {
     mrcpp::FMap zoramap = [](double val) { return 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv); };
     QMFunction &ZoraFunction = *this;
     mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
@@ -202,7 +202,7 @@ void ZoraPotential::computeZora(double prec) {
  *  \f z = V(1-V/2c^2) = V/\kappa \f
  *
  */
-void ZoraPotential::computeVZora(double prec) {
+void ZoraPotential::computeVKappaInv(double prec) {
     mrcpp::FMap zoramap = [](double val) {
         auto temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
         return val * temp;

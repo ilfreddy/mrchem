@@ -18,7 +18,7 @@ class SCFEnergy;
 class KineticOperator;
 class KinZoraOperator;
 class ZoraOperator;
-class GradZoraOperator;
+class GradLnKappaOperator;
 class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -40,9 +40,9 @@ public:
     RankZeroTensorOperator &perturbation() { return this->H_1; }
 
     std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
-    std::shared_ptr<KinZoraOperator> &getKinZoraOperator() { return this->zora; }
-    std::shared_ptr<GradZoraOperator> &getGradZoraOperator() { return this->gradzora; }
-    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->zora_oper; }
+    std::shared_ptr<KinZoraOperator> &getKinZoraOperator() { return this->kinzora; }
+    std::shared_ptr<GradLnKappaOperator> &getGradLnKappaOperator() { return this->grad_lnkappa; }
+    std::shared_ptr<ZoraOperator> &getKappaInvOperator() { return this->kappa_inv; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
@@ -70,9 +70,9 @@ private:
     RankZeroTensorOperator H_1; ///< Perturbation operators
 
     std::shared_ptr<KineticOperator> kin;
-    std::shared_ptr<KinZoraOperator> zora;
-    std::shared_ptr<GradZoraOperator> gradzora;
-    std::shared_ptr<ZoraOperator> zora_oper;
+    std::shared_ptr<KinZoraOperator> kinzora;
+    std::shared_ptr<GradLnKappaOperator> grad_lnkappa;
+    std::shared_ptr<ZoraOperator> kappa_inv;
     std::shared_ptr<NuclearOperator> nuc;
     std::shared_ptr<CoulombOperator> coul;
     std::shared_ptr<ExchangeOperator> ex;

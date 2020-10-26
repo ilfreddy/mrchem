@@ -36,7 +36,7 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/RankOneTensorOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/GradZoraOperator.h"
+#include "qmoperators/one_electron/GradLnKappaOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/KinZoraOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
