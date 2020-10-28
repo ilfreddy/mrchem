@@ -49,6 +49,8 @@ namespace mrchem {
 
 class Molecule;
 class FockOperator;
+class RankZeroTensorOperator;
+template <int I> class RankOneTensorOperator;
 
 class GroundStateSolver : public SCFSolver {
 public:
@@ -58,15 +60,16 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
-    //    void set_a(std::shared_ptr<RankZeroTensorOperator> a); // implement here!
-    //    void set_b(std::shared_ptr<RankZeroTensorOperator> b);
-    //    void set_c(std::shared_ptr<RankZeroTensorOperator> c);
+    void setZora(bool zora) { this->isZora = true; }
+    void setKappaInv(std::shared_ptr<RankZeroTensorOperator> kappa_inv); // implement here!
+    void setGradLnKappa(std::shared_ptr<RankOneTensorOperator<3>> grad_ln_kappa);
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization
     bool localize{false}; ///< Use localized or canonical orbitals
+    bool isZora{false};   ///< ZORA scalar relativistic calculation
     std::string chkFile;  ///< Name of checkpoint file
     std::vector<SCFEnergy> energy;
 
@@ -75,9 +78,8 @@ protected:
     void printProperty() const;
     void printParameters(const std::string &method) const;
 
-    //    std::shared_ptr<RankZeroTensorOperator> en_over_k;
-    //    std::shared_ptr<RankZeroTensorOperator> grad_k_grad;
-    //    std::shared_ptr<RankZeroTensorOperator> en_plus_k_e;
+    std::shared_ptr<RankZeroTensorOperator> kappaInv;
+    std::shared_ptr<RankOneTensorOperator<3>> gradLnKappa;
 
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
