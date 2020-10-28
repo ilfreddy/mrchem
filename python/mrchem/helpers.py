@@ -169,9 +169,11 @@ def write_scf_solver(user_dict, method_name):
         "final_prec": final_prec,
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
-        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
+        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "zora": user_dict["WaveFunction"]["zora"],
+        "light_speed": user_dict["ZORA"]["light_return"]
     }
-    return solver_dict
+    retun solver_dict
 
 
 def write_scf_properties(user_dict, origin):
