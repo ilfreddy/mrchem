@@ -253,6 +253,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     // Run GroundStateSolver if present in input JSON
     if (json_scf.contains("scf_solver")) {
         auto kain = json_scf["scf_solver"]["kain"];
+        auto zora = json_scf["scf_solver"]["zora"];
         auto method = json_scf["scf_solver"]["method"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
@@ -264,9 +265,13 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
+        auto light_speed = json_scf["scf_solver"]["light_speed"];
+
+        std::cout << "light speed" << light_speed << std::endl;
 
         GroundStateSolver solver;
         solver.setHistory(kain);
+        solver.setZora(zora);
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
@@ -278,6 +283,31 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setThreshold(orbital_thrs, energy_thrs);
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
+        /*
+        if(zora) {
+            double zora_factor = 2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv;
+            auto zora_diff = (*json_kinzora)["derivative"].get<std::string>();
+            auto proj_prec = (*json_kinzora)["proj_prec"].get<double>();
+            auto smooth_prec = (*json_kinzora)["smooth_prec"].get<double>();
+            auto shared_memory = (*json_kinzora)["shared_memory"].get<bool>();
+            auto D_p = driver::get_derivative(zora_diff);
+            auto kappa_inv = std::make_shared<ZoraOperator>(mol.nuclei,
+                                                            proj_prec,
+                                                            smooth_prec,
+                                                            zora_fator,
+                                                            shared_memory,
+                                                            2);
+            auto ln_kappa = std::make_shared<ZoraPotential>(mol.nuclei,
+                                                            proj_prec,
+                                                            smooth_prec,
+                                                            zora_factor,
+                                                            shared_memory,
+                                                            1);
+            auto grad_ln_kappa = std::make_shared<GradLnKappaOperator>(D_p, ln_kappa);
+            solver.setKappaInvOperator() = kappa_inv;
+            solver.setGradLnKappaOperator() = grad_ln_kappa;
+        }
+        */
     }
 
     ///////////////////////////////////////////////////////////
@@ -951,18 +981,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     auto json_kinzora = json_fock.find("kinzora_operator");
     if (json_kinzora != json_fock.end()) {
+        double zora_factor = 2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv;
         auto zora_diff = (*json_kinzora)["derivative"].get<std::string>();
         auto proj_prec = (*json_kinzora)["proj_prec"].get<double>();
         auto smooth_prec = (*json_kinzora)["smooth_prec"].get<double>();
         auto shared_memory = (*json_kinzora)["shared_memory"].get<bool>();
         auto D_p = driver::get_derivative(zora_diff);
-        auto Z_p = std::make_shared<KinZoraOperator>(D_p, nuclei, proj_prec, smooth_prec, shared_memory);
-        F.getKinZoraOperator() = Z_p;
-        auto ln_kappa = std::make_shared<ZoraPotential>(nuclei, proj_prec, smooth_prec, shared_memory, 1);
-        auto kappa_inv = std::make_shared<ZoraOperator>(nuclei, proj_prec, smooth_prec, shared_memory, 2);
-        auto grad_ln_kappa = std::make_shared<GradLnKappaOperator>(D_p, ln_kappa);
-        F.getKappaInvOperator() = kappa_inv;
-        F.getGradLnKappaOperator() = grad_ln_kappa;
+        auto kin_zora = std::make_shared<KinZoraOperator>(D_p, nuclei, proj_prec, smooth_prec, shared_memory);
+        F.getKinZoraOperator() = kin_zora;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
