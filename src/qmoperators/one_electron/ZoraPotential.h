@@ -9,6 +9,7 @@ namespace mrchem {
 class ZoraPotential final : public QMPotential {
 public:
     ZoraPotential(const Nuclei &nucs,
+                  double zora_factor,
                   double proj_prec,
                   double smooth_prec = -1.0,
                   bool mpi_share = false,
@@ -19,6 +20,7 @@ public:
     void clear() override { clearApplyPrec(); }
 
 private:
+    double zoraFactor;
     void computeVKappaInv(double prec = -1.0);
     void computeKappaInv(double prec = -1.0);
     void computeKappa(double prec = -1.0);
