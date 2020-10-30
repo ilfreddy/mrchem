@@ -26,8 +26,14 @@ namespace mrchem {
  *              nuclei, which are distributed among the available
  *              MPIs. This is used only for the projection below.
  */
-ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, int func_flag)
-        : QMPotential(1, mpi_share) {
+ZoraPotential::ZoraPotential(const Nuclei &nucs,
+                             double zora_factor,
+                             double proj_prec,
+                             double smooth_prec,
+                             bool mpi_share,
+                             int func_flag)
+        : QMPotential(1, mpi_share)
+        , zoraFactor(zora_factor) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
 
@@ -90,6 +96,8 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs, double proj_prec, double smooth
     Timer t_com;
     allreducePotential(abs_prec, V_loc);
     t_com.stop();
+
+    std::cout << "Zora Factor " << zoraFactor << std::endl;
 
     Timer t_map;
     switch (func_flag) {
@@ -156,8 +164,9 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
  *  \f \kappa = \frac{1}{1-V/2c^2} \f
  */
 void ZoraPotential::computeKappa(double prec) {
-    mrcpp::FMap kappamap = [](double val) {
-        double temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+    auto zf = this->zoraFactor;
+    auto kappamap = [zf](double val) {
+        double temp = 1.0 - val / zf;
         return 1.0 / temp;
     };
     QMFunction &ZoraFunction = *this;
@@ -172,8 +181,9 @@ void ZoraPotential::computeKappa(double prec) {
  *  \f \ln(k) = -\ln({1-V/2c^2}) \f
  */
 void ZoraPotential::computeLnKappa(double prec) {
-    mrcpp::FMap kappamap = [](double val) {
-        double temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+    auto zf = this->zoraFactor;
+    auto kappamap = [zf](double val) {
+        double temp = 1.0 - val / zf;
         return -std::log(temp);
     };
     QMFunction &ZoraFunction = *this;
@@ -189,7 +199,8 @@ void ZoraPotential::computeLnKappa(double prec) {
  *
  */
 void ZoraPotential::computeKappaInv(double prec) {
-    mrcpp::FMap zoramap = [](double val) { return 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv); };
+    auto zf = this->zoraFactor;
+    auto zoramap = [zf](double val) { return 1.0 - val / zf; };
     QMFunction &ZoraFunction = *this;
     mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
     zora_real.map(zoramap);
@@ -203,8 +214,9 @@ void ZoraPotential::computeKappaInv(double prec) {
  *
  */
 void ZoraPotential::computeVKappaInv(double prec) {
-    mrcpp::FMap zoramap = [](double val) {
-        auto temp = 1.0 - val / (2.0 * PHYSCONST::alpha_inv * PHYSCONST::alpha_inv);
+    auto zf = this->zoraFactor;
+    auto zoramap = [zf](double val) {
+        auto temp = 1.0 - val / zf;
         return val * temp;
     };
     QMFunction &ZoraFunction = *this;
