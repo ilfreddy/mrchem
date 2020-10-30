@@ -61,8 +61,8 @@ public:
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
     void setZora(bool zora) { this->isZora = true; }
-    void setKappaInv(std::shared_ptr<RankZeroTensorOperator> kappa_inv); // implement here!
-    void setGradLnKappa(std::shared_ptr<RankOneTensorOperator<3>> grad_ln_kappa);
+    void setKappaInv(std::shared_ptr<RankZeroTensorOperator> kappa_inv) { kappaInv = kappa_inv; }
+    void setGradLnKappa(std::shared_ptr<RankOneTensorOperator<3>> grad_ln_kappa) { gradLnKappa = grad_ln_kappa; }
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
