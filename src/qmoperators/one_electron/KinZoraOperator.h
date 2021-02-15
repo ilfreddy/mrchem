@@ -2,7 +2,6 @@
 
 #include "MomentumOperator.h"
 #include "ZoraOperator.h"
-#include "qmoperators/RankZeroTensorOperator.h"
 #include "qmoperators/one_electron/KinBaseOperator.h"
 
 /** @class KineticOperator
