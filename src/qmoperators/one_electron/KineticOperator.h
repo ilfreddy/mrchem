@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MomentumOperator.h"
-#include "qmoperators/RankZeroTensorOperator.h"
+#include "qmoperators/one_electron/KinBaseOperator.h"
 
 /** @class KineticOperator
  *
@@ -16,7 +16,7 @@
 
 namespace mrchem {
 
-class KineticOperator final : public RankZeroTensorOperator {
+class KineticOperator final : public KinBaseOperator {
 public:
     KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
             : p(D) {
