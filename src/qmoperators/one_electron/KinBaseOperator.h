@@ -18,7 +18,6 @@ namespace mrchem {
 
 class KinBaseOperator : public RankZeroTensorOperator {
 public:
-    KinBaseOperator(){}
 
     virtual ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket) = 0;
     virtual ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket) = 0;
