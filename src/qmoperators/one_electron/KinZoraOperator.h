@@ -3,6 +3,7 @@
 #include "MomentumOperator.h"
 #include "ZoraOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+#include "qmoperators/one_electron/KinBaseOperator.h"
 
 /** @class KineticOperator
  *
@@ -17,7 +18,7 @@
 
 namespace mrchem {
 
-class KinZoraOperator final : public RankZeroTensorOperator {
+class KinZoraOperator final : public KinBaseOperator {
 public:
     KinZoraOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
                     const Nuclei &nucs,
