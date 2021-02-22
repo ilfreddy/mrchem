@@ -33,8 +33,8 @@ public:
         t.name() = "T";
     }
 
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket) override;
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket) override;
 
     using RankZeroTensorOperator::operator();
     using RankZeroTensorOperator::dagger;
