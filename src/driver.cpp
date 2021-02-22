@@ -50,6 +50,7 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
+#include "qmoperators/one_electron/KinBaseOperator.h"
 #include "qmoperators/one_electron/KinZoraOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
@@ -964,7 +965,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto kin_diff = json_fock["kinetic_operator"]["derivative"];
         auto D_p = driver::get_derivative(kin_diff);
         auto T_p = std::make_shared<KineticOperator>(D_p);
-        F.getKineticOperator() = T_p;
+        F.getKinBaseOperator() = T_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Kinetic Zora Operator   //////////////
@@ -981,8 +982,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto D_p = driver::get_derivative(zora_diff);
         auto kin_zora =
             std::make_shared<KinZoraOperator>(D_p, nuclei, zora_factor, proj_prec, smooth_prec, shared_memory);
-        F.getKinZoraOperator() = kin_zora;
-        std::cout << "made kinetic zora " << std::endl;
+        F.getKinBaseOperator() = kin_zora;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
