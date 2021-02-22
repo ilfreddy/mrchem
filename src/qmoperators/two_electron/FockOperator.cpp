@@ -11,16 +11,14 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
-#include "qmoperators/one_electron/KinZoraOperator.h"
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/KinBaseOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
 
-using KineticOperator_p = std::shared_ptr<mrchem::KineticOperator>;
-using KinZoraOperator_p = std::shared_ptr<mrchem::KinZoraOperator>;
+using KinBaseOperator_p = std::shared_ptr<mrchem::KinBaseOperator>;
 using NuclearOperator_p = std::shared_ptr<mrchem::NuclearOperator>;
 using CoulombOperator_p = std::shared_ptr<mrchem::CoulombOperator>;
 using ExchangeOperator_p = std::shared_ptr<mrchem::ExchangeOperator>;
@@ -43,16 +41,14 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * Each of the arguments can be NULL, so this operators includes both core Hamiltonian,
  * the Hartree(-Fock) method and (pure/hybrid) Density Functional Theory.
  */
-FockOperator::FockOperator(KineticOperator_p t,
-                           KinZoraOperator_p z,
+FockOperator::FockOperator(KinBaseOperator_p t,
                            NuclearOperator_p v,
                            CoulombOperator_p j,
                            ExchangeOperator_p k,
                            XCOperator_p xc,
                            ElectricFieldOperator_p ext,
                            ReactionOperator_p reo)
-        : kin(t)
-        , kinzora(z)
+        : kinbase(t)
         , nuc(v)
         , coul(j)
         , ex(k)
@@ -66,8 +62,7 @@ FockOperator::FockOperator(KineticOperator_p t,
 void FockOperator::build(double exx) {
     this->exact_exchange = exx;
     this->T = RankZeroTensorOperator();
-    if (this->kinzora != nullptr) this->T += (*this->kinzora);
-    // if (this->kin != nullptr) this->T += (*this->kin);
+    if (this->kinbase != nullptr) this->T += (*this->kinbase);
 
     this->V = RankZeroTensorOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
@@ -164,8 +159,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
         Er_el = 0.5 * this->Ro->getElectronicEnergy();
     }
     // Electronic part
-    if (this->kinzora != nullptr) E_kin = this->kinzora->trace(Phi).real();
-    // if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
+    if (this->kinbase != nullptr) E_kin = this->kinbase->trace(Phi).real();
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
@@ -182,8 +176,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    auto t = this->getKinZoraOperator();
-    // auto t = this->getKineticOperator();
+    auto t = this->getKinBaseOperator();
     auto v = this->potential();
 
     ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());

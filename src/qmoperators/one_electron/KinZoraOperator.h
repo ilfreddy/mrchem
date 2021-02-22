@@ -2,7 +2,6 @@
 
 #include "MomentumOperator.h"
 #include "ZoraOperator.h"
-#include "qmoperators/RankZeroTensorOperator.h"
 #include "qmoperators/one_electron/KinBaseOperator.h"
 
 /** @class KineticOperator
@@ -34,8 +33,8 @@ public:
         t.name() = "T";
     }
 
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket) override;
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket) override;
 
     using RankZeroTensorOperator::operator();
     using RankZeroTensorOperator::dagger;
