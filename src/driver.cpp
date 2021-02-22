@@ -985,6 +985,24 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         F.getKinBaseOperator() = kin_zora;
     }
     ///////////////////////////////////////////////////////////
+    //////////////////   Kinetic Zora Operator   //////////////
+    ///////////////////////////////////////////////////////////
+    auto json_kinzora = json_fock.find("kinzora_operator");
+    if (json_kinzora != json_fock.end()) {
+        double light_speed = (*json_kinzora)["light_speed"].get<double>();
+        if (light_speed <= 0.0) { light_speed = PHYSCONST::alpha_inv; }
+        double zora_factor = 2.0 * light_speed * light_speed;
+        auto zora_diff = (*json_kinzora)["derivative"].get<std::string>();
+        auto proj_prec = (*json_kinzora)["proj_prec"].get<double>();
+        auto smooth_prec = (*json_kinzora)["smooth_prec"].get<double>();
+        auto shared_memory = (*json_kinzora)["shared_memory"].get<bool>();
+        auto D_p = driver::get_derivative(zora_diff);
+        auto kin_zora =
+            std::make_shared<KinZoraOperator>(D_p, nuclei, zora_factor, proj_prec, smooth_prec, shared_memory);
+        F.getKinZoraOperator() = kin_zora;
+        std::cout << "made kinetic zora " << std::endl;
+    }
+    ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("nuclear_operator")) {
