@@ -495,4 +495,55 @@ def stencil() -> JSONDict:
                                         {   'default': "user['SCF']['localize']",
                                             'name': 'localize',
                                             'type': 'bool'}],
-                        'name': 'Response'}]}
+                        'name': 'Response'},
+                    {   'keywords': [   {   'default': 100,
+                                            'name': 'max_iter',
+                                            'type': 'int'},
+                                        {   'default': False,
+                                            'name': 'run_environment',
+                                            'type': 'bool'},
+                                        {   'default': 'scrf',
+                                            'name': 'algorithm',
+                                            'predicates': [   'value.lower() '
+                                                              "in ['scrf']"],
+                                            'type': 'str'},
+                                        {   'default': 'dynamic',
+                                            'name': 'convergence_criterion',
+                                            'predicates': [   'value.lower() '
+                                                              "in ['dynamic', "
+                                                              "'static']"],
+                                            'type': 'str'},
+                                        {   'default': True,
+                                            'name': 'extrapolate_Vr',
+                                            'type': 'bool'},
+                                        {   'default': 'total',
+                                            'name': 'density_type',
+                                            'predicates': [   'value.lower() '
+                                                              "in ['total', "
+                                                              "'nuclear', "
+                                                              "'electronic']"],
+                                            'type': 'str'},
+                                        {   'default': "user['SCF']['kain']",
+                                            'name': 'kain',
+                                            'type': 'int'}],
+                        'name': 'Environment',
+                        'sections': [   {   'keywords': [   {   'default': '',
+                                                                'name': 'spheres',
+                                                                'type': 'str'},
+                                                            {   'default': 0.2,
+                                                                'name': 'cavity_width',
+                                                                'type': 'float'}],
+                                            'name': 'Cavity'},
+                                        {   'keywords': [   {   'default': 1.0,
+                                                                'name': 'epsilon_in',
+                                                                'type': 'float'},
+                                                            {   'default': 2.0,
+                                                                'name': 'epsilon_out',
+                                                                'type': 'float'},
+                                                            {   'default': 'exponential',
+                                                                'name': 'formulation',
+                                                                'predicates': [   'value.lower() '
+                                                                                  'in '
+                                                                                  "['exponential']"],
+                                                                'type': 'str'}],
+                                            'name': 'Permittivity'}]}]}
