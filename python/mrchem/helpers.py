@@ -53,19 +53,21 @@ SHORTHAND_FUNCTIONALS = [
 def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
     fock_dict = {}
 
-    # Kinetic
-    fock_dict["kinetic_operator"] = {
-        "derivative": user_dict["Derivatives"]["kinetic"]
-    }
 
-    # ZORA Kinetic
-    fock_dict["kinzora_operator"] = {
-        "light_speed": user_dict["ZORA"]["light_speed"],
-        "derivative": user_dict["Derivatives"]["kinetic"],
-        "proj_prec": user_dict["Precisions"]["nuclear_prec"],
-        "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
-        "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-    }
+    # Determine which kinetic operator to use
+    if user_dict['WaveFunction']["zora"]:
+        fock_dict["kinzora_operator"] = {
+            "light_speed": user_dict["ZORA"]["light_speed"],
+            "derivative": user_dict["Derivatives"]["kinetic"],
+            "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+            "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+            "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
+        }
+    else:
+        fock_dict["kinetic_operator"] = {
+            "derivative": user_dict["Derivatives"]["kinetic"]
+        }
+
 
     # Nuclear
     fock_dict["nuclear_operator"] = {
