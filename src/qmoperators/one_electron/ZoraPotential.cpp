@@ -25,18 +25,20 @@ namespace mrchem {
  * 2) loc_func: Temporary function that contains only some of the
  *              nuclei, which are distributed among the available
  *              MPIs. This is used only for the projection below.
- */
+*/
 ZoraPotential::ZoraPotential(const Nuclei &nucs,
                              double zora_factor,
                              double proj_prec,
                              double smooth_prec,
-                             bool mpi_share,
-                             int func_flag)
+                             bool mpi_share)
         : QMPotential(1, mpi_share)
         , zoraFactor(zora_factor) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
-
+    
+    // ==============================
+    // Set up printing functionality
+    // ==============================
     int pprec = Printer::getPrecision();
     int w0 = Printer::getWidth() - 1;
     int w1 = 5;
@@ -57,7 +59,9 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs,
     mrcpp::print::separator(2, '-');
 
     NuclearFunction loc_func;
-
+    
+    // What is c?
+    // Loop over nuclei
     double c = 0.00435 * smooth_prec;
     for (int k = 0; k < nucs.size(); k++) {
         const Nucleus &nuc = nucs[k];
@@ -99,30 +103,12 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs,
 
     std::cout << "Zora Factor " << zoraFactor << std::endl;
 
-    Timer t_map;
-    switch (func_flag) {
-        case 0: // required for kinetic energy and SCF
-            computeKappa(proj_prec);
-            break;
-        case 1: // maybe required for SCF
-            computeLnKappa(proj_prec);
-            break;
-        case 2: // required for SCF
-            computeKappaInv(proj_prec);
-            break;
-        case 3: // maybe required for SCF
-            computeVKappaInv(proj_prec);
-            break;
-        default:
-            MSG_ABORT("Invalid func_flag");
-    }
-    t_map.stop();
+    computeKappa(proj_prec);
 
     t_tot.stop();
     mrcpp::print::separator(2, '-');
     print_utils::qmfunction(2, "Local potential", V_loc, t_loc);
     print_utils::qmfunction(2, "Allreduce potential", V_loc, t_com);
-    print_utils::qmfunction(2, "Map potential", V_loc, t_map);
     mrcpp::print::footer(2, t_tot, 2);
 }
 
@@ -166,62 +152,8 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
 void ZoraPotential::computeKappa(double prec) {
     auto zf = this->zoraFactor;
     auto kappamap = [zf](double val) {
-        double temp = 1.0 - val / zf;
-        return 1.0 / temp;
+        return 1.0 / (1.0 - val / zf);
     };
-    QMFunction &ZoraFunction = *this;
-    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
-    zora_real.map(kappamap);
+    this->real().map(kappamap);
 }
-
-/** @brief maps the potential function into the logarithm of kappa
- *
- * @param[in] prec precision
- *
- *  \f \ln(k) = -\ln({1-V/2c^2}) \f
- */
-void ZoraPotential::computeLnKappa(double prec) {
-    auto zf = this->zoraFactor;
-    auto kappamap = [zf](double val) {
-        double temp = 1.0 - val / zf;
-        return -std::log(temp);
-    };
-    QMFunction &ZoraFunction = *this;
-    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
-    zora_real.map(kappamap);
-}
-
-/** @brief maps the potential function into a scaled potential
- *
- * @param[in] prec precision
- *
- *  \f z = 1-V/2c^2 = 1/\kappa\f
- *
- */
-void ZoraPotential::computeKappaInv(double prec) {
-    auto zf = this->zoraFactor;
-    auto zoramap = [zf](double val) { return 1.0 - val / zf; };
-    QMFunction &ZoraFunction = *this;
-    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
-    zora_real.map(zoramap);
-}
-
-/** @brief maps the potential function into a scaled potential times the potential
- *
- * @param[in] prec precision
- *
- *  \f z = V(1-V/2c^2) = V/\kappa \f
- *
- */
-void ZoraPotential::computeVKappaInv(double prec) {
-    auto zf = this->zoraFactor;
-    auto zoramap = [zf](double val) {
-        auto temp = 1.0 - val / zf;
-        return val * temp;
-    };
-    QMFunction &ZoraFunction = *this;
-    mrcpp::FunctionTree<3> &zora_real = ZoraFunction.real();
-    zora_real.map(zoramap);
-}
-
 } // namespace mrchem

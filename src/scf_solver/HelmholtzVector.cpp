@@ -35,7 +35,6 @@
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/RankOneTensorOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/GradLnKappaOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/QMPotential.h"
 #include "utils/print_utils.h"

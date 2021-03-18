@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MomentumOperator.h"
-#include "qmoperators/one_electron/KinBaseOperator.h"
+#include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class KineticOperator
  *
@@ -16,24 +16,15 @@
 
 namespace mrchem {
 
-class KineticOperator final : public KinBaseOperator {
+class KineticOperator : public RankZeroTensorOperator {
 public:
-    KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : p(D) {
-        // Invoke operator= to assign *this operator
-        RankZeroTensorOperator &t = (*this);
-        t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-        t.name() = "T";
-    }
 
-    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket) override;
-    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket) override;
+    virtual ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket) = 0;
+    virtual ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket) = 0;
 
     using RankZeroTensorOperator::operator();
     using RankZeroTensorOperator::dagger;
 
-private:
-    MomentumOperator p;
 };
 
 } // namespace mrchem

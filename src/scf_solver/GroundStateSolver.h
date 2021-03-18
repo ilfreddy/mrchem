@@ -60,9 +60,8 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
-    void setZora(bool zora) { this->isZora = true; }
-    void setKappaInv(std::shared_ptr<RankZeroTensorOperator> kappa_inv) { kappaInv = kappa_inv; }
-    void setGradLnKappa(std::shared_ptr<RankOneTensorOperator<3>> grad_ln_kappa) { gradLnKappa = grad_ln_kappa; }
+    void setIsZora(bool zora) { this->isZora = true; }
+    void setZora(std::shared_ptr<RankZeroTensorOperator> zora) { this->zora = zora; }
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
@@ -78,11 +77,9 @@ protected:
     void printProperty() const;
     void printParameters(const std::string &method) const;
 
-    std::shared_ptr<RankZeroTensorOperator> kappaInv;
-    std::shared_ptr<RankOneTensorOperator<3>> gradLnKappa;
+    std::shared_ptr<RankZeroTensorOperator> zora;
 
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
 };
-
 } // namespace mrchem

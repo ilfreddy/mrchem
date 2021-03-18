@@ -34,14 +34,14 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NRKineticOperator.h"
 
 using namespace mrchem;
 using namespace orbital;
 
 namespace kinetic_operator {
 
-TEST_CASE("KineticOperator", "[kinetic_operator]") {
+TEST_CASE("NRKineticOperator", "[kinetic_operator]") {
     const double prec = 1.0e-3;
     const double thrs = prec * prec;
 
@@ -69,7 +69,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     }
 
     auto D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
-    KineticOperator T(D);
+    NRKineticOperator T(D);
     T.setup(prec);
     SECTION("apply") {
         Orbital Tphi_0 = T(Phi[0]);

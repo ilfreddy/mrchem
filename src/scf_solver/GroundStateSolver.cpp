@@ -37,11 +37,10 @@
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/RankOneTensorOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
-#include "qmoperators/one_electron/GradLnKappaOperator.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
-#include "qmoperators/one_electron/KinZoraOperator.h"
-#include "qmoperators/one_electron/KineticOperator.h"
-#include "qmoperators/one_electron/ZoraPotential.h"
+#include "qmoperators/one_electron/ZoraKineticOperator.h"
+#include "qmoperators/one_electron/NRKineticOperator.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -239,13 +238,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     DoubleVector errors = DoubleVector::Ones(Phi_n.size());
     double err_o = errors.maxCoeff();
     double err_t = errors.norm();
-
-    //    auto D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
-    //    NablaOperator nab(D);
-    //    auto grad_lnk = F.getGradZoraOperator();
-    //    auto zora = F.getZoraOperator();
-    //    RankZeroTensorOperator grad_lnK_grad = (*grad_lnk)[0] * nab[0] + (*grad_lnk)[1] * nab[1] + (*grad_lnk)[2] *
-    //    nab[2];
 
     this->error.push_back(err_t);
     this->energy.push_back(E_n);

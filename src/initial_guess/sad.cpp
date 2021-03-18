@@ -40,7 +40,7 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NRKineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
@@ -89,7 +89,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
-    KineticOperator T(D_p);
+    NRKineticOperator T(D_p);
     NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
     XCOperator XC(mrdft_p);

@@ -41,7 +41,7 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NRKineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 
 using mrcpp::Printer;
@@ -103,7 +103,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     // Make Fock operator contributions
     t_lap.start();
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
-    KineticOperator T(D_p);
+    NRKineticOperator T(D_p);
     NuclearOperator V(nucs, prec);
     if (plevel == 1) mrcpp::print::time(1, "Projecting nuclear potential", t_lap);
 
@@ -254,7 +254,7 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 
-ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V) {
+ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, NRKineticOperator &T, RankZeroTensorOperator &V) {
     Timer t1;
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     ComplexMatrix f_tilde = T(Phi, Phi) + V(Phi, Phi);
