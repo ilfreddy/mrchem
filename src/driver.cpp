@@ -969,6 +969,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
          F.getZoraOperator() = VZ_p;
     }
     ///////////////////////////////////////////////////////////
+>>>>>>> a8a84418d4413a46a0c9f63fdb2ad12195e77788
     //////////////////   Nuclear Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("nuclear_operator")) {
