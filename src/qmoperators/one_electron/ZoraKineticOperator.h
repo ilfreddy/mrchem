@@ -3,7 +3,7 @@
 #include "MomentumOperator.h"
 #include "ZoraOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
-#include "qmoperators/one_electron/ZoraPotential.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
 
 /** @class KineticOperator
  *
@@ -20,14 +20,14 @@ namespace mrchem {
 
 class ZoraKineticOperator final : public KineticOperator {
 public:
-    ZoraKineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                        const Nuclei &nucs,
-                        double zora_factor,
-                        double proj_prec,
-                        double smooth_prec = -1.0,
-                        bool mpi_share = false)
+    ZoraKineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, 
+                        const Nuclei &nuclei, 
+                        double zora_factor, 
+                        double proj_prec,  
+                        double smooth_prec, 
+                        bool shared_memory)
                 : p(D)
-                , vz(nucs, zora_factor, proj_prec, smooth_prec, mpi_share) {
+                , vz(nuclei, zora_factor, proj_prec, smooth_prec, shared_memory) {
 
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &t = (*this);
