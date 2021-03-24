@@ -28,6 +28,9 @@
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
 #include "qmoperators/qmoperator_fwd.h"
+#include "qmoperators/one_electron/ZoraPotential.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/QMPotential.h"
 
 /** @class HelmholtzVector
  *
@@ -56,6 +59,11 @@ public:
                              RankZeroTensorOperator &zora,
                              OrbitalVector &Phi,
                              OrbitalVector &Psi) const;
+    
+    OrbitalVector apply_zora_v3(RankZeroTensorOperator &V,
+                                ZoraOperator &VZ,
+                                OrbitalVector &Phi,
+                                OrbitalVector &Psi) const;
     
     OrbitalVector operator()(OrbitalVector &Phi) const;
 

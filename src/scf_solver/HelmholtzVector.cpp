@@ -35,8 +35,14 @@
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/RankOneTensorOperator.h"
 #include "qmoperators/RankZeroTensorOperator.h"
+#include "qmoperators/qmoperator_utils.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/QMPotential.h"
+#include "qmoperators/one_electron/ZoraPotential.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/NablaOperator.h"
+#include "qmoperators/one_electron/IdentityOperator.h"
+#include "qmoperators/one_electron/NRKineticOperator.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -137,6 +143,49 @@ OrbitalVector HelmholtzVector::apply(RankZeroTensorOperator &V, OrbitalVector &P
     return out;
 }
 
+OrbitalVector HelmholtzVector::apply_zora_v3(RankZeroTensorOperator &V,
+                                             ZoraOperator &kappa,
+                                             OrbitalVector &Phi,
+                                             OrbitalVector &Psi) const {
+    
+    // Construct necessary operators
+    auto diff = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+    NablaOperator nabla(diff);
+    NRKineticOperator T(diff);
+    IdentityOperator I;
+    RankOneTensorOperator<3> dKappa = nabla(*(kappa.getPotential()));
+    RankZeroTensorOperator O;
+    
+    // Build the terms in eq. 56
+    O += (I - kappa) * T;
+    O += -0.5 * qmoperator::dot(dKappa, nabla);
+    O += V;
+    
+    // Setup operators with precision
+    kappa.setup(this->prec);
+    T.setup(this->prec);
+    I.setup(this->prec);
+    nabla.setup(this->prec);
+    dKappa.setup(this->prec);
+
+    // Apply O on all orbitals
+    OrbitalVector out = orbital::param_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
+        Orbital OPhi_i = O(Phi[i]);
+        OPhi_i.add(-1.0, Psi[i]);
+        OPhi_i.rescale(- 1 / (2 * MATHCONST::pi));
+        out[i] = apply(i, OPhi_i);
+    }
+    
+    // Clear operators and return result
+    T.clear();
+    kappa.clear();
+    I.clear();
+    nabla.clear();
+    dKappa.clear();
+    return out; 
+    }
+
 /** @brief Apply Helmholtz operator component wise on OrbitalVector
  *
  * This will construct a separate Helmholtz operator for each of the entries
@@ -195,6 +244,7 @@ OrbitalVector HelmholtzVector::apply_zora(RankZeroTensorOperator &V,
     if (plevel == 1) mrcpp::print::time(1, "Applying Helmholtz operators", t_tot);
     return out;
 }
+
 
 /** @brief Apply Helmholtz operator on individual Orbital
  *
