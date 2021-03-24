@@ -3,6 +3,8 @@
 #include "qmoperators/QMOperator.h"
 #include "qmoperators/RankOneTensorOperator.h"
 
+#include "qmoperators/one_electron/QMPotential.h"
+
 namespace mrchem {
 
 class QMNabla final : public QMOperator {
@@ -19,7 +21,8 @@ private:
 
 class NablaOperator final : public RankOneTensorOperator<3> {
 public:
-    NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
+    NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) 
+        : derivativeOperator(D) {
         d_x = std::make_shared<QMNabla>(0, D);
         d_y = std::make_shared<QMNabla>(1, D);
         d_z = std::make_shared<QMNabla>(2, D);
@@ -34,10 +37,13 @@ public:
         d[2].name() = "del[z]";
     }
 
+    RankOneTensorOperator<3> operator()(QMPotential &V);
+
 private:
     std::shared_ptr<QMNabla> d_x{nullptr};
     std::shared_ptr<QMNabla> d_y{nullptr};
     std::shared_ptr<QMNabla> d_z{nullptr};
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivativeOperator;
 };
 
 } // namespace mrchem
