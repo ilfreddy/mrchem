@@ -1,5 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include <MRCPP/MWOperators>
 
 #include "ZoraPotential.h"
 #include "chemistry/chemistry_utils.h"
@@ -33,6 +34,7 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs,
                              bool mpi_share)
         : QMPotential(1, mpi_share)
         , zoraFactor(zora_factor) {
+
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
     
@@ -150,10 +152,11 @@ void ZoraPotential::allreducePotential(double prec, QMFunction &V_loc) {
  *  \f \kappa = \frac{1}{1-V/2c^2} \f
  */
 void ZoraPotential::computeKappa(double prec) {
-    auto zf = this->zoraFactor;
+    double zf = this->zoraFactor;
     auto kappamap = [zf](double val) {
-        return 1.0 / (1.0 - val / zf);
+        return zf / (zf - val);
     };
     this->real().map(kappamap);
 }
+
 } // namespace mrchem
