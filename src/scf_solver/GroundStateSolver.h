@@ -60,7 +60,7 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
-    void setIsZora(bool zora) { this->isZora = true; }
+    void setIsZora(bool isZora) { this->isZora = isZora; }
     void setZora(std::shared_ptr<RankZeroTensorOperator> zora) { this->zora = zora; }
 
     nlohmann::json optimize(Molecule &mol, FockOperator &F);
