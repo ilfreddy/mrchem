@@ -5,6 +5,8 @@
 #include "qmoperators/one_electron/QMPotential.h"
 #include "qmoperators/one_electron/ZoraPotential.h"
 
+using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
+
 namespace mrchem {
 
 class ZoraOperator final : public RankZeroTensorOperator {
@@ -21,6 +23,8 @@ public:
         v = potential;
         v.name() = "ZORA";
     }
+
+    std::shared_ptr<ZoraPotential> getPotential() { return this->potential; }
 
 private:
     std::shared_ptr<ZoraPotential> potential{nullptr};
