@@ -103,8 +103,6 @@ ZoraPotential::ZoraPotential(const Nuclei &nucs,
     allreducePotential(abs_prec, V_loc);
     t_com.stop();
 
-    std::cout << "Zora Factor " << zoraFactor << std::endl;
-
     computeKappa(proj_prec);
 
     t_tot.stop();
