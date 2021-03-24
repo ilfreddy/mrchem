@@ -25,6 +25,7 @@ using ExchangeOperator_p = std::shared_ptr<mrchem::ExchangeOperator>;
 using XCOperator_p = std::shared_ptr<mrchem::XCOperator>;
 using ElectricFieldOperator_p = std::shared_ptr<mrchem::ElectricFieldOperator>;
 using ReactionOperator_p = std::shared_ptr<mrchem::ReactionOperator>;
+using ZoraOperator_p = std::shared_ptr<mrchem::ZoraOperator>;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -47,14 +48,16 @@ FockOperator::FockOperator(KineticOperator_p t,
                            ExchangeOperator_p k,
                            XCOperator_p xc,
                            ElectricFieldOperator_p ext,
-                           ReactionOperator_p reo)
+                           ReactionOperator_p reo,
+                           ZoraOperator_p vz)
         : kin(t)
         , nuc(v)
         , coul(j)
         , ex(k)
         , xc(xc)
         , ext(ext)
-        , Ro(reo) {}
+        , Ro(reo) 
+        , zora(vz) {}
 
 /** @brief build the Fock operator once all contributions are in place
  *

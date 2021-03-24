@@ -32,7 +32,8 @@ public:
                  std::shared_ptr<ExchangeOperator> k = nullptr,
                  std::shared_ptr<XCOperator> xc = nullptr,
                  std::shared_ptr<ElectricFieldOperator> ext = nullptr,
-                 std::shared_ptr<ReactionOperator> reo = nullptr);
+                 std::shared_ptr<ReactionOperator> reo = nullptr,
+                 std::shared_ptr<ZoraOperator> vz = nullptr);
 
     RankZeroTensorOperator &kinetic() { return this->T; }
     RankZeroTensorOperator &potential() { return this->V; }
