@@ -38,8 +38,10 @@ namespace mrchem {
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital()
-        : QMFunction(false)
-        , orb_data({-1, 0, 0}) {}
+{
+    orb_comp = QMFunction(false);
+    orb_data = OrbitalData({-1, 0, 0});
+}
 
 /** @brief Constructor
  *
@@ -49,9 +51,9 @@ Orbital::Orbital()
  *
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
-Orbital::Orbital(int spin, int occ, int rank)
-        : QMFunction(false)
-        , orb_data({rank, spin, occ}) {
+Orbital::Orbital(int spin, int occ, int rank) {
+    orb_comp = QMFunction(false);
+    orb_data = OrbitalData({rank, spin, occ});
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         if (this->spin() == SPIN::Paired) this->orb_data.occ = 2;
@@ -67,9 +69,10 @@ Orbital::Orbital(int spin, int occ, int rank)
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
-Orbital::Orbital(const Orbital &orb)
-        : QMFunction(orb)
-        , orb_data(orb.orb_data) {}
+    Orbital::Orbital(const Orbital &orb) {
+        orb_comp = QMFunction(orb.orb_comp);
+        orb_data = OrbitalData(orb.orb_data);
+    }
 
 /** @brief Assignment operator
  *
@@ -80,14 +83,14 @@ Orbital::Orbital(const Orbital &orb)
  */
 Orbital &Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
-        QMFunction::operator=(orb);
+        orb_comp = orb.orb_comp;
         this->orb_data = orb.orb_data;
     }
     return *this;
 }
 
 Orbital &Orbital::operator=(const QMFunction &func) {
-    if (this != &func) QMFunction::operator=(func);
+    if (&this->orb_comp != &func) orb_comp = func;
     return *this;
 }
 
@@ -137,17 +140,17 @@ void Orbital::saveOrbital(const std::string &file) {
     f.close();
 
     // writing real part
-    if (hasReal()) {
+    if (orb_comp.hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        real().saveTree(fname.str());
+        orb_comp.real().saveTree(fname.str());
     }
 
     // writing imaginary part
-    if (hasImag()) {
+    if (orb_comp.hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        imag().saveTree(fname.str());
+        orb_comp.imag().saveTree(fname.str());
     }
 }
 
@@ -160,8 +163,8 @@ void Orbital::saveOrbital(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::loadOrbital(const std::string &file) {
-    if (hasReal()) MSG_ERROR("Orbital not empty");
-    if (hasImag()) MSG_ERROR("Orbital not empty");
+    if (orb_comp.hasReal()) MSG_ERROR("Orbital not empty");
+    if (orb_comp.hasImag()) MSG_ERROR("Orbital not empty");
 
     // reading meta data
     std::stringstream fmeta;
@@ -197,7 +200,7 @@ void Orbital::loadOrbital(const std::string &file) {
         std::stringstream fname;
         fname << file << "_re";
         alloc(NUMBER::Real, mra);
-        real().loadTree(fname.str());
+        orb_comp.real().loadTree(fname.str());
     }
 
     // reading imaginary part
@@ -205,7 +208,7 @@ void Orbital::loadOrbital(const std::string &file) {
         std::stringstream fname;
         fname << file << "_im";
         alloc(NUMBER::Imag, mra);
-        imag().loadTree(fname.str());
+        orb_comp.imag().loadTree(fname.str());
     }
     delete mra;
 }
@@ -219,4 +222,9 @@ char Orbital::printSpin() const {
     return sp;
 }
 
+    /** @brief Returns the norm of an orbital */
+    double Orbital::norm() const {
+        return orb_comp.norm();
+    }
+    
 } // namespace mrchem

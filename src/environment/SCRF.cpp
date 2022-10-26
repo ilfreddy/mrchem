@@ -163,8 +163,8 @@ void SCRF::accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain
 
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
-    func = phi_n[0];
-    dfunc = dPhi_n[0]; // see if you can remove these two lines
+    func = phi_n[0].getComp();
+    dfunc = dPhi_n[0].getComp(); // see if you can remove these two lines
 
     phi_n.clear();
     dPhi_n.clear();

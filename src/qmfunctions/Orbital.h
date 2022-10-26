@@ -54,7 +54,7 @@ struct OrbitalData {
     int occ;
 };
 
-class Orbital final : public QMFunction {
+class Orbital final {
 public:
     explicit Orbital();
     explicit Orbital(int spin, int occ = -1, int rank = -1);
@@ -78,10 +78,19 @@ public:
     void loadOrbital(const std::string &file);
 
     char printSpin() const;
-
+    double norm() const;
+    QMFunction &getComp() { return this->orb_comp; }
+  bool hasReal() const { return (orb_comp.hasReal());}
+  bool hasImag() const { return (orb_comp.hasImag());}
+  void free(int type) {orb_comp.free(type);}
+  mrcpp::FunctionTree<3> &real() { return orb_comp.real(); }
+  mrcpp::FunctionTree<3> &imag() { return orb_comp.imag(); }
+  const mrcpp::FunctionTree<3> &real() const { return orb_comp.real(); }
+  const mrcpp::FunctionTree<3> &imag() const { return orb_comp.imag(); }
+  
 private:
     OrbitalData orb_data;
-
+    QMFunction orb_comp;
     std::ostream &print(std::ostream &o) const;
 };
 

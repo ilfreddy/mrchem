@@ -661,9 +661,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << Phi[i].printSpin() << "_scf_idx_" << i;
-                if (line) plt.linePlot(npts, Phi[i], name.str());
-                if (surf) plt.surfPlot(npts, Phi[i], name.str());
-                if (cube) plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i].getComp(), name.str());
+                if (surf) plt.surfPlot(npts, Phi[i].getComp(), name.str());
+                if (cube) plt.cubePlot(npts, Phi[i].getComp(), name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         } else {
@@ -677,9 +677,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 if (Phi[i].spin() == SPIN::Alpha) sp = 'a';
                 if (Phi[i].spin() == SPIN::Beta) sp = 'b';
                 name << path << "/phi_" << sp << "_scf_idx_" << i;
-                if (line) plt.linePlot(npts, Phi[i], name.str());
-                if (surf) plt.surfPlot(npts, Phi[i], name.str());
-                if (cube) plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i].getComp(), name.str());
+                if (surf) plt.surfPlot(npts, Phi[i].getComp(), name.str());
+                if (cube) plt.cubePlot(npts, Phi[i].getComp(), name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         }
