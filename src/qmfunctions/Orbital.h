@@ -80,13 +80,14 @@ public:
     char printSpin() const;
     double norm() const;
     QMFunction &getComp() { return this->orb_comp; }
-  bool hasReal() const { return (orb_comp.hasReal());}
-  bool hasImag() const { return (orb_comp.hasImag());}
-  void free(int type) {orb_comp.free(type);}
-  mrcpp::FunctionTree<3> &real() { return orb_comp.real(); }
-  mrcpp::FunctionTree<3> &imag() { return orb_comp.imag(); }
-  const mrcpp::FunctionTree<3> &real() const { return orb_comp.real(); }
-  const mrcpp::FunctionTree<3> &imag() const { return orb_comp.imag(); }
+    bool hasReal() const { return (orb_comp.hasReal());}
+     bool hasImag() const { return (orb_comp.hasImag());}
+    void free(int type) {orb_comp.free(type);}
+    mrcpp::FunctionTree<3> &real() { return orb_comp.real(); }
+    mrcpp::FunctionTree<3> &imag() { return orb_comp.imag(); }
+    const mrcpp::FunctionTree<3> &real() const { return orb_comp.real(); }
+    const mrcpp::FunctionTree<3> &imag() const { return orb_comp.imag(); }
+    bool conjugate() const { return this->orb_comp.conjugate(); }    
   
 private:
     OrbitalData orb_data;

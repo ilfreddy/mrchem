@@ -27,6 +27,7 @@
 
 #include "MRCPP/Printer"
 
+#include "QMFunction.h"
 #include "Orbital.h"
 #include "orbital_utils.h"
 #include "qmfunction_utils.h"
@@ -110,8 +111,8 @@ Orbital Orbital::paramCopy() const {
  * however, they interpret the imaginary part with opposite sign.
  */
 Orbital Orbital::dagger() const {
-    Orbital out(*this); // Shallow copy
-    out.conj = not this->conjugate();
+    Orbital out(*this);
+    out.orb_comp = out.orb_comp.dagger();
     return out; // Return shallow copy
 }
 
@@ -129,7 +130,7 @@ void Orbital::saveOrbital(const std::string &file) {
     metafile << file << ".meta";
 
     // this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = orb_comp.getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
@@ -171,7 +172,7 @@ void Orbital::loadOrbital(const std::string &file) {
     fmeta << file << ".meta";
 
     // this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = orb_comp.getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
